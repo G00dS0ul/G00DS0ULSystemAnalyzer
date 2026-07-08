@@ -3,6 +3,26 @@ root = true
 [*]
 end_of_line = lf
 insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = space
 
+# Windows batch scripts keep CRLF
 [*.{bat,cmd}]
 end_of_line = crlf
+
+# C# — 4 spaces (.NET convention)
+[*.cs]
+indent_size = 4
+
+# Dart — 2 spaces (official Dart style)
+[*.dart]
+indent_size = 2
+
+# Config / markup — 2 spaces
+[*.{json,jsonc,yml,yaml,xml,csproj,props,targets}]
+indent_size = 2
+
+# Markdown — don't trim trailing spaces (they're meaningful for line breaks)
+[*.md]
+trim_trailing_whitespace = false
