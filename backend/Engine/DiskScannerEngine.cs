@@ -275,53 +275,6 @@ public class DiskScannerEngine : IDiskScannerEngine
 		return size;
 	}
 
-	// TODO: Clean up this determining which Scan directory works better.
-	private long ScanDirectoryR(DirectoryInfo dir, CancellationToken token, int currentDepth = 1)
-	{
-		token.ThrowIfCancellationRequested();
-
-		var config = _settings.Current.Scan;
-
-		if (currentDepth > config.Depth) return 0;
-
-		var normalizedPath = dir.FullName.Replace("\\", "/");
-		if (config.ExcludedPaths.Any(p => normalizedPath.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
-		{
-			return 0;
-		}
-
-		long size = 0;
-
-		var option = new EnumerationOptions
-		{
-			IgnoreInaccessible = true,
-			ReturnSpecialDirectories = false,
-			AttributesToSkip = 0
-		};
-
-		if (config.SkipHiddenFiles) option.AttributesToSkip |= FileAttributes.Hidden;
-		if (config.SkipSystemFiles) option.AttributesToSkip |= FileAttributes.System;
-
-		try
-		{
-			foreach (var file in dir.EnumerateFiles("*", option))
-			{
-				size += file.Length;
-				Interlocked.Increment(ref _scannedFilesCount);
-			}
-
-			foreach (var subDir in dir.EnumerateDirectories("*", option))
-			{
-				size += ScanDirectoryR(subDir, token, currentDepth + 1);
-			}
-		}
-		catch (UnauthorizedAccessException)
-		{
-		}
-
-		return size;
-	}
-
 	public void SaveMemoryToDisk()
 	{
 		lock (_fileWriteLock)
