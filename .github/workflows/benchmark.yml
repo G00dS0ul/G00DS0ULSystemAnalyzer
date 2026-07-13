@@ -1,0 +1,45 @@
+name: GS Engine Benchmark
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  run-benchmarks:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Core Repo
+        uses: actions/checkout@v4
+        with:
+          path: core
+
+      - name: Checkout Benchmark Repo
+        uses: actions/checkout@v4
+        with:
+          repository: GS-SystemAnalyzer/gs-benchmark 
+          path: gs-benchmarks
+          # We removed the '#' here so GitHub uses your new VIP pass!
+          token: ${{ secrets.BENCHMARK_REPO_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Execute Disk Scanner Benchmark
+        env:
+          CoreRepoPath: ${{ github.workspace }}\core
+        working-directory: .\gs-benchmarks\GSAnalyzer.Benchmarks
+        run: dotnet run -c Release
+
+      # The Discord bot is now attached to the benchmark run!
+      - name: Notify Discord
+        continue-on-error: true
+        uses: sarisia/actions-status-discord@v1
+        if: always() 
+        with:
+          webhook: ${{secrets.CI_BUILD}}
+          title: "GS Engine Benchmark Run"
