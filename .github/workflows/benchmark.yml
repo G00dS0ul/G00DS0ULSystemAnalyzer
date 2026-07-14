@@ -34,10 +34,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-          cache: true
-          cache-dependency-path: |
-            gs-benchmarks/**/packages.lock.json
-            core/**/packages.lock.json
 
       - name: Execute ${{ matrix.suite }} Benchmarks
         env:
