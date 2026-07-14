@@ -19,8 +19,8 @@ jobs:
             filter: "*GSAnalyzer.Benchmarks.Suites.Storage.ScannerBenchmarks*"
             artifact: Storage-Scanner
           - name: Storage - CacheFootprint
-            filter: "*GSAnalyzer.Benchmarks.Suites.Storage.CacheFootprintBenchmarks*"
-            artifact: Storage-CacheFootprintBenchmarks
+            filter: "*GSAnalyzer.Benchmarks.Suites.Storage.CacheFootprintBenchmark*"
+            artifact: Storage-CacheFootprintBenchmark
           - name: Memory
             filter: "*GSAnalyzer.Benchmarks.Suites.Memory.*"
             artifact: Memory
