@@ -1,0 +1,43 @@
+name: GS Engine Benchmark (Report)
+
+
+on:
+  workflow_run:
+    workflows: ["GS Engine Benchmark (PR)"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download benchmark artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: $ github.event.workflow_run.id 
+          github-token: $ secrets.GITHUB_TOKEN 
+          path: artifacts
+          merge-multiple: true
+
+      - name: Read PR metadata
+        id: meta
+        shell: bash
+        run: |
+          num=$(cat artifacts/pr-number.txt 2>/dev/null | tr -d '\r\n' || echo "")
+          repo=$(cat artifacts/pr-repo.txt 2>/dev/null | tr -d '\r\n' || echo "")
+          echo "pr=$num"   >> "$GITHUB_OUTPUT"
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Discord
+        continue-on-error: true
+        if: always()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: $ secrets.DISCORD_WEBHOOK 
+          status: $ github.event.workflow_run.conclusion 
+          title: "GS Engine Benchmark — PR #$ steps.meta.outputs.pr  ($ steps.meta.outputs.repo )"
+          url: $ github.event.workflow_run.html_url 
+          description: "Benchmark suites finished for this pull request. Click through for full logs and artifacts."
