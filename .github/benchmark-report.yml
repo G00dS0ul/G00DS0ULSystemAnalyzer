@@ -17,8 +17,8 @@ jobs:
       - name: Download benchmark artifacts
         uses: actions/download-artifact@v4
         with:
-          run-id: $ github.event.workflow_run.id 
-          github-token: $ secrets.GITHUB_TOKEN 
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts
           merge-multiple: true
 
@@ -36,8 +36,8 @@ jobs:
         if: always()
         uses: sarisia/actions-status-discord@v1
         with:
-          webhook: $ secrets.DISCORD_WEBHOOK 
-          status: $ github.event.workflow_run.conclusion 
-          title: "GS Engine Benchmark — PR #$ steps.meta.outputs.pr  ($ steps.meta.outputs.repo )"
-          url: $ github.event.workflow_run.html_url 
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ github.event.workflow_run.conclusion }}
+          title: "GS Engine Benchmark — PR #${{ steps.meta.outputs.pr }} (${{ steps.meta.outputs.repo }})"
+          url: ${{ github.event.workflow_run.html_url }}
           description: "Benchmark suites finished for this pull request. Click through for full logs and artifacts."

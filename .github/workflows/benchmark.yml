@@ -16,7 +16,7 @@ jobs:
       matrix:
         suite: [Storage, Memory, Processing, Hardware]
 
-    name: Suite - $ matrix.suite 
+    name: Suite - ${{ matrix.suite }}
 
     steps:
       - name: Checkout Core (PR code)
@@ -39,11 +39,11 @@ jobs:
             gs-benchmarks/**/packages.lock.json
             core/**/packages.lock.json
 
-      - name: Execute $ matrix.suite  Benchmarks
+      - name: Execute ${{ matrix.suite }} Benchmarks
         env:
-          CoreRepoPath: $ github.workspace \core
+          CoreRepoPath: ${{ github.workspace }}\core
         working-directory: .\gs-benchmarks\GSAnalyzer.Benchmarks
-        run: dotnet run -c Release -- --filter "*GSAnalyzer.Benchmarks.Suites.$ matrix.suite .*" --exporters json github
+        run: dotnet run -c Release -- --filter "*GSAnalyzer.Benchmarks.Suites.${{ matrix.suite }}.*" --exporters json github
 
       - name: Collect results + PR metadata
         if: always()
@@ -54,13 +54,13 @@ jobs:
           if (Test-Path $results) { Copy-Item -Recurse -Force "$results\*" artifact\ }
           # Persist the PR number so the report workflow can reference it.
           # (workflow_run.pull_requests is empty for fork PRs, so we carry it here.)
-          "$ github.event.pull_request.number " | Out-File -Encoding ascii artifact\pr-number.txt
-          "$ github.event.pull_request.head.repo.full_name " | Out-File -Encoding ascii artifact\pr-repo.txt
+          "${{ github.event.pull_request.number }}" | Out-File -Encoding ascii artifact\pr-number.txt
+          "${{ github.event.pull_request.head.repo.full_name }}" | Out-File -Encoding ascii artifact\pr-repo.txt
 
       - name: Upload results artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: benchmark-$ matrix.suite 
+          name: benchmark-${{ matrix.suite }}
           path: artifact
           retention-days: 7
