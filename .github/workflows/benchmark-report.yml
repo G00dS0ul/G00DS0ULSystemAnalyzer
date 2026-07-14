@@ -1,0 +1,52 @@
+﻿name: GS Engine Benchmark (Report)
+
+# Runs AFTER "GS Engine Benchmark (PR)" finishes. This workflow runs on the
+# TRUSTED side (your base repo), so it can read secrets and post to Discord --
+# even for fork PRs. It never runs the contributor's code; it only reads the
+# results that the PR workflow uploaded as an artifact.
+
+on:
+  workflow_run:
+    workflows: ["GS Engine Benchmark (PR)"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    # only react to PR-triggered benchmark runs
+    if: github.event.workflow_run.event == 'pull_request'
+
+    steps:
+      - name: Download benchmark artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: artifacts
+          pattern: benchmark-*
+
+      - name: Read PR metadata
+        id: meta
+        shell: bash
+        run: |
+          num=$(cat artifacts/*/pr-number.txt 2>/dev/null | head -n1 | tr -d '[:space:]')
+          repo=$(cat artifacts/*/pr-repo.txt 2>/dev/null | head -n1 | tr -d '[:space:]')
+          echo "pr_number=$num" >> "$GITHUB_OUTPUT"
+          echo "pr_repo=$repo" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Discord
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: ${{ secrets.CI_BUILD }}
+          status: ${{ github.event.workflow_run.conclusion }}
+          title: "GS Engine Benchmark -- PR #${{ steps.meta.outputs.pr_number }}"
+          description: |
+            Suites: Storage, Memory, Processing, Hardware
+            Source repo: ${{ steps.meta.outputs.pr_repo }}
+            Result: ${{ github.event.workflow_run.conclusion }}
+          url: ${{ github.event.workflow_run.html_url }}
