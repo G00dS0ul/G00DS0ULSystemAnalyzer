@@ -9,6 +9,13 @@ on:
 jobs:
   run-benchmarks:
     runs-on: windows-latest
+    
+    strategy:
+      fail-fast: false # If one suite fails, let the others finish running
+      matrix:
+        suite: [Storage, Memory, Processing, Hardware]
+
+    name: Suite - ${{ matrix.suite }}
 
     steps:
       - name: Checkout Core Repo
@@ -28,11 +35,11 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Execute Disk Scanner Benchmark
+      - name: Execute ${{ matrix.suite }} Benchmarks
         env:
           CoreRepoPath: ${{ github.workspace }}\core
         working-directory: .\gs-benchmarks\GSAnalyzer.Benchmarks
-        run: dotnet run -c Release
+        run: dotnet run -c Release -- --filter "*GSAnalyzer.Benchmarks.Suites.${{ matrix.suite }}.*"
 
       - name: Notify Discord
         continue-on-error: true
@@ -40,4 +47,4 @@ jobs:
         if: always() 
         with:
           webhook: ${{secrets.CI_BUILD}}
-          title: "GS Engine Benchmark Run"
+          title: "GS Engine Benchmark: ${{ matrix.suite }}"
