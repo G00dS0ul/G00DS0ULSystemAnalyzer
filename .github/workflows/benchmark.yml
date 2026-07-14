@@ -14,9 +14,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [Storage, Memory, Processing, Hardware]
+        include:
+          - name: Storage - Scanner
+            filter: "*GSAnalyzer.Benchmarks.Suites.Storage.ScannerBenchmarks*"
+            artifact: Storage-Scanner
+          - name: Storage - CacheFootprintBenchmarks
+            filter: "*GSAnalyzer.Benchmarks.Suites.Storage.CacheFootprintBenchmarks*"
+            artifact: Storage-CacheFootprintBenchmarks
+          - name: Memory
+            filter: "*GSAnalyzer.Benchmarks.Suites.Memory.*"
+            artifact: Memory
+          - name: Processing
+            filter: "*GSAnalyzer.Benchmarks.Suites.Processing.*"
+            artifact: Processing
+          - name: Hardware
+            filter: "*GSAnalyzer.Benchmarks.Suites.Hardware.*"
+            artifact: Hardware
 
-    name: Suite - ${{ matrix.suite }}
+    name: ${{ matrix.name }}
 
     steps:
       - name: Checkout Core (PR code)
@@ -35,11 +50,11 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Execute ${{ matrix.suite }} Benchmarks
+      - name: Execute ${{ matrix.name }} Benchmarks
         env:
           CoreRepoPath: ${{ github.workspace }}\core
         working-directory: .\gs-benchmarks\GSAnalyzer.Benchmarks
-        run: dotnet run -c Release -- --filter "*GSAnalyzer.Benchmarks.Suites.${{ matrix.suite }}.*" --exporters json github
+        run: dotnet run -c Release -- --filter "${{ matrix.filter }}" --exporters json github
 
       - name: Collect results + PR metadata
         if: always()
@@ -57,6 +72,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: benchmark-${{ matrix.suite }}
+          name: benchmark-${{ matrix.artifact }}
           path: artifact
           retention-days: 7
