@@ -15,6 +15,7 @@ import 'package:gs_analyzer_ui/providers/file_type_provider.dart';
 import 'package:gs_analyzer_ui/models/permission_audit_models.dart';
 import 'package:gs_analyzer_ui/models/telemetry_history_model.dart';
 import 'package:gs_analyzer_ui/models/startup_program.dart';
+import 'package:gs_analyzer_ui/models/scheduled_scan_model.dart';
 
 class ApiService {
   final http.Client _client;
@@ -31,6 +32,7 @@ class ApiService {
       'http://localhost:5200/api/telemetry/history';
   static const String tempFilesUrl = 'http://localhost:5200/api/tempfiles';
   static const String startupUrl = 'http://localhost:5200/api/startup';
+  static const String schedulesUrl = 'http://localhost:5200/api/schedules';
 
   Future<TelemetryHistoryResponse?> fetchTelemetryHistory(
     String metric,
@@ -625,6 +627,85 @@ class ApiService {
     }
     throw Exception('Startup action failed [${response.statusCode}]: $message');
   }
+
+  // --- SCHEDULED SCANS ---
+
+  Future<List<ScheduledScan>> getSchedules() async {
+    final uri = Uri.parse(schedulesUrl);
+    final response = await _client.get(uri);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = jsonDecode(response.body);
+      return jsonList.map((j) => ScheduledScan.fromJson(j)).toList();
+    } else {
+      throw Exception('Failed to load schedules: ${response.body}');
+    }
+  }
+
+  Future<ScheduledScan> createSchedule(Map<String, dynamic> data) async {
+    final uri = Uri.parse(schedulesUrl);
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 201) {
+      return ScheduledScan.fromJson(jsonDecode(response.body));
+    } else {
+      _throwDetailedError('Failed to create schedule', response);
+      throw Exception('Unreachable');
+    }
+  }
+
+  Future<ScheduledScan> updateSchedule(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final uri = Uri.parse('$schedulesUrl/$id');
+    final response = await _client.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200) {
+      return ScheduledScan.fromJson(jsonDecode(response.body));
+    } else {
+      _throwDetailedError('Failed to update schedule', response);
+      throw Exception('Unreachable');
+    }
+  }
+
+  Future<void> deleteSchedule(String id) async {
+    final uri = Uri.parse('$schedulesUrl/$id');
+    final response = await _client.delete(uri);
+
+    if (response.statusCode != 200) {
+      _throwDetailedError('Failed to delete schedule', response);
+    }
+  }
+
+  Future<void> runScheduleNow(String id) async {
+    final uri = Uri.parse('$schedulesUrl/$id/run-now');
+    final response = await _client.post(uri);
+
+    if (response.statusCode == 409) {
+      throw ScheduleBusyException();
+    } else if (response.statusCode != 200) {
+      _throwDetailedError('Failed to run schedule', response);
+    }
+  }
+
+  void _throwDetailedError(String prefix, http.Response response) {
+    try {
+      final body = jsonDecode(response.body);
+      final message = body['message'] ?? response.body;
+      throw Exception('$prefix: $message');
+    } catch (_) {
+      throw Exception('$prefix [${response.statusCode}]: ${response.body}');
+    }
+  }
 }
 
 ExtensionBreakdownResult _parseBreakdown(String body) {
@@ -642,4 +723,10 @@ class StartupAdminRequiredException implements Exception {
 
   @override
   String toString() => message;
+}
+
+class ScheduleBusyException implements Exception {
+  const ScheduleBusyException();
+  @override
+  String toString() => 'A scan is already in progress. Try again later.';
 }

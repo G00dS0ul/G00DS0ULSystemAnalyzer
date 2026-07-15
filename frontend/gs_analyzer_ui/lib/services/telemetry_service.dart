@@ -23,6 +23,8 @@ class TelemetryService {
   Function(Map<String, dynamic>)? onCpuUpdate;
   Function(List<dynamic>)? onDriveUpdate;
   Function(Map<String, dynamic>)? onAuditProgress;
+  Function(List<dynamic>)? onScheduleUpdate;
+  Function(Map<String, dynamic>)? onAutoScanComplete;
 
   TelemetryService({
     required this.onProgressUpdate,
@@ -59,6 +61,8 @@ class TelemetryService {
     _hubConnection.on('ReceiveCpuTelemetry', _handleCpuUpdate);
     _hubConnection.on('DriveListUpdate', _handleDriveUpdate);
     _hubConnection.on('AuditProgress', _handleAuditProgress);
+    _hubConnection.on('ScheduleUpdate', _handleScheduleUpdate);
+    _hubConnection.on('AutoScanComplete', _handleAutoScanComplete);
   }
 
   Future<void> startListening() async {
@@ -218,6 +222,19 @@ class TelemetryService {
   void _handleAuditProgress(List<Object?>? arguments) {
     if (onAuditProgress != null && arguments != null && arguments.isNotEmpty) {
       onAuditProgress!(arguments[0] as Map<String, dynamic>);
+    }
+  }
+
+  void _handleScheduleUpdate(List<Object?>? arguments) {
+    if (onScheduleUpdate != null && arguments != null && arguments.isNotEmpty) {
+      final data = arguments[0] as Map<String, dynamic>;
+      onScheduleUpdate!(data['schedules'] as List<dynamic>);
+    }
+  }
+
+  void _handleAutoScanComplete(List<Object?>? arguments) {
+    if (onAutoScanComplete != null && arguments != null && arguments.isNotEmpty) {
+      onAutoScanComplete!(arguments[0] as Map<String, dynamic>);
     }
   }
 }

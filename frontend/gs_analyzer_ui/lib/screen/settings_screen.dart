@@ -5,6 +5,7 @@ import 'package:gs_analyzer_ui/models/app_settings.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/utils/hud_label.dart';
 import 'package:gs_analyzer_ui/utils/globals.dart';
+import 'package:gs_analyzer_ui/widgets/scheduled_scans_panel.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -306,6 +307,7 @@ class SettingsScreen extends ConsumerWidget {
                 notifier.updateUI();
               },
             ),
+          const ScheduledScansPanel(),
         ],
       ),
     );
