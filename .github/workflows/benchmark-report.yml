@@ -1,0 +1,62 @@
+name: GS Engine Benchmark (Report)
+
+# Runs AFTER "GS Engine Benchmark (PR)" finishes.
+on:
+  workflow_run:
+    workflows: ["GS Engine Benchmark (PR)"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push'
+
+    steps:
+      - name: Download benchmark artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: artifacts
+          pattern: benchmark-*
+
+      - name: Read run metadata
+        id: meta
+        shell: bash
+        run: |
+          # Do NOT let a missing file or an early-closing pipe abort the step:
+          # GitHub's default bash runs with `-eo pipefail`, which turns a
+          # non-matching glob / SIGPIPE into a hard failure. Turn both off here.
+          set +e +o pipefail
+
+          echo "::group::Downloaded artifact tree"
+          find artifacts -type f 2>/dev/null | sort
+          echo "::endgroup::"
+
+          # Search recursively so it works no matter how download-artifact lays
+          # the files out (one subdir per artifact, flat, single vs. multiple).
+          num=$(find artifacts -type f -name 'pr-number.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
+          repo=$(find artifacts -type f -name 'pr-repo.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
+
+
+          echo "Resolved ${num:-<unknown>} from repo ${repo:-<unknown>}"
+          echo "pr_number=$num" >> "$GITHUB_OUTPUT"
+          echo "pr_repo=$repo" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Discord
+        uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          webhook: ${{ secrets.CI_BUILD }}
+          status: ${{ github.event.workflow_run.conclusion }}
+          title: "GS Engine Benchmark -- ${{ steps.meta.outputs.pr_number }}"
+          description: |
+            Trigger: ${{ github.event.workflow_run.event }}
+            Suites: Storage, Memory, Processing, Hardware
+            Source: ${{ steps.meta.outputs.pr_repo }}
+            Result: ${{ github.event.workflow_run.conclusion }}
+          url: ${{ github.event.workflow_run.html_url }}

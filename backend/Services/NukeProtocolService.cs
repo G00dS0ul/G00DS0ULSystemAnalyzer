@@ -66,8 +66,19 @@ public class NukeProtocolService : INukeProtocolService
 						{
 							if (!entry.IsDirectory)
 							{
-								pathBytes += entry.Length;
-								pathFileCount++;
+								try
+								{
+									pathBytes += entry.Length;
+									pathFileCount++;
+								}
+								catch (FileNotFoundException)
+								{
+									// File was deleted between enumeration and size check
+								}
+								catch (UnauthorizedAccessException)
+								{
+									// Access denied for this file
+								}
 							}
 							return 0;
 						},

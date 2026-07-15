@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/GS-SystemAnalyzer/core/discussions
+    about: Questions, ideas, and general help belong here, please don't open an issue for them.
+  - name: Contributor Discord
+    url: https://discord.gg/CTqvqZEy6
+    about: Onboarding, dev chat, and release pings.
