@@ -141,6 +141,7 @@ class MonitoringSettings {
     'thermalPollIntervalMs': thermalPollIntervalMs,
     'networkPollIntervalMs': networkPollIntervalMs,
     'scheduledScanIntervalMinutes': scheduledScanIntervalMinutes,
+    'enableScheduledScans': enableScheduledScans,
   };
 }
 

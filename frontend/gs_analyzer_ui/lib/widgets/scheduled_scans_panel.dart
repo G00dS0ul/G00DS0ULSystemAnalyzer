@@ -286,7 +286,7 @@ class _ScheduleDialogState extends ConsumerState<_ScheduleDialog> {
       final s = widget.existingScan!;
       _selectedKind = s.kind;
       _selectedType = s.type;
-      _selectedPath = s.path;
+      _selectedPath = s.path.replaceAll('/', '\\');
       _intervalMinutes = (s.intervalMinutes ?? 15).toDouble();
       _cronController = TextEditingController(text: s.cron ?? '0 3 * * *');
     } else {
@@ -310,7 +310,7 @@ class _ScheduleDialogState extends ConsumerState<_ScheduleDialog> {
 
     return AlertDialog(
       backgroundColor: HudTheme.bgPanel,
-      title: Text('ADD SCHEDULE', style: HudTheme.headerCyan),
+      title: Text(widget.existingScan == null ? 'ADD SCHEDULE' : 'EDIT SCHEDULE', style: HudTheme.headerCyan),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

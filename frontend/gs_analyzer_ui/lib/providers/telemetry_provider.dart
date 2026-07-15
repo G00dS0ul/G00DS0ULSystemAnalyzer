@@ -157,21 +157,17 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
       // TODO: ref.invalidate(scanDiffProvider(root));
       ref.read(directoryProvider.notifier).scanDirectory(root);
 
-      // Only show the snackbar if the user is in the storage panel
-      final currentRoute = ref.read(navigationProvider);
-      if (currentRoute == AppRoute.storage) {
-        snackbarKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(
-              'AUTO-SCAN COMPLETE',
-              style: HudTheme.headerCyan.copyWith(color: Colors.white),
-            ),
-            backgroundColor: HudTheme.bgPanel,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
+      snackbarKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+            'AUTO-SCAN COMPLETE',
+            style: HudTheme.headerCyan.copyWith(color: Colors.white),
           ),
-        );
-      }
+          backgroundColor: HudTheme.bgPanel,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     };
 
 
