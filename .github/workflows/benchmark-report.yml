@@ -1,10 +1,6 @@
 ﻿name: GS Engine Benchmark (Report)
 
-# Runs AFTER "GS Engine Benchmark (PR)" finishes. This workflow runs on the
-# TRUSTED side (your base repo), so it can read secrets and post to Discord --
-# even for fork PRs. It never runs the contributor's code; it only reads the
-# results that the PR workflow uploaded as an artifact.
-
+# Runs AFTER "GS Engine Benchmark (PR)" finishes.
 on:
   workflow_run:
     workflows: ["GS Engine Benchmark (PR)"]
@@ -33,8 +29,21 @@ jobs:
         id: meta
         shell: bash
         run: |
-          num=$(cat artifacts/*/pr-number.txt 2>/dev/null | head -n1 | tr -d '[:space:]')
-          repo=$(cat artifacts/*/pr-repo.txt 2>/dev/null | head -n1 | tr -d '[:space:]')
+          # Do NOT let a missing file or an early-closing pipe abort the step:
+          # GitHub's default bash runs with `-eo pipefail`, which turns a
+          # non-matching glob / SIGPIPE into a hard failure. Turn both off here.
+          set +e +o pipefail
+
+          echo "::group::Downloaded artifact tree"
+          find artifacts -type f 2>/dev/null | sort
+          echo "::endgroup::"
+
+          # Search recursively so it works no matter how download-artifact lays
+          # the files out (one subdir per artifact, flat, single vs. multiple).
+          num=$(find artifacts -type f -name 'pr-number.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
+          repo=$(find artifacts -type f -name 'pr-repo.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
+
+          echo "Resolved PR #${num:-<unknown>} from repo ${repo:-<unknown>}"
           echo "pr_number=$num" >> "$GITHUB_OUTPUT"
           echo "pr_repo=$repo" >> "$GITHUB_OUTPUT"
 
