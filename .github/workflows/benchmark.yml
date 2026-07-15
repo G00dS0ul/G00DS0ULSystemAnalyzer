@@ -82,3 +82,18 @@ jobs:
           name: benchmark-${{ matrix.artifact }}
           path: artifact
           retention-days: 7
+          
+  benchmark-gate:
+    needs: run-benchmarks
+    if: always()            # run even when a suite fails, so the gate reports red instead of being skipped
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate benchmark result
+        run: |
+          result="${{ needs.run-benchmarks.result }}"
+          echo "Benchmark matrix rolled-up result: $result"
+          if [ "$result" != "success" ]; then
+            echo "::error::One or more benchmark suites did not pass (result: $result)."
+            exit 1
+          fi
+          echo "All benchmark suites passed."
