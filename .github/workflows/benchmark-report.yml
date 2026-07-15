@@ -1,6 +1,7 @@
 ﻿name: GS Engine Benchmark (Report)
 
 # Runs AFTER "GS Engine Benchmark (PR)" finishes.
+
 on:
   workflow_run:
     workflows: ["GS Engine Benchmark (PR)"]
@@ -13,8 +14,7 @@ permissions:
 jobs:
   report:
     runs-on: ubuntu-latest
-    # only react to PR-triggered benchmark runs
-    if: github.event.workflow_run.event == 'pull_request'
+    if: github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push'
 
     steps:
       - name: Download benchmark artifacts
@@ -25,7 +25,7 @@ jobs:
           path: artifacts
           pattern: benchmark-*
 
-      - name: Read PR metadata
+      - name: Read run metadata
         id: meta
         shell: bash
         run: |
@@ -43,7 +43,7 @@ jobs:
           num=$(find artifacts -type f -name 'pr-number.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
           repo=$(find artifacts -type f -name 'pr-repo.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
 
-          echo "Resolved PR #${num:-<unknown>} from repo ${repo:-<unknown>}"
+          echo "Resolved ${num:-<unknown>} from repo ${repo:-<unknown>}"
           echo "pr_number=$num" >> "$GITHUB_OUTPUT"
           echo "pr_repo=$repo" >> "$GITHUB_OUTPUT"
 
@@ -53,9 +53,10 @@ jobs:
         with:
           webhook: ${{ secrets.CI_BUILD }}
           status: ${{ github.event.workflow_run.conclusion }}
-          title: "GS Engine Benchmark -- PR #${{ steps.meta.outputs.pr_number }}"
+          title: "GS Engine Benchmark -- ${{ steps.meta.outputs.pr_number }}"
           description: |
+            Trigger: ${{ github.event.workflow_run.event }}
             Suites: Storage, Memory, Processing, Hardware
-            Source repo: ${{ steps.meta.outputs.pr_repo }}
+            Source: ${{ steps.meta.outputs.pr_repo }}
             Result: ${{ github.event.workflow_run.conclusion }}
           url: ${{ github.event.workflow_run.html_url }}

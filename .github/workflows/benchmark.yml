@@ -3,6 +3,8 @@ name: GS Engine Benchmark (PR)
 on:
   pull_request:
     branches: [ "main" ]
+  push:
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -34,7 +36,7 @@ jobs:
     name: ${{ matrix.name }}
 
     steps:
-      - name: Checkout Core (PR code)
+      - name: Checkout Core (PR / main code)
         uses: actions/checkout@v4
         with:
           path: core
@@ -56,17 +58,22 @@ jobs:
         working-directory: .\gs-benchmarks\GSAnalyzer.Benchmarks
         run: dotnet run -c Release -- --filter "${{ matrix.filter }}" --exporters json github
 
-      - name: Collect results + PR metadata
+      - name: Collect results + run metadata
         if: always()
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path artifact | Out-Null
           $results = ".\gs-benchmarks\GSAnalyzer.Benchmarks\BenchmarkDotNet.Artifacts\results"
           if (Test-Path $results) { Copy-Item -Recurse -Force "$results\*" artifact\ }
-          # Persist the PR number so the report workflow can reference it.
-          # (workflow_run.pull_requests is empty for fork PRs, so we carry it here.)
-          "${{ github.event.pull_request.number }}" | Out-File -Encoding ascii artifact\pr-number.txt
-          "${{ github.event.pull_request.head.repo.full_name }}" | Out-File -Encoding ascii artifact\pr-repo.txt
+          # PR events carry a pull_request object; push events (merges to main) do
+          # not, so fall back to the branch + short commit so the report workflow
+          # always has a usable label.
+          $prNum  = "${{ github.event.pull_request.number }}"
+          $prRepo = "${{ github.event.pull_request.head.repo.full_name }}"
+          if ([string]::IsNullOrWhiteSpace($prNum))  { $prNum  = "main@" + "${{ github.sha }}".Substring(0,7) }
+          if ([string]::IsNullOrWhiteSpace($prRepo)) { $prRepo = "${{ github.repository }}" }
+          $prNum  | Out-File -Encoding ascii artifact\pr-number.txt
+          $prRepo | Out-File -Encoding ascii artifact\pr-repo.txt
 
       - name: Upload results artifact
         if: always()
