@@ -1,7 +1,6 @@
-﻿name: GS Engine Benchmark (Report)
+name: GS Engine Benchmark (Report)
 
 # Runs AFTER "GS Engine Benchmark (PR)" finishes.
-
 on:
   workflow_run:
     workflows: ["GS Engine Benchmark (PR)"]
@@ -42,6 +41,7 @@ jobs:
           # the files out (one subdir per artifact, flat, single vs. multiple).
           num=$(find artifacts -type f -name 'pr-number.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
           repo=$(find artifacts -type f -name 'pr-repo.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
+
 
           echo "Resolved ${num:-<unknown>} from repo ${repo:-<unknown>}"
           echo "pr_number=$num" >> "$GITHUB_OUTPUT"
