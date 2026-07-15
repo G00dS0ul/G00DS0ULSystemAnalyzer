@@ -150,6 +150,11 @@ public class SchedulesController : ControllerBase
 		if (!readyDrives.Any(d => d.Name.ToUpperInvariant() == normalized))
 			return BadRequest(new { error = "DRIVE_NOT_READY", message = $"Drive not ready or not found: {path}" });
 
+		// Protected roots check
+		var pathUpper = path.Replace("\\", "/").ToUpperInvariant();
+		if (pathUpper.StartsWith("C:/WINDOWS") || pathUpper.StartsWith("C:/PROGRAM FILES"))
+			return BadRequest(new { error = "PROTECTED_ROOT", message = "Protected system directories cannot be scheduled for background scanning." });
+
 		return null;
 	}
 }

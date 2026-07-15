@@ -152,7 +152,9 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
       final root = data['root'] as String;
       
       // The spec mentions invalidating scanResultFamily(root) and scanDiffProvider(root)
-      // which will be added in the next PR. For now, we refresh the directory tree:
+      // which will be added in the next PR. For now, we refresh the directory tree unconditionally:
+      // TODO: ref.invalidate(scanResultFamily(root));
+      // TODO: ref.invalidate(scanDiffProvider(root));
       ref.read(directoryProvider.notifier).scanDirectory(root);
 
       // Only show the snackbar if the user is in the storage panel

@@ -152,6 +152,7 @@ public class ScheduledScanWorker : BackgroundService
 				scheduleId = schedule.Id,
 				root = schedule.Path,
 				scannedAt = completedAt,
+				// TODO: Hook into IScanDiffService to attach flat-map JSON diff here once merged.
 				diff = (object?)null
 			}, stoppingToken);
 

@@ -32,7 +32,7 @@ class ScheduledScansPanel extends ConsumerWidget {
               Text('SCHEDULED SCANS', style: HudTheme.headerCyan),
               if (isMasterEnabled)
                 TextButton.icon(
-                  onPressed: () => _showAddScheduleDialog(context, ref),
+                  onPressed: () => _showScheduleDialog(context, ref),
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('ADD SCHEDULE'),
                   style: TextButton.styleFrom(
@@ -191,6 +191,12 @@ class ScheduledScansPanel extends ConsumerWidget {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            color: HudTheme.accentCyan,
+            onPressed: () => _showScheduleDialog(context, ref, scan),
+            tooltip: 'Edit Schedule',
+          ),
+          IconButton(
             icon: const Icon(Icons.play_arrow, size: 20),
             color: scan.enabled ? HudTheme.accentCyan : HudTheme.textDim,
             onPressed: scan.enabled ? () => _runNow(context, ref, scan) : null,
@@ -249,25 +255,44 @@ class ScheduledScansPanel extends ConsumerWidget {
     );
   }
 
-  void _showAddScheduleDialog(BuildContext context, WidgetRef ref) {
+  void _showScheduleDialog(BuildContext context, WidgetRef ref, [ScheduledScan? existingScan]) {
     showDialog(
       context: context,
-      builder: (ctx) => _AddScheduleDialog(),
+      builder: (ctx) => _ScheduleDialog(existingScan: existingScan),
     );
   }
 }
 
-class _AddScheduleDialog extends ConsumerStatefulWidget {
+class _ScheduleDialog extends ConsumerStatefulWidget {
+  final ScheduledScan? existingScan;
+
+  const _ScheduleDialog({this.existingScan});
+
   @override
-  _AddScheduleDialogState createState() => _AddScheduleDialogState();
+  _ScheduleDialogState createState() => _ScheduleDialogState();
 }
 
-class _AddScheduleDialogState extends ConsumerState<_AddScheduleDialog> {
+class _ScheduleDialogState extends ConsumerState<_ScheduleDialog> {
   String _selectedKind = 'Interval';
   String _selectedType = 'Directory';
   String? _selectedPath;
   double _intervalMinutes = 15;
-  final TextEditingController _cronController = TextEditingController(text: '0 3 * * *');
+  late TextEditingController _cronController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingScan != null) {
+      final s = widget.existingScan!;
+      _selectedKind = s.kind;
+      _selectedType = s.type;
+      _selectedPath = s.path;
+      _intervalMinutes = (s.intervalMinutes ?? 15).toDouble();
+      _cronController = TextEditingController(text: s.cron ?? '0 3 * * *');
+    } else {
+      _cronController = TextEditingController(text: '0 3 * * *');
+    }
+  }
 
   @override
   void dispose() {
@@ -300,7 +325,9 @@ class _AddScheduleDialogState extends ConsumerState<_AddScheduleDialog> {
               items: drives.map((d) {
                 return DropdownMenuItem(value: d.name, child: Text(d.name));
               }).toList(),
-              onChanged: (val) => setState(() => _selectedPath = val),
+              onChanged: widget.existingScan == null 
+                  ? (val) => setState(() => _selectedPath = val)
+                  : null, // Disable changing drive on edit
             ),
             const SizedBox(height: 16),
             const Text('SCAN TYPE', style: TextStyle(color: Colors.white54, fontSize: 12)),
@@ -373,7 +400,7 @@ class _AddScheduleDialogState extends ConsumerState<_AddScheduleDialog> {
       'path': _selectedPath,
       'type': _selectedType,
       'kind': _selectedKind,
-      'enabled': true,
+      'enabled': widget.existingScan?.enabled ?? true,
     };
     
     if (_selectedKind == 'Interval') {
@@ -382,7 +409,11 @@ class _AddScheduleDialogState extends ConsumerState<_AddScheduleDialog> {
       data['cron'] = _cronController.text;
     }
     
-    ref.read(scheduleProvider.notifier).createSchedule(data).then((_) {
+    final future = widget.existingScan == null
+        ? ref.read(scheduleProvider.notifier).createSchedule(data)
+        : ref.read(scheduleProvider.notifier).updateSchedule(widget.existingScan!.id, data);
+
+    future.then((_) {
       if (mounted) Navigator.pop(context);
     }).catchError((e) {
       if (mounted) {
