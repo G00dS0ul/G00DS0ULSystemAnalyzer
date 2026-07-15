@@ -1,6 +1,7 @@
 name: GS Engine Benchmark (Report)
 
-# Runs AFTER "GS Engine Benchmark (PR)" finishes.
+# Runs AFTER "GS Engine Benchmark (PR)" finishes
+
 on:
   workflow_run:
     workflows: ["GS Engine Benchmark (PR)"]
@@ -13,6 +14,7 @@ permissions:
 jobs:
   report:
     runs-on: ubuntu-latest
+    # React to both PR-triggered and push-to-main benchmark runs.
     if: github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push'
 
     steps:
@@ -41,7 +43,6 @@ jobs:
           # the files out (one subdir per artifact, flat, single vs. multiple).
           num=$(find artifacts -type f -name 'pr-number.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
           repo=$(find artifacts -type f -name 'pr-repo.txt' -exec cat {} + 2>/dev/null | head -n1 | tr -d '[:space:]')
-
 
           echo "Resolved ${num:-<unknown>} from repo ${repo:-<unknown>}"
           echo "pr_number=$num" >> "$GITHUB_OUTPUT"
