@@ -24,7 +24,7 @@ namespace GSSystemAnalyzer.Controllers
 		}
 
 		[HttpPost("stream-sector")]
-		public IActionResult StreamDirectorySection([FromServices] IHubContext<SystemHub> hubContext, [FromServices] IDriveDetectionService driveService, [FromQuery] string path, [FromQuery] Guid? scanId)
+		public IActionResult StreamDirectorySection([FromServices] IHubContext<SystemHub> hubContext, [FromServices] IDriveDetectionService driveService, [FromQuery] string path, [FromQuery] Guid? scanId, [FromQuery] bool forceRefresh = false)
 		{
 			var validationResult = ValidateDriveAndDirectory(path, driveService);
 			if (validationResult != null) return validationResult;
@@ -37,7 +37,7 @@ namespace GSSystemAnalyzer.Controllers
 				var scopedDiskService = scope.ServiceProvider.GetRequiredService<IDiskOperationService>();
 				try
 				{
-					var allNodes = scopedDiskService.ScanDirectory(path, id).ToList();
+					var allNodes = scopedDiskService.ScanDirectory(path, id, forceRefresh).ToList();
 
 					var chunkSize = 100;
 					for (var i = 0; i < allNodes.Count; i += chunkSize)
@@ -87,7 +87,7 @@ namespace GSSystemAnalyzer.Controllers
 				if (validationResult != null) return validationResult;
 
 				var id = _diskService.BeginScan(request.ScanId);
-				var result = await Task.Run(() => _diskService.ScanDirectory(targetPath, id));
+				var result = await Task.Run(() => _diskService.ScanDirectory(targetPath, id, request.ForceRefresh));
 
 				var response = new ApiResponse<IEnumerable<StorageNode>>
 				{

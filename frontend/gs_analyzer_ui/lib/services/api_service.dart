@@ -59,7 +59,7 @@ class ApiService {
 
   Future<List<StorageNode>> scanDirectory(String path, String scanId) async {
     final uri = Uri.parse('$storageUrl/scan');
-    appLogger.i('MATRIX BRIDGE FIRING TO: $uri (root: $path, scanId: $scanId)');
+    //appLogger.i('MATRIX BRIDGE FIRING TO: $uri (root: $path, scanId: $scanId)');
 
     final response = await _client.post(
       uri,
@@ -71,7 +71,7 @@ class ApiService {
       final jsonBody = jsonDecode(response.body);
 
       if (jsonBody['success'] == true) {
-        appLogger.i('FEDEX BOX OPENED! Data is: ${jsonBody['data']}');
+        //appLogger.i('FEDEX BOX OPENED! Data is: ${jsonBody['data']}');
         List<dynamic> data = jsonBody['data'];
         return data.map((json) => StorageNode.fromJson(json)).toList();
       } else {
@@ -88,7 +88,7 @@ class ApiService {
 
   Future<PermissionAuditResult> auditPermissions(String root) async {
     final uri = Uri.parse('$auditUrl/permissions');
-    appLogger.i('FIRING PERMISSION AUDIT ON: $uri (root: $root)');
+    //appLogger.i('FIRING PERMISSION AUDIT ON: $uri (root: $root)');
 
     _auditClient = http.Client();
     try {
@@ -287,10 +287,18 @@ class ApiService {
     }
   }
 
-  Future<void> requestDirectoryStream(String path, String scanId) async {
-    final uri = Uri.parse(
-      '$storageUrl/stream-sector',
-    ).replace(queryParameters: {'path': path, 'scanId': scanId});
+  Future<void> requestDirectoryStream(
+    String path,
+    String scanId, {
+    bool forceRefresh = false,
+  }) async {
+    final uri = Uri.parse('$storageUrl/stream-sector').replace(
+      queryParameters: {
+        'path': path,
+        'scanId': scanId,
+        'forceRefresh': forceRefresh.toString(),
+      },
+    );
     await _client.post(uri);
   }
 

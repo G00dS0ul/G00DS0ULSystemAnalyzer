@@ -47,8 +47,14 @@ namespace GSSystemAnalyzer.Services
 			};
 		}
 
-		public IEnumerable<StorageNode> ScanDirectory(string path, Guid scanId)
+		public IEnumerable<StorageNode> ScanDirectory(string path, Guid scanId, bool forceRefresh = false)
 		{
+			if (forceRefresh)
+			{
+				// A user/scheduled scan must reflect reality; navigation still uses the cache.
+				_scanner.InvalidatePaths(new[] { path });
+			}
+
 			try
 			{
 				var items = _scanner.LoadDirectoryItems(path);
@@ -90,10 +96,17 @@ namespace GSSystemAnalyzer.Services
 
 				var normalizedPath = Path.GetFullPath(path);
 				_scanner.DirectorySizeCache.TryGetValue(normalizedPath, out var oldEntry);
+
+				DateTime dirLastWrite;
+				try { dirLastWrite = new DirectoryInfo(path).LastWriteTimeUtc; }
+				catch { dirLastWrite = DateTime.UtcNow; }
+
 				_scanner.DirectorySizeCache[normalizedPath] = new CacheEntry
 				{
 					Size = actualFolderSize,
-					LastUpdated = DateTime.UtcNow,
+					LastUpdated = dirLastWrite,
+					CachedAtUtc = DateTime.UtcNow,
+					ScanRoot = Path.GetPathRoot(normalizedPath) ?? normalizedPath,
 					Extensions = oldEntry?.Extensions
 				};
 

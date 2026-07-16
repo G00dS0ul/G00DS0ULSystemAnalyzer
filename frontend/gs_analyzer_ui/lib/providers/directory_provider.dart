@@ -225,7 +225,7 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
     );
 
     try {
-      await _apiService.requestDirectoryStream(safePath, scanId);
+      await _apiService.requestDirectoryStream(safePath, scanId, forceRefresh: forceRefresh);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

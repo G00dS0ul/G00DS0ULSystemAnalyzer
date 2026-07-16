@@ -6,5 +6,6 @@ namespace GSSystemAnalyzer.Models
 	{
 		public string Root { get; set; } = string.Empty;
 		public Guid? ScanId { get; set; }
+		public bool ForceRefresh { get; set; } = false;
 	}
 }

@@ -83,8 +83,8 @@ public class DiskScannerEngine : IDiskScannerEngine
 		{
 			// FIX: hidden/System filter is logically wrong(Should be two separate Check)
 			var dirInfo = new DirectoryInfo(path);
-			items.AddRange(dirInfo.GetDirectories().Where(d => !d.Attributes.HasFlag(FileAttributes.Hidden | FileAttributes.System)));
-			items.AddRange(dirInfo.GetFiles().Where(f => !f.Attributes.HasFlag(FileAttributes.Hidden | FileAttributes.System)));
+			items.AddRange(dirInfo.GetDirectories().Where(d => !d.Attributes.HasFlag(FileAttributes.Hidden) && !d.Attributes.HasFlag(FileAttributes.System)));
+			items.AddRange(dirInfo.GetFiles().Where(f => !f.Attributes.HasFlag(FileAttributes.Hidden) && !f.Attributes.HasFlag(FileAttributes.System)));
 		}
 		catch (UnauthorizedAccessException)
 		{
