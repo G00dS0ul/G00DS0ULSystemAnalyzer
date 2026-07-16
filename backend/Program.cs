@@ -39,6 +39,8 @@ builder.Services.AddSingleton<ISettingService, SettingsServices>();
 builder.Services.AddSingleton<IProcessOwnerResolver, ProcessOwnerResolver>();
 builder.Services.AddSingleton<IFileTypeScanner, FileTypeScanner>();
 builder.Services.AddSingleton<IAgeHeatmapEngine, AgeHeatmapEngine>();
+builder.Services.AddSingleton<IScanSnapshotStore, ScanSnapshotStore>();
+builder.Services.AddSingleton<IScanDiffService, ScanDiffService>();
 
 builder.Services.AddSingleton<ITelemetryHistoryBuffer, TelemetryHistoryBuffer>();
 

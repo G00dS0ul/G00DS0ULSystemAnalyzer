@@ -67,6 +67,13 @@ public class ScheduledScanWorkerTests
 		return factoryMock;
 	}
 
+	private static Mock<IScanDiffService> BuildDiffServiceMock()
+	{
+		var mock = new Mock<IScanDiffService>();
+		mock.Setup(d => d.GetCachedDiff(It.IsAny<string>())).Returns((GSSystemAnalyzer.Models.ScanDiff?)null);
+		return mock;
+	}
+
 	[Fact]
 	public async Task Worker_RespectsGlobalToggle_WhenDisabled()
 	{
@@ -79,7 +86,8 @@ public class ScheduledScanWorkerTests
 			BuildScanner(),
 			BuildScopeFactory().Object,
 			BuildHubMock().Object,
-			NullLogger<ScheduledScanWorker>.Instance);
+			NullLogger<ScheduledScanWorker>.Instance,
+			BuildDiffServiceMock().Object);
 
 		await worker.TickAsync(CancellationToken.None);
 
@@ -122,7 +130,8 @@ public class ScheduledScanWorkerTests
 			BuildScanner(),
 			BuildScopeFactory(diskServiceMock).Object,
 			BuildHubMock().Object,
-			NullLogger<ScheduledScanWorker>.Instance);
+			NullLogger<ScheduledScanWorker>.Instance,
+			BuildDiffServiceMock().Object);
 
 		await worker.TickAsync(CancellationToken.None);
 
@@ -180,7 +189,8 @@ public class ScheduledScanWorkerTests
 				scanner,
 				BuildScopeFactory(diskServiceMock).Object,
 				BuildHubMock().Object,
-				NullLogger<ScheduledScanWorker>.Instance);
+				NullLogger<ScheduledScanWorker>.Instance,
+				BuildDiffServiceMock().Object);
 
 			await worker.TickAsync(CancellationToken.None);
 
@@ -233,7 +243,8 @@ public class ScheduledScanWorkerTests
 			BuildScanner(),
 			BuildScopeFactory(diskServiceMock).Object,
 			hubMock.Object,
-			NullLogger<ScheduledScanWorker>.Instance);
+			NullLogger<ScheduledScanWorker>.Instance,
+			BuildDiffServiceMock().Object);
 
 		await worker.TickAsync(CancellationToken.None);
 
@@ -267,7 +278,8 @@ public class ScheduledScanWorkerTests
 			BuildScanner(),
 			BuildScopeFactory().Object,
 			BuildHubMock().Object,
-			NullLogger<ScheduledScanWorker>.Instance);
+			NullLogger<ScheduledScanWorker>.Instance,
+			BuildDiffServiceMock().Object);
 
 		await worker.TickAsync(CancellationToken.None);
 
@@ -313,7 +325,8 @@ public class ScheduledScanWorkerTests
 			BuildScanner(),
 			BuildScopeFactory().Object,
 			BuildHubMock().Object,
-			NullLogger<ScheduledScanWorker>.Instance);
+			NullLogger<ScheduledScanWorker>.Instance,
+			BuildDiffServiceMock().Object);
 
 		await worker.TickAsync(CancellationToken.None);
 
@@ -357,7 +370,8 @@ public class ScheduledScanWorkerTests
 			BuildScanner(),
 			BuildScopeFactory(diskServiceMock).Object,
 			BuildHubMock().Object,
-			NullLogger<ScheduledScanWorker>.Instance);
+			NullLogger<ScheduledScanWorker>.Instance,
+			BuildDiffServiceMock().Object);
 
 		// Should not throw — error handled gracefully
 		await worker.TickAsync(CancellationToken.None);

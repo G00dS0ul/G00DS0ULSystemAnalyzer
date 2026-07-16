@@ -3,12 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gs_analyzer_ui/models/temp_cleaner_model.dart';
 import 'package:gs_analyzer_ui/providers/temp_cleaner_provider.dart';
 
-// Since ApiService is constructed internally in TempCleanerNotifier,
-// and the app's current test pattern doesn't mock internal ApiService instantiations easily
-// without DI, we can't easily mock ApiService here without changing the provider's implementation.
-// However, looking at the project, the providers don't use DI for ApiService.
-// I will adjust the test to just test the state manipulations and not the actual fetch.
-
 void main() {
   group('TempCleanerNotifier state manipulations', () {
     late ProviderContainer container;

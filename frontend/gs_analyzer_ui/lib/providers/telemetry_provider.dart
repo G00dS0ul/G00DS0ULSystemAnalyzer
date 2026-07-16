@@ -3,15 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:gs_analyzer_ui/providers/settings_provider.dart';
 import 'package:gs_analyzer_ui/providers/ram_provider.dart';
-import 'package:gs_analyzer_ui/providers/startup_provider.dart';
 import 'package:gs_analyzer_ui/providers/schedule_provider.dart';
-import 'package:gs_analyzer_ui/providers/navigation_provider.dart';
 import 'package:gs_analyzer_ui/services/telemetry_service.dart';
 import 'package:gs_analyzer_ui/utils/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/providers/directory_provider.dart';
 import 'package:gs_analyzer_ui/providers/drive_stats_provider.dart';
+import 'package:gs_analyzer_ui/providers/scan_diff_provider.dart';
 
 import 'cpu_provider.dart';
 import 'nuke_provider.dart';
@@ -154,7 +153,7 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
       // The spec mentions invalidating scanResultFamily(root) and scanDiffProvider(root)
       // which will be added in the next PR. For now, we refresh the directory tree unconditionally:
       // TODO: ref.invalidate(scanResultFamily(root));
-      // TODO: ref.invalidate(scanDiffProvider(root));
+      ref.invalidate(scanDiffProvider(root));
       ref.read(directoryProvider.notifier).scanDirectory(root);
 
       snackbarKey.currentState?.showSnackBar(

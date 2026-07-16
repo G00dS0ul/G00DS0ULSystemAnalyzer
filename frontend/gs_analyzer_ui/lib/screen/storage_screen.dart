@@ -10,7 +10,7 @@ import 'package:gs_analyzer_ui/providers/storage_mode_provider.dart';
 import 'package:gs_analyzer_ui/widgets/file_type_analyzer_panel.dart';
 import 'package:gs_analyzer_ui/widgets/undo_history_panel.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
-
+import 'package:gs_analyzer_ui/screen/scan_diff_screen.dart';
 class StorageScreen extends ConsumerWidget {
   const StorageScreen({Key? key}) : super(key: key);
 
@@ -113,6 +113,18 @@ class StorageScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text('STORAGE MATRICES', style: HudTheme.headerCyan),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.change_history, color: HudTheme.accentCyan),
+            tooltip: 'what changes',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ScanDiffScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: buildBody(),
     );

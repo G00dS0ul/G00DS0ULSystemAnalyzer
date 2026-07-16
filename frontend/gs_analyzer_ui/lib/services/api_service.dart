@@ -16,6 +16,7 @@ import 'package:gs_analyzer_ui/models/permission_audit_models.dart';
 import 'package:gs_analyzer_ui/models/telemetry_history_model.dart';
 import 'package:gs_analyzer_ui/models/startup_program.dart';
 import 'package:gs_analyzer_ui/models/scheduled_scan_model.dart';
+import 'package:gs_analyzer_ui/models/scan_diff_model.dart';
 
 class ApiService {
   final http.Client _client;
@@ -532,6 +533,28 @@ class ApiService {
     );
   }
 
+  Future<ScanDiff> getScanDiff(String root) async {
+    final uri = Uri.parse(
+      '$storageUrl/scan/diff',
+    ).replace(queryParameters: {'root': root});
+
+    appLogger.i('MATRIX BRIDGE: Requesting Scan Diff for $root');
+
+    final response = await _client.get(uri);
+
+    if (response.statusCode == 409) {
+      throw const ScanDiffNoScanException();
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'ScanDiff fetch failed [${response.statusCode}]: ${response.body}',
+      );
+    }
+
+    return compute(_parseScanDiff, response.body);
+  }
+
   Future<TempPreviewResponse> getTempPreview() async {
     final uri = Uri.parse('$tempFilesUrl/preview');
     appLogger.i('MATRIX BRIDGE: Requesting Temp Folder Preview...');
@@ -710,6 +733,12 @@ class ApiService {
 
 ExtensionBreakdownResult _parseBreakdown(String body) {
   return ExtensionBreakdownResult.fromJson(
+    jsonDecode(body) as Map<String, dynamic>,
+  );
+}
+
+ScanDiff _parseScanDiff(String body) {
+  return ScanDiff.fromJson(
     jsonDecode(body) as Map<String, dynamic>,
   );
 }

@@ -305,6 +305,64 @@ namespace GSSystemAnalyzer.Controllers
 			return Ok(result);
 		}
 
+		[HttpGet("scan/diff")]
+		public IActionResult GetScanDiff(
+			[FromQuery] string? root,
+			[FromQuery] long minDeltaBytes = 0,
+			[FromServices] IScanDiffService diffService = null!,
+			[FromServices] ISettingService settings = null!)
+		{
+			root = ResolveTargetPath(root);
+
+			var validationResult = ValidateRootForCachedRead(root);
+			if (validationResult != null) return validationResult;
+
+			var diff = diffService.GetCachedDiff(root);
+
+			if (diff is null)
+				return Conflict(new
+				{
+					error = "NO_SCAN_CACHED",
+					message = "No scan result found for this root. Run a scan first."
+				});
+
+			// Apply minDeltaBytes filter on Grown/Shrunk lists (summary stays intact)
+			if (minDeltaBytes > 0)
+			{
+				var filteredGrown = diff.Grown
+					.Where(e => Math.Abs(e.DeltaBytes) >= minDeltaBytes)
+					.ToList();
+				var filteredShrunk = diff.Shrunk
+					.Where(e => Math.Abs(e.DeltaBytes) >= minDeltaBytes)
+					.ToList();
+
+				diff = diff with { Grown = filteredGrown, Shrunk = filteredShrunk };
+			}
+
+			return Ok(diff);
+		}
+
+		[HttpDelete("scan/diff/baseline")]
+		public IActionResult DeleteScanDiffBaseline(
+			[FromQuery] string? root,
+			[FromServices] IScanDiffService diffService = null!,
+			[FromServices] ISettingService settings = null!)
+		{
+			root = ResolveTargetPath(root);
+
+			var validationResult = ValidateRootForCachedRead(root);
+			if (validationResult != null) return validationResult;
+
+			var depth = settings.Current.Scan.Depth;
+			diffService.DeleteBaseline(root, depth);
+
+			return Ok(new ApiResponse<object>
+			{
+				Success = true,
+				Message = "Baseline cleared. The next scan will establish a new baseline."
+			});
+		}
+
 		private static ApiResponse<object> Fail(string message) =>
 			new() { Success = false, Message = message };
 

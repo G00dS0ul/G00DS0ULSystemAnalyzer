@@ -18,13 +18,10 @@ public class ScheduledScanWorker : BackgroundService
 	private readonly IServiceScopeFactory _scopeFactory;
 	private readonly IHubContext<SystemHub> _hubContext;
 	private readonly ILogger<ScheduledScanWorker> _logger;
+	private readonly IScanDiffService _diffService;
 
 	private bool _defaultScheduleSeeded;
 
-	/// <summary>
-	/// Interval between tick evaluations in milliseconds.
-	/// Exposed as internal for test overriding.
-	/// </summary>
 	internal int TickIntervalMs { get; set; } = 30_000;
 
 	public ScheduledScanWorker(
@@ -33,7 +30,8 @@ public class ScheduledScanWorker : BackgroundService
 		DiskScannerEngine engine,
 		IServiceScopeFactory scopeFactory,
 		IHubContext<SystemHub> hubContext,
-		ILogger<ScheduledScanWorker> logger)
+		ILogger<ScheduledScanWorker> logger,
+		IScanDiffService diffService)
 	{
 		_scheduleService = scheduleService;
 		_settings = settings;
@@ -41,6 +39,7 @@ public class ScheduledScanWorker : BackgroundService
 		_scopeFactory = scopeFactory;
 		_hubContext = hubContext;
 		_logger = logger;
+		_diffService = diffService;
 
 		// Hot-reload: settings changes are picked up on the next tick automatically
 		// since we read _settings.Current on every iteration.
@@ -75,10 +74,6 @@ public class ScheduledScanWorker : BackgroundService
 		_logger.LogInformation("ScheduledScanWorker is stopping");
 	}
 
-	/// <summary>
-	/// Single tick: evaluate all due schedules and execute them if the engine is free.
-	/// Exposed as internal for unit testing.
-	/// </summary>
 	internal async Task TickAsync(CancellationToken stoppingToken)
 	{
 		var monitoring = _settings.Current.Monitoring;
@@ -145,15 +140,15 @@ public class ScheduledScanWorker : BackgroundService
 			var completedAt = DateTimeOffset.UtcNow;
 			_scheduleService.MarkCompleted(schedule.Id, completedAt);
 
-			// Broadcast AutoScanComplete — diff field is null until the Scan Result Diff
-			// feature is implemented, which will call IScanDiffService.ComputeDiff() here.
+			// Retrieve the diff computed by DiskOperationsService.ScanDirectory
+			var cachedDiff = _diffService.GetCachedDiff(schedule.Path);
+
 			await _hubContext.Clients.All.SendAsync("AutoScanComplete", new
 			{
 				scheduleId = schedule.Id,
 				root = schedule.Path,
 				scannedAt = completedAt,
-				// TODO: Hook into IScanDiffService to attach flat-map JSON diff here once merged.
-				diff = (object?)null
+				diff = cachedDiff
 			}, stoppingToken);
 
 			_logger.LogInformation(

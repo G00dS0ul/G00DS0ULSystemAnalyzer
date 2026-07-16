@@ -13,12 +13,21 @@ namespace GSSystemAnalyzer.Services
 		private readonly DiskScannerEngine _scanner;
 		private readonly IHubContext<SystemHub> _hubContext;
 		private readonly ILogger<DiskOperationsService> _logger;
+		private readonly IScanDiffService _diffService;
+		private readonly ISettingService _settings;
 
-		public DiskOperationsService(DiskScannerEngine scanner, IHubContext<SystemHub> hubContext, ILogger<DiskOperationsService> logger)
+		public DiskOperationsService(
+			DiskScannerEngine scanner,
+			IHubContext<SystemHub> hubContext,
+			ILogger<DiskOperationsService> logger,
+			IScanDiffService diffService,
+			ISettingService settings)
 		{
 			_scanner = scanner;
 			_hubContext = hubContext;
 			_logger = logger;
+			_diffService = diffService;
+			_settings = settings;
 		}
 
 		public DriveTelemetryDto GetDriveTelemetry(string driveLetter)
@@ -89,6 +98,17 @@ namespace GSSystemAnalyzer.Services
 				};
 
 				Task.Run(() => _scanner.SaveMemoryToDisk());
+
+				// Compute diff against the stored baseline after every scan completion
+				try
+				{
+					var depth = _settings.Current.Scan.Depth;
+					_diffService.ComputeDiff(path, depth, DateTimeOffset.UtcNow);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogWarning(ex, "Failed to compute scan diff for {Path}", path);
+				}
 
 				return nodes;
 			}
