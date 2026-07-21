@@ -57,6 +57,10 @@ public class ScheduledScanWorkerTests
 		serviceProviderMock
 			.Setup(sp => sp.GetService(typeof(IDiskOperationService)))
 			.Returns(diskServiceMock.Object);
+		// The worker reads back the cached diff after a scan; a stub returning null is enough.
+		serviceProviderMock
+			.Setup(sp => sp.GetService(typeof(IScanDiffService)))
+			.Returns(new Mock<IScanDiffService>().Object);
 
 		var scopeMock = new Mock<IServiceScope>();
 		scopeMock.Setup(s => s.ServiceProvider).Returns(serviceProviderMock.Object);
