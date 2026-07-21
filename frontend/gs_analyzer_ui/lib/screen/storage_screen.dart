@@ -22,7 +22,9 @@ class StorageScreen extends ConsumerWidget {
 
     Widget buildBody() {
       if (drives.isEmpty) {
-        return Center(child: CircularProgressIndicator(color: HudTheme.accentCyan));
+        return Center(
+          child: CircularProgressIndicator(color: HudTheme.accentCyan),
+        );
       }
 
       if (currentDrive == null) {
@@ -52,21 +54,47 @@ class StorageScreen extends ConsumerWidget {
                         subtitle: 'Index every sector on ${currentDrive.name}',
                         icon: Icons.account_tree_outlined,
                         d: d,
-                        onLaunch: () => _enterAnalyzer(ref, currentDrive, StorageMode.diskAnalyzer),
+                        onLaunch: () => _enterAnalyzer(
+                          ref,
+                          currentDrive,
+                          StorageMode.diskAnalyzer,
+                        ),
                       ),
                       _ScanLaunchTile(
                         title: 'DUPLICATE HUNTER',
-                        subtitle: 'Scan for duplicate files on ${currentDrive.name}',
+                        subtitle:
+                            'Scan for duplicate files on ${currentDrive.name}',
                         icon: Icons.copy_all_outlined,
                         d: d,
-                        onLaunch: () => _enterAnalyzer(ref, currentDrive, StorageMode.duplicateScanner),
+                        onLaunch: () => _enterAnalyzer(
+                          ref,
+                          currentDrive,
+                          StorageMode.duplicateScanner,
+                        ),
+                      ),
+                      _ScanLaunchTile(
+                        title: 'TEMP CLEANER',
+                        subtitle:
+                            'Purge temporary files across all system cache locations',
+                        icon: Icons.cleaning_services_outlined,
+                        d: d,
+                        onLaunch: () => _enterAnalyzer(
+                          ref,
+                          currentDrive,
+                          StorageMode.tempFileCleaner,
+                        ),
                       ),
                       _ScanLaunchTile(
                         title: 'PERMISSION AUDIT',
-                        subtitle: 'Detect world-writable paths and orphaned files',
+                        subtitle:
+                            'Detect world-writable paths and orphaned files',
                         icon: Icons.security_outlined,
                         d: d,
-                        onLaunch: () => _enterAnalyzer(ref, currentDrive, StorageMode.permissionAudit),
+                        onLaunch: () => _enterAnalyzer(
+                          ref,
+                          currentDrive,
+                          StorageMode.permissionAudit,
+                        ),
                       ),
                     ],
                   ),
@@ -74,7 +102,7 @@ class StorageScreen extends ConsumerWidget {
                 UndoHistoryPanel(),
               ],
             ),
-          )
+          ),
         ],
       );
     }
@@ -96,7 +124,9 @@ class StorageScreen extends ConsumerWidget {
 
     if (mode == StorageMode.diskAnalyzer) {
       // Force refresh so the TelemetryHudWidget tracks the exact duration of the real scan.
-      ref.read(directoryProvider.notifier).scanDirectory(drive.name, forceRefresh: true);
+      ref
+          .read(directoryProvider.notifier)
+          .scanDirectory(drive.name, forceRefresh: true);
     }
 
     ref.read(storageViewProvider.notifier).state = StorageView.analyzer;
@@ -138,13 +168,19 @@ class _ScanLaunchTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: HudTheme.headerCyan
-                              .copyWith(color: HudTheme.accentCyan)),
+                      Text(
+                        title,
+                        style: HudTheme.headerCyan.copyWith(
+                          color: HudTheme.accentCyan,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(subtitle,
-                          style: HudTheme.bodyText
-                              .copyWith(color: HudTheme.textDim)),
+                      Text(
+                        subtitle,
+                        style: HudTheme.bodyText.copyWith(
+                          color: HudTheme.textDim,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -172,7 +208,8 @@ class _DriveSelectorBar extends ConsumerWidget {
         children: drives.map((drive) {
           final isSelected = drive.name == selectedDrive.name;
           return GestureDetector(
-            onTap: () => ref.read(selectedDriveNameProvider.notifier).state = drive.name,
+            onTap: () =>
+                ref.read(selectedDriveNameProvider.notifier).state = drive.name,
             child: _DriveTab(drive: drive, isActive: isSelected),
           );
         }).toList(),
@@ -209,7 +246,9 @@ class _DriveTab extends ConsumerWidget {
       width: 160,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isActive ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+        color: isActive
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.transparent,
         border: Border(
           bottom: BorderSide(
             color: isActive ? HudTheme.accentCyan : Colors.transparent,
@@ -222,7 +261,11 @@ class _DriveTab extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(getIcon(), color: isActive ? HudTheme.accentCyan : HudTheme.textDim, size: 16),
+              Icon(
+                getIcon(),
+                color: isActive ? HudTheme.accentCyan : HudTheme.textDim,
+                size: 16,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -255,7 +298,8 @@ class _DriveDetailCard extends ConsumerWidget {
 
   const _DriveDetailCard({required this.drive, required this.d});
 
-  String _formatGB(int bytes) => (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
+  String _formatGB(int bytes) =>
+      (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -264,7 +308,9 @@ class _DriveDetailCard extends ConsumerWidget {
 
     final Color statusColor = drive.percentageUsed >= redThreshold
         ? Colors.redAccent
-        : (drive.percentageUsed >= redThreshold - 10 ? Colors.amber : HudTheme.accentCyan);
+        : (drive.percentageUsed >= redThreshold - 10
+              ? Colors.amber
+              : HudTheme.accentCyan);
 
     return Container(
       padding: EdgeInsets.all(d.panelPad),
@@ -275,10 +321,18 @@ class _DriveDetailCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('DRIVE: ${drive.label} (${drive.name})',
-                  style: HudTheme.headerCyan.copyWith(color: HudTheme.accentCyan)),
+              Text(
+                'DRIVE: ${drive.label} (${drive.name})',
+                style: HudTheme.headerCyan.copyWith(color: HudTheme.accentCyan),
+              ),
               if (drive.percentageUsed >= redThreshold)
-                Text('● CRITICAL SPACE', style: HudTheme.bodyText.copyWith(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                Text(
+                  '● CRITICAL SPACE',
+                  style: HudTheme.bodyText.copyWith(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
             ],
           ),
           Divider(color: Colors.white10, height: d.gap * 3, thickness: 1),
@@ -308,7 +362,10 @@ class _DriveDetailCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Text('${drive.percentageUsed.toStringAsFixed(1)}%', style: HudTheme.bodyText),
+              Text(
+                '${drive.percentageUsed.toStringAsFixed(1)}%',
+                style: HudTheme.bodyText,
+              ),
             ],
           ),
           SizedBox(height: d.gap * 2),
@@ -316,9 +373,18 @@ class _DriveDetailCard extends ConsumerWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final wide = constraints.maxWidth > 520;
-              final used = Text('USED: ${_formatGB(drive.usedBytes)} GB', style: HudTheme.bodyText.copyWith(color: statusColor));
-              final free = Text('FREE: ${_formatGB(drive.freeBytes)} GB', style: HudTheme.bodyText);
-              final total = Text('TOTAL: ${_formatGB(drive.totalBytes)} GB', style: HudTheme.bodyText.copyWith(color: HudTheme.textDim));
+              final used = Text(
+                'USED: ${_formatGB(drive.usedBytes)} GB',
+                style: HudTheme.bodyText.copyWith(color: statusColor),
+              );
+              final free = Text(
+                'FREE: ${_formatGB(drive.freeBytes)} GB',
+                style: HudTheme.bodyText,
+              );
+              final total = Text(
+                'TOTAL: ${_formatGB(drive.totalBytes)} GB',
+                style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+              );
 
               if (wide) {
                 return Row(
@@ -329,7 +395,7 @@ class _DriveDetailCard extends ConsumerWidget {
                   ],
                 );
               }
-              
+
               return Wrap(
                 spacing: d.gap * 3,
                 runSpacing: d.gap,
@@ -346,8 +412,14 @@ class _DriveDetailCard extends ConsumerWidget {
   Widget _buildMetaTag(String label, String value) {
     return Row(
       children: [
-        Text('$label: ', style: HudTheme.bodyText.copyWith(color: HudTheme.textDim)),
-        Text(value, style: HudTheme.bodyText.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          '$label: ',
+          style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+        ),
+        Text(
+          value,
+          style: HudTheme.bodyText.copyWith(fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }

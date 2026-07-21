@@ -9,17 +9,12 @@ class CpuState {
   final CpuSnapshot? snapshot;
   final int cpuThresholdPercent;
 
-  const CpuState({
-    this.snapshot,
-    this.cpuThresholdPercent = 95,
-  });
+  const CpuState({this.snapshot, this.cpuThresholdPercent = 95});
 
-  bool get isCritical => snapshot != null && snapshot!.averageLoad >= cpuThresholdPercent;
+  bool get isCritical =>
+      snapshot != null && snapshot!.averageLoad >= cpuThresholdPercent;
 
-  CpuState copyWith({
-    CpuSnapshot? snapshot,
-    int? cpuThresholdPercent,
-  }) {
+  CpuState copyWith({CpuSnapshot? snapshot, int? cpuThresholdPercent}) {
     return CpuState(
       snapshot: snapshot ?? this.snapshot,
       cpuThresholdPercent: cpuThresholdPercent ?? this.cpuThresholdPercent,

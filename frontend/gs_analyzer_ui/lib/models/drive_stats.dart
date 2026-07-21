@@ -8,11 +8,15 @@ class DriveStats {
     required this.totalBytes,
     required this.freeBytes,
     required this.usedBytes,
-    required this.percentageFree
+    required this.percentageFree,
   });
 
   factory DriveStats.fromJson(Map<String, dynamic> json) {
-    return DriveStats(totalBytes: json['totalBytes'] ?? 0, freeBytes: json['freeBytes'] ?? 0, usedBytes: json['usedBytes'] ?? 0, percentageFree: (json['percentageFree'] ?? 0).toDouble(),
+    return DriveStats(
+      totalBytes: json['totalBytes'] ?? 0,
+      freeBytes: json['freeBytes'] ?? 0,
+      usedBytes: json['usedBytes'] ?? 0,
+      percentageFree: (json['percentageFree'] ?? 0).toDouble(),
     );
   }
 }

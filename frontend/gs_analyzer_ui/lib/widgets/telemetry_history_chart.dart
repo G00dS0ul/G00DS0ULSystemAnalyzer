@@ -11,7 +11,8 @@ class TelemetryHistoryChart extends ConsumerStatefulWidget {
   const TelemetryHistoryChart({super.key, required this.metricKey});
 
   @override
-  ConsumerState<TelemetryHistoryChart> createState() => _TelemetryHistoryChartState();
+  ConsumerState<TelemetryHistoryChart> createState() =>
+      _TelemetryHistoryChartState();
 }
 
 class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
@@ -26,7 +27,8 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
   @override
   void didUpdateWidget(covariant TelemetryHistoryChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.metricKey != widget.metricKey && !widget.metricKey.startsWith('ram')) {
+    if (oldWidget.metricKey != widget.metricKey &&
+        !widget.metricKey.startsWith('ram')) {
       _currentMetricKey = widget.metricKey;
     }
   }
@@ -34,7 +36,9 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(telemetryHistoryProvider(_currentMetricKey));
-    final notifier = ref.read(telemetryHistoryProvider(_currentMetricKey).notifier);
+    final notifier = ref.read(
+      telemetryHistoryProvider(_currentMetricKey).notifier,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -61,9 +65,9 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
               ],
             ),
           ),
-          
+
           const Divider(height: 1, color: Colors.white10),
-          
+
           // Chart Area
           Expanded(
             child: Padding(
@@ -71,20 +75,39 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
               child: _buildChartContent(state),
             ),
           ),
-          
+
           const Divider(height: 1, color: Colors.white10),
-          
+
           // Stats Strip
           if (state.response != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatChip('MIN', state.response!.stats.min, state.response!.unit),
-                  _buildStatChip('AVG', state.response!.stats.avg, state.response!.unit),
-                  _buildStatChip('MAX', state.response!.stats.max, state.response!.unit),
-                  _buildStatChip('NOW', state.response!.stats.current, state.response!.unit),
+                  _buildStatChip(
+                    'MIN',
+                    state.response!.stats.min,
+                    state.response!.unit,
+                  ),
+                  _buildStatChip(
+                    'AVG',
+                    state.response!.stats.avg,
+                    state.response!.unit,
+                  ),
+                  _buildStatChip(
+                    'MAX',
+                    state.response!.stats.max,
+                    state.response!.unit,
+                  ),
+                  _buildStatChip(
+                    'NOW',
+                    state.response!.stats.current,
+                    state.response!.unit,
+                  ),
                 ],
               ),
             ),
@@ -95,10 +118,7 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
 
   Widget _buildHeaderTitle() {
     String title = _currentMetricKey.toUpperCase().replaceAll('_', ' ');
-    return Text(
-      title,
-      style: HudTheme.headerCyan,
-    );
+    return Text(title, style: HudTheme.headerCyan);
   }
 
   Widget _buildRamToggle() {
@@ -130,8 +150,12 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              border: Border.all(color: isSelected ? HudTheme.accentCyan : Colors.white10),
-              color: isSelected ? HudTheme.accentCyan.withValues(alpha: 0.1) : Colors.transparent,
+              border: Border.all(
+                color: isSelected ? HudTheme.accentCyan : Colors.white10,
+              ),
+              color: isSelected
+                  ? HudTheme.accentCyan.withValues(alpha: 0.1)
+                  : Colors.transparent,
             ),
             child: Text(
               label,
@@ -157,7 +181,8 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
   }
 
   Widget _buildChartContent(TelemetryHistoryState state) {
-    if (state.isLoading && (state.response == null || state.response!.points.isEmpty)) {
+    if (state.isLoading &&
+        (state.response == null || state.response!.points.isEmpty)) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -172,7 +197,10 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
 
     if (state.response == null || state.response!.points.isEmpty) {
       return const Center(
-        child: Text('COLLECTING DATA — CHECK BACK IN A MOMENT', style: HudTheme.labelMuted),
+        child: Text(
+          'COLLECTING DATA — CHECK BACK IN A MOMENT',
+          style: HudTheme.labelMuted,
+        ),
       );
     }
 
@@ -211,15 +239,21 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
         ),
         titlesData: FlTitlesData(
           show: true,
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (value, meta) {
                 return Text(
-                  isPercent ? value.toInt().toString() : value.toStringAsFixed(1),
+                  isPercent
+                      ? value.toInt().toString()
+                      : value.toStringAsFixed(1),
                   style: HudTheme.labelMuted.copyWith(fontSize: 10),
                   textAlign: TextAlign.right,
                 );
@@ -254,11 +288,17 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
             getTooltipColor: (touchedSpot) => HudTheme.bgPanel,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
-                final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                final date = DateTime.fromMillisecondsSinceEpoch(
+                  spot.x.toInt(),
+                );
                 final timeStr = DateFormat('HH:mm:ss').format(date);
                 return LineTooltipItem(
                   '$timeStr\n${spot.y} $unit',
-                  const TextStyle(color: HudTheme.accentCyan, fontFamily: HudTheme.fontCore, fontSize: 12),
+                  const TextStyle(
+                    color: HudTheme.accentCyan,
+                    fontFamily: HudTheme.fontCore,
+                    fontSize: 12,
+                  ),
                 );
               }).toList();
             },

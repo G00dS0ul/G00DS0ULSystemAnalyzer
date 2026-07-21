@@ -6,130 +6,130 @@ namespace GSSystemAnalyzer.Engine;
 
 public class AgeHeatmapEngine : IAgeHeatmapEngine
 {
-    private readonly DiskScannerEngine _engine;
-    private readonly IMemoryCache _cache;
+	private readonly DiskScannerEngine _engine;
+	private readonly IMemoryCache _cache;
 
-    public AgeHeatmapEngine(DiskScannerEngine engine, IMemoryCache cache)
-    {
-        _engine = engine;
-        _cache = cache;
-    }
+	public AgeHeatmapEngine(DiskScannerEngine engine, IMemoryCache cache)
+	{
+		_engine = engine;
+		_cache = cache;
+	}
 
-    /// <inheritdoc/>
-    public AgeHeatmapResult? Analyze(string root)
-    {
-        var normalized = NormalizeRoot(root);
-        var cacheKey = $"ageheatmap:{normalized}";
+	/// <inheritdoc/>
+	public AgeHeatmapResult? Analyze(string root)
+	{
+		var normalized = NormalizeRoot(root);
+		var cacheKey = $"ageheatmap:{normalized}";
 
-        if (_cache.TryGetValue(cacheKey, out AgeHeatmapResult? hit))
-            return hit;
+		if (_cache.TryGetValue(cacheKey, out AgeHeatmapResult? hit))
+			return hit;
 
-        // Check whether a scan has been run for this root (normalize cache keys before comparing)
-        var normalizedNoSlash = normalized.TrimEnd('/');
-        var wasScanned = _engine.DirectorySizeCache.Keys
-            .Any(k =>
-            {
-                var nk = NormalizeKey(k);
-                return nk == normalizedNoSlash || nk.StartsWith(normalized);
-            });
+		// Check whether a scan has been run for this root (normalize cache keys before comparing)
+		var normalizedNoSlash = normalized.TrimEnd('/');
+		var wasScanned = _engine.DirectorySizeCache.Keys
+			.Any(k =>
+			{
+				var nk = NormalizeKey(k);
+				return nk == normalizedNoSlash || nk.StartsWith(normalized);
+			});
 
-        if (!wasScanned) return null;
+		if (!wasScanned) return null;
 
-        var result = BuildResult(normalized);
-        _cache.Set(cacheKey, result, TimeSpan.FromMinutes(15));
-        return result;
-    }
+		var result = BuildResult(normalized);
+		_cache.Set(cacheKey, result, TimeSpan.FromMinutes(15));
+		return result;
+	}
 
-    private AgeHeatmapResult BuildResult(string root)
-    {
-        var now = DateTime.UtcNow;
-        var nodes = new List<AgeHeatmapNode>();
+	private AgeHeatmapResult BuildResult(string root)
+	{
+		var now = DateTime.UtcNow;
+		var nodes = new List<AgeHeatmapNode>();
 
-        var normalizedNoSlash = root.TrimEnd('/');
+		var normalizedNoSlash = root.TrimEnd('/');
 
-        // Walk every cached directory under this root — normalize keys before comparing
-        var cachedDirs = _engine.DirectorySizeCache
-            .Where(kvp =>
-            {
-                var nk = NormalizeKey(kvp.Key);
-                return nk == normalizedNoSlash || nk.StartsWith(root);
-            });
+		// Walk every cached directory under this root — normalize keys before comparing
+		var cachedDirs = _engine.DirectorySizeCache
+			.Where(kvp =>
+			{
+				var nk = NormalizeKey(kvp.Key);
+				return nk == normalizedNoSlash || nk.StartsWith(root);
+			});
 
-        // Build summary — initialize all four buckets so they always appear
-        var summary = new Dictionary<string, AgeBucketSummary>
-        {
-            ["fresh"]  = new AgeBucketSummary(),
-            ["recent"] = new AgeBucketSummary(),
-            ["aging"]  = new AgeBucketSummary(),
-            ["stale"]  = new AgeBucketSummary()
-        };
+		// Build summary — initialize all four buckets so they always appear
+		var summary = new Dictionary<string, AgeBucketSummary>
+		{
+			["fresh"] = new AgeBucketSummary(),
+			["recent"] = new AgeBucketSummary(),
+			["aging"] = new AgeBucketSummary(),
+			["stale"] = new AgeBucketSummary()
+		};
 
-        foreach (var kvp in cachedDirs)
-        {
-            var entry = kvp.Value;
-            
-            // Calculate non-recursive size and file count to prevent double-counting descendants
-            long directSize = entry.Extensions?.Sum(e => e.Value.Bytes) ?? 0;
-            int directCount = entry.Extensions?.Sum(e => e.Value.Count) ?? 0;
-            
-            var bucketName = ClassifyAge(entry.LastUpdated, now);
+		foreach (var kvp in cachedDirs)
+		{
+			var entry = kvp.Value;
 
-            // Use the cached LastUpdated timestamp directly — no filesystem access
-            nodes.Add(new AgeHeatmapNode
-            {
-                Path = kvp.Key.Replace("\\", "/"),
-                SizeBytes = directSize,
-                AgeBucket = bucketName,
-                LastModified = entry.LastUpdated
-            });
-            
-            var bucket = summary[bucketName];
-            bucket.Count += directCount; // Number of files
-            bucket.TotalBytes += directSize; // Non-recursive size
-        }
+			// Calculate non-recursive size and file count to prevent double-counting descendants
+			long directSize = entry.Extensions?.Sum(e => e.Value.Bytes) ?? 0;
+			int directCount = entry.Extensions?.Sum(e => e.Value.Count) ?? 0;
 
-        return new AgeHeatmapResult
-        {
-            Root = root.TrimEnd('/'),
-            Nodes = nodes,
-            Summary = summary
-        };
-    }
+			var bucketName = ClassifyAge(entry.LastUpdated, now);
 
-    /// <summary>
-    /// Classify a timestamp into one of four age buckets relative to the current UTC time.
-    /// </summary>
-    private static string ClassifyAge(DateTime lastModified, DateTime now)
-    {
-        var age = now - lastModified;
+			// Use the cached LastUpdated timestamp directly — no filesystem access
+			nodes.Add(new AgeHeatmapNode
+			{
+				Path = kvp.Key.Replace("\\", "/"),
+				SizeBytes = directSize,
+				AgeBucket = bucketName,
+				LastModified = entry.LastUpdated
+			});
 
-        return age.TotalDays switch
-        {
-            < 7   => "fresh",
-            < 30  => "recent",
-            < 365 => "aging",
-            _     => "stale"
-        };
-    }
+			var bucket = summary[bucketName];
+			bucket.Count += directCount; // Number of files
+			bucket.TotalBytes += directSize; // Non-recursive size
+		}
 
-    /// <summary>
-    /// Normalizes a root path to a canonical format: forward slashes, lowercase, trailing slash.
-    /// Example: "C:\Users\Foo" → "c:/users/foo/"
-    /// </summary>
-    private static string NormalizeRoot(string root)
-    {
-        var fullPath = Path.GetFullPath(root);
-        var canonical = fullPath.Replace("\\", "/").ToLowerInvariant();
-        if (!canonical.EndsWith('/'))
-            canonical += '/';
-        return canonical;
-    }
+		return new AgeHeatmapResult
+		{
+			Root = root.TrimEnd('/'),
+			Nodes = nodes,
+			Summary = summary
+		};
+	}
 
-    /// <summary>
-    /// Normalizes a cache key to the same canonical format used by NormalizeRoot (without trailing slash).
-    /// </summary>
-    private static string NormalizeKey(string key)
-    {
-        return key.Replace("\\", "/").ToLowerInvariant().TrimEnd('/');
-    }
+	/// <summary>
+	/// Classify a timestamp into one of four age buckets relative to the current UTC time.
+	/// </summary>
+	private static string ClassifyAge(DateTime lastModified, DateTime now)
+	{
+		var age = now - lastModified;
+
+		return age.TotalDays switch
+		{
+			< 7 => "fresh",
+			< 30 => "recent",
+			< 365 => "aging",
+			_ => "stale"
+		};
+	}
+
+	/// <summary>
+	/// Normalizes a root path to a canonical format: forward slashes, lowercase, trailing slash.
+	/// Example: "C:\Users\Foo" → "c:/users/foo/"
+	/// </summary>
+	private static string NormalizeRoot(string root)
+	{
+		var fullPath = Path.GetFullPath(root);
+		var canonical = fullPath.Replace("\\", "/").ToLowerInvariant();
+		if (!canonical.EndsWith('/'))
+			canonical += '/';
+		return canonical;
+	}
+
+	/// <summary>
+	/// Normalizes a cache key to the same canonical format used by NormalizeRoot (without trailing slash).
+	/// </summary>
+	private static string NormalizeKey(string key)
+	{
+		return key.Replace("\\", "/").ToLowerInvariant().TrimEnd('/');
+	}
 }

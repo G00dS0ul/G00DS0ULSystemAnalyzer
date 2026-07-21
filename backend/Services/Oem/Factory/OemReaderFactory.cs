@@ -3,7 +3,7 @@ using GSSystemAnalyzer.Services.Oem.Dell;
 
 namespace GSSystemAnalyzer.Services.Oem.Factory
 {
-    /* public static class OemReaderFactory
+	/* public static class OemReaderFactory
     {
         public static IDellOemTelemetry CreateReader()
         {

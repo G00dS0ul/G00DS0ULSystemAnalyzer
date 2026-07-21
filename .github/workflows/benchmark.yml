@@ -1,0 +1,99 @@
+name: GS Engine Benchmark (PR)
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  run-benchmarks:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Storage - Scanner
+            filter: "*GSAnalyzer.Benchmarks.Suites.Storage.ScannerBenchmarks*"
+            artifact: Storage-Scanner
+          - name: Storage - CacheFootprint
+            filter: "*GSAnalyzer.Benchmarks.Suites.Storage.CacheFootprintBenchmark*"
+            artifact: Storage-CacheFootprintBenchmark
+          - name: Memory
+            filter: "*GSAnalyzer.Benchmarks.Suites.Memory.*"
+            artifact: Memory
+          - name: Processing
+            filter: "*GSAnalyzer.Benchmarks.Suites.Processing.*"
+            artifact: Processing
+          - name: Hardware
+            filter: "*GSAnalyzer.Benchmarks.Suites.Hardware.*"
+            artifact: Hardware
+
+    name: ${{ matrix.name }}
+
+    steps:
+      - name: Checkout Core (PR / main code)
+        uses: actions/checkout@v4
+        with:
+          path: core
+
+      - name: Checkout Benchmark Repo
+        uses: actions/checkout@v4
+        with:
+          repository: GS-SystemAnalyzer/gs-benchmark
+          path: gs-benchmarks
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Execute ${{ matrix.name }} Benchmarks
+        env:
+          CoreRepoPath: ${{ github.workspace }}\core
+        working-directory: .\gs-benchmarks\GSAnalyzer.Benchmarks
+        run: dotnet run -c Release -- --filter "${{ matrix.filter }}" --exporters json github
+
+      - name: Collect results + run metadata
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact | Out-Null
+          $results = ".\gs-benchmarks\GSAnalyzer.Benchmarks\BenchmarkDotNet.Artifacts\results"
+          if (Test-Path $results) { Copy-Item -Recurse -Force "$results\*" artifact\ }
+          # PR events carry a pull_request object; push events (merges to main) do
+          # not, so fall back to the branch + short commit so the report workflow
+          # always has a usable label.
+          $prNum  = "${{ github.event.pull_request.number }}"
+          $prRepo = "${{ github.event.pull_request.head.repo.full_name }}"
+          if ([string]::IsNullOrWhiteSpace($prNum))  { $prNum  = "main@" + "${{ github.sha }}".Substring(0,7) }
+          if ([string]::IsNullOrWhiteSpace($prRepo)) { $prRepo = "${{ github.repository }}" }
+          $prNum  | Out-File -Encoding ascii artifact\pr-number.txt
+          $prRepo | Out-File -Encoding ascii artifact\pr-repo.txt
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ matrix.artifact }}
+          path: artifact
+          retention-days: 7
+          
+  benchmark-gate:
+    needs: run-benchmarks
+    if: always()            # run even when a suite fails, so the gate reports red instead of being skipped
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate benchmark result
+        run: |
+          result="${{ needs.run-benchmarks.result }}"
+          echo "Benchmark matrix rolled-up result: $result"
+          if [ "$result" != "success" ]; then
+            echo "::error::One or more benchmark suites did not pass (result: $result)."
+            exit 1
+          fi
+          echo "All benchmark suites passed."

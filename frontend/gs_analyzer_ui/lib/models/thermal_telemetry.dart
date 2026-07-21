@@ -35,12 +35,16 @@ class ThermalTelemetry {
     this.gpuHotspotCelsius,
     this.gpuVramCelsius,
     this.gpuFanRpm,
-});
+  });
 
   factory ThermalTelemetry.fromJson(Map<String, dynamic> json) {
     return ThermalTelemetry(
       cpuPackageCelsius: (json['cpuPackageCelsius'] as num?)?.toDouble(),
-      coreCelsius: (json['coreCelsius'] as List<dynamic>?)?.map((e) => (e as num).toDouble()).toList() ?? [],
+      coreCelsius:
+          (json['coreCelsius'] as List<dynamic>?)
+              ?.map((e) => (e as num).toDouble())
+              .toList() ??
+          [],
       motherBoardCelsius: (json['motherboardCelsius'] as num?)?.toDouble(),
       chipsetCelsius: (json['chipsetCelsius'] as num?)?.toDouble(),
       nvmeCelsius: (json['nvmeCelsius'] as num?)?.toDouble(),

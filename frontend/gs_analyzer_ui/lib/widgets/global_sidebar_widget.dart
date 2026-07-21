@@ -9,7 +9,8 @@ class GlobalSidebarWidget extends ConsumerStatefulWidget {
   const GlobalSidebarWidget({super.key});
 
   @override
-  ConsumerState<GlobalSidebarWidget> createState() => _GlobalSidebarWidgetState();
+  ConsumerState<GlobalSidebarWidget> createState() =>
+      _GlobalSidebarWidgetState();
 }
 
 class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
@@ -48,16 +49,32 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           if (_isExpanded) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('NODE_01', style: TextStyle(color: HudTheme.accentCyan, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: HudTheme.fontCore)),
+                  const Text(
+                    'NODE_01',
+                    style: TextStyle(
+                      color: HudTheme.accentCyan,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: HudTheme.fontCore,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  const Text('ONLINE', style: TextStyle(color: HudTheme.accentGreen, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: HudTheme.fontCore)),
+                  const Text(
+                    'ONLINE',
+                    style: TextStyle(
+                      color: HudTheme.accentGreen,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: HudTheme.fontCore,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                 ],
               ),
@@ -70,32 +87,90 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  _buildNavItem(AppRoute.dashboard, 'DASHBOARD', Icons.dashboard_outlined, currentRoute),
-                  _buildNavItem(AppRoute.process, 'PROCESS EXPLORER', Icons.monitor_heart_outlined, currentRoute),
-                  _buildNavItem(AppRoute.cpuMetics, 'CPU METRICS', Icons.memory_outlined, currentRoute),
-                  _buildNavItem(AppRoute.memory, 'MEMORY', Icons.bar_chart_outlined, currentRoute),
-                  _buildNavItem(AppRoute.storage, 'STORAGE', Icons.storage_outlined, currentRoute),
-                  _buildNavItem(AppRoute.network, 'NETWORK', Icons.account_tree_outlined, currentRoute),
-                  _buildNavItem(AppRoute.thermal, 'THERMAL', Icons.thermostat_outlined, currentRoute),
-                  _buildNavItem(AppRoute.telemetryHistory, 'TELEMETRY HISTORY', Icons.history_outlined, currentRoute),
+                  _buildNavItem(
+                    AppRoute.dashboard,
+                    'DASHBOARD',
+                    Icons.dashboard_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.process,
+                    'PROCESS EXPLORER',
+                    Icons.monitor_heart_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.cpuMetics,
+                    'CPU METRICS',
+                    Icons.memory_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.memory,
+                    'MEMORY',
+                    Icons.bar_chart_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.storage,
+                    'STORAGE',
+                    Icons.storage_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.startup,
+                    'STARTUP',
+                    Icons.rocket_launch_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.network,
+                    'NETWORK',
+                    Icons.account_tree_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.thermal,
+                    'THERMAL',
+                    Icons.thermostat_outlined,
+                    currentRoute,
+                  ),
+                  _buildNavItem(
+                    AppRoute.telemetryHistory,
+                    'TELEMETRY HISTORY',
+                    Icons.history_outlined,
+                    currentRoute,
+                  ),
                 ],
               ),
             ),
           ),
 
           _buildSettingsNavItem(currentRoute),
-          
-          _buildNavItem(null, 'HELP', Icons.help_outline_outlined, currentRoute, isAction: true),
+
+          _buildNavItem(
+            null,
+            'HELP',
+            Icons.help_outline_outlined,
+            currentRoute,
+            isAction: true,
+          ),
           const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(AppRoute? route, String title, IconData icon, AppRoute currentRoute, {bool isAction = false}) {
+  Widget _buildNavItem(
+    AppRoute? route,
+    String title,
+    IconData icon,
+    AppRoute currentRoute, {
+    bool isAction = false,
+  }) {
     final isActive = route == currentRoute && !isAction;
     final color = isActive ? HudTheme.accentCyan : HudTheme.textDim;
-    
+
     // Windows 11 style accent line
     final accentLine = Container(
       width: 3,
@@ -117,7 +192,9 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
         height: 40,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+          color: isActive
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -138,7 +215,7 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
                   ),
                 ),
               ),
-            ]
+            ],
           ],
         ),
       ),
@@ -147,7 +224,9 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
 
   Widget _buildSettingsNavItem(AppRoute currentRoute) {
     final bool isSelected = currentRoute == AppRoute.settings;
-    final bool hasUnsavedChanges = ref.watch(settingsProvider).hasUnsavedChanges;
+    final bool hasUnsavedChanges = ref
+        .watch(settingsProvider)
+        .hasUnsavedChanges;
     final color = isSelected ? HudTheme.accentCyan : HudTheme.textDim;
 
     final accentLine = Container(
@@ -160,13 +239,16 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
     );
 
     return InkWell(
-      onTap: () => ref.read(navigationProvider.notifier).state = AppRoute.settings,
+      onTap: () =>
+          ref.read(navigationProvider.notifier).state = AppRoute.settings,
       hoverColor: Colors.white.withValues(alpha: 0.05),
       child: Container(
         height: 40,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
+          color: isSelected
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -177,11 +259,7 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
               isLabelVisible: hasUnsavedChanges,
               smallSize: 8,
               backgroundColor: Colors.amber, // Warning dot!
-              child: Icon(
-                Icons.settings_outlined,
-                color: color,
-                size: 20,
-              ),
+              child: Icon(Icons.settings_outlined, color: color, size: 20),
             ),
             if (_isExpanded) ...[
               const SizedBox(width: 10),
@@ -192,12 +270,14 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
                   style: HudTheme.bodyText.copyWith(
                     color: color,
                     fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     letterSpacing: 2.0,
                   ),
                 ),
               ),
-            ]
+            ],
           ],
         ),
       ),

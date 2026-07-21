@@ -36,7 +36,10 @@ class ProcessExplorerScreen extends ConsumerWidget {
         Expanded(
           child: ramState.isLoading && ramState.groupedProcesses.isEmpty
               ? const Center(
-                  child: CircularProgressIndicator(color: HudTheme.primaryBorder))
+                  child: CircularProgressIndicator(
+                    color: HudTheme.primaryBorder,
+                  ),
+                )
               : Column(
                   children: [
                     _TableHeader(),
@@ -51,9 +54,14 @@ class ProcessExplorerScreen extends ConsumerWidget {
                             isSelected: isSelected,
                             d: d,
                             onTap: () {
-                              final current = ref.read(selectedProcessPidProvider);
-                              ref.read(selectedProcessPidProvider.notifier).state =
-                                  current == group.primaryPid ? null : group.primaryPid;
+                              final current = ref.read(
+                                selectedProcessPidProvider,
+                              );
+                              ref
+                                  .read(selectedProcessPidProvider.notifier)
+                                  .state = current == group.primaryPid
+                                  ? null
+                                  : group.primaryPid;
                             },
                           );
                         },
@@ -80,9 +88,11 @@ class _SystemLoadBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final d = ref.watch(hudDensityProvider);
-    final load    = cpuState.snapshot?.averageLoad ?? 0.0;
-    final cpuPct  = load / 100.0;
-    final ramPct  = ramState.totalGb > 0 ? ramState.activeGb / ramState.totalGb : 0.0;
+    final load = cpuState.snapshot?.averageLoad ?? 0.0;
+    final cpuPct = load / 100.0;
+    final ramPct = ramState.totalGb > 0
+        ? ramState.activeGb / ramState.totalGb
+        : 0.0;
     final cpuText = cpuState.snapshot != null
         ? '${load.toStringAsFixed(1)}%'
         : '--';
@@ -90,13 +100,24 @@ class _SystemLoadBar extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: d.panelPad, vertical: d.gap),
       decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white10))),
+        border: Border(bottom: BorderSide(color: Colors.white10)),
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth > 520;
-          final cpu = _LoadMetric('CPU', cpuText, cpuPct.clamp(0.0, 1.0), HudTheme.accentCyan);
-          final ram = _LoadMetric('RAM', '${(ramPct * 100).toStringAsFixed(1)}%', ramPct.clamp(0.0, 1.0), HudTheme.accentGreen);
-          
+          final cpu = _LoadMetric(
+            'CPU',
+            cpuText,
+            cpuPct.clamp(0.0, 1.0),
+            HudTheme.accentCyan,
+          );
+          final ram = _LoadMetric(
+            'RAM',
+            '${(ramPct * 100).toStringAsFixed(1)}%',
+            ramPct.clamp(0.0, 1.0),
+            HudTheme.accentGreen,
+          );
+
           if (wide) {
             return Row(
               children: [
@@ -156,28 +177,43 @@ class _LoadMetric extends StatelessWidget {
 class _Toolbar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sort   = ref.watch(processSortModeProvider);
+    final sort = ref.watch(processSortModeProvider);
     final status = ref.watch(processStatusFilterProvider);
 
     String sortLabel;
     switch (sort) {
-      case ProcessSortMode.cpu:  sortLabel = '% CPU';    break;
-      case ProcessSortMode.ram:  sortLabel = '% MEM';    break;
-      case ProcessSortMode.pid:  sortLabel = 'PID';      break;
-      case ProcessSortMode.name: sortLabel = 'NAME';     break;
+      case ProcessSortMode.cpu:
+        sortLabel = '% CPU';
+        break;
+      case ProcessSortMode.ram:
+        sortLabel = '% MEM';
+        break;
+      case ProcessSortMode.pid:
+        sortLabel = 'PID';
+        break;
+      case ProcessSortMode.name:
+        sortLabel = 'NAME';
+        break;
     }
 
     String statusLabel;
     switch (status) {
-      case ProcessStatusFilter.all:      statusLabel = 'ALL';      break;
-      case ProcessStatusFilter.running:  statusLabel = 'RUNNING';  break;
-      case ProcessStatusFilter.sleeping: statusLabel = 'SLEEPING'; break;
+      case ProcessStatusFilter.all:
+        statusLabel = 'ALL';
+        break;
+      case ProcessStatusFilter.running:
+        statusLabel = 'RUNNING';
+        break;
+      case ProcessStatusFilter.sleeping:
+        statusLabel = 'SLEEPING';
+        break;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white10))),
+        border: Border(bottom: BorderSide(color: Colors.white10)),
+      ),
       child: Row(
         children: [
           // Filter
@@ -190,7 +226,11 @@ class _Toolbar extends ConsumerWidget {
               decoration: InputDecoration(
                 hintText: 'FILTER BY NAME OR PID...',
                 hintStyle: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
-                prefixIcon: const Icon(Icons.search, color: HudTheme.textDim, size: 18),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: HudTheme.textDim,
+                  size: 18,
+                ),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
@@ -214,10 +254,22 @@ class _Toolbar extends ConsumerWidget {
             tooltip: 'Sort by',
             child: _ToolbarChip('SORT: $sortLabel', Icons.sort),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: ProcessSortMode.cpu,  child: Text('% CPU')),
-              const PopupMenuItem(value: ProcessSortMode.ram,  child: Text('% MEM')),
-              const PopupMenuItem(value: ProcessSortMode.pid,  child: Text('PID')),
-              const PopupMenuItem(value: ProcessSortMode.name, child: Text('NAME')),
+              const PopupMenuItem(
+                value: ProcessSortMode.cpu,
+                child: Text('% CPU'),
+              ),
+              const PopupMenuItem(
+                value: ProcessSortMode.ram,
+                child: Text('% MEM'),
+              ),
+              const PopupMenuItem(
+                value: ProcessSortMode.pid,
+                child: Text('PID'),
+              ),
+              const PopupMenuItem(
+                value: ProcessSortMode.name,
+                child: Text('NAME'),
+              ),
             ],
             onSelected: (m) =>
                 ref.read(processSortModeProvider.notifier).state = m,
@@ -229,9 +281,18 @@ class _Toolbar extends ConsumerWidget {
             tooltip: 'Filter by status',
             child: _ToolbarChip(statusLabel, Icons.filter_list),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: ProcessStatusFilter.all,      child: Text('ALL')),
-              const PopupMenuItem(value: ProcessStatusFilter.running,  child: Text('RUNNING')),
-              const PopupMenuItem(value: ProcessStatusFilter.sleeping, child: Text('SLEEPING')),
+              const PopupMenuItem(
+                value: ProcessStatusFilter.all,
+                child: Text('ALL'),
+              ),
+              const PopupMenuItem(
+                value: ProcessStatusFilter.running,
+                child: Text('RUNNING'),
+              ),
+              const PopupMenuItem(
+                value: ProcessStatusFilter.sleeping,
+                child: Text('SLEEPING'),
+              ),
             ],
             onSelected: (m) =>
                 ref.read(processStatusFilterProvider.notifier).state = m,
@@ -256,13 +317,19 @@ class _ToolbarChip extends StatelessWidget {
         border: Border.all(color: Colors.white12),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: HudTheme.textDim, size: 14),
-        const SizedBox(width: 6),
-        Text(label, style: HudTheme.bodyText.copyWith(color: HudTheme.textDim)),
-        const SizedBox(width: 4),
-        const Icon(Icons.arrow_drop_down, color: HudTheme.textDim, size: 14),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: HudTheme.textDim, size: 14),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.arrow_drop_down, color: HudTheme.textDim, size: 14),
+        ],
+      ),
     );
   }
 }
@@ -276,17 +343,41 @@ class _TableHeader extends ConsumerWidget {
       padding: EdgeInsets.symmetric(horizontal: d.panelPad, vertical: 8),
       height: d.rowHeight + 16,
       decoration: BoxDecoration(
-          color: HudTheme.bgPanel,
-          border: const Border(bottom: BorderSide(color: Colors.white10))),
-      child: const Row(children: [
-        Expanded(flex: 2, child: HudLabel('PID', textAlign: TextAlign.center)),
-        Expanded(flex: 4, child: HudLabel('COMMAND', textAlign: TextAlign.center)),
-        Expanded(flex: 3, child: HudLabel('USER', textAlign: TextAlign.center)),
-        Expanded(flex: 2, child: HudLabel('%CPU',  textAlign: TextAlign.center)),
-        Expanded(flex: 2, child: HudLabel('%MEM',  textAlign: TextAlign.center)),
-        Expanded(flex: 3, child: HudLabel('STATUS', textAlign: TextAlign.center)),
-        Expanded(flex: 1, child: HudLabel('ACTION', textAlign: TextAlign.center)),
-      ]),
+        color: HudTheme.bgPanel,
+        border: const Border(bottom: BorderSide(color: Colors.white10)),
+      ),
+      child: const Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: HudLabel('PID', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 4,
+            child: HudLabel('COMMAND', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 3,
+            child: HudLabel('USER', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 2,
+            child: HudLabel('%CPU', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 2,
+            child: HudLabel('%MEM', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 3,
+            child: HudLabel('STATUS', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 1,
+            child: HudLabel('ACTION', textAlign: TextAlign.center),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -309,15 +400,17 @@ class _ProcessRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isCpuHot = group.totalCpuPercent > 10.0;
     final isMemHot = group.totalPercentMem > 10.0;
-    final isHot    = isCpuHot || isMemHot;
+    final isHot = isCpuHot || isMemHot;
     final rowColor = isSelected
         ? HudTheme.accentCyan.withValues(alpha: 0.06)
         : isHot
-            ? HudTheme.accentAmber.withValues(alpha: 0.05)
-            : Colors.transparent;
+        ? HudTheme.accentAmber.withValues(alpha: 0.05)
+        : Colors.transparent;
 
     final textColor = isHot ? HudTheme.accentAmber : HudTheme.textMain;
-    final displayName = group.count > 1 ? '${group.name} (x${group.count})' : group.name;
+    final displayName = group.count > 1
+        ? '${group.name} (x${group.count})'
+        : group.name;
 
     return Column(
       children: [
@@ -338,42 +431,78 @@ class _ProcessRow extends ConsumerWidget {
                 bottom: const BorderSide(color: Colors.white10),
               ),
             ),
-            child: Row(children: [
-              Expanded(flex: 2, child: Text(
-                group.count > 1 ? 'GRP' : group.primaryPid.toString(),
-                style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
-                textAlign: TextAlign.center,
-              )),
-              Expanded(flex: 4, child: Text(
-                displayName,
-                style: HudTheme.bodyText.copyWith(color: isSelected ? HudTheme.accentCyan : textColor, fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              )),
-              Expanded(flex: 3, child: Text(
-                group.primaryUser,
-                style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              )),
-              Expanded(flex: 2, child: Text(
-                '${group.totalCpuPercent.toStringAsFixed(1)}%',
-                style: HudTheme.statGreen.copyWith(color: isCpuHot ? HudTheme.accentAmber : HudTheme.accentCyan),
-                textAlign: TextAlign.center,
-              )),
-              Expanded(flex: 2, child: Text(
-                '${group.totalPercentMem.toStringAsFixed(1)}%',
-                style: HudTheme.statGreen.copyWith(color: textColor),
-                textAlign: TextAlign.center,
-              )),
-              Expanded(flex: 3, child: Center(child: _StatusBadge(group.dominantStatus))),
-              Expanded(flex: 1, child: IconButton(
-                icon: const Icon(Icons.cancel_outlined, color: HudTheme.accentRed, size: 18),
-                tooltip: group.count > 1 ? 'Kill all ${group.name}' : 'Kill PID ${group.primaryPid}',
-                padding: EdgeInsets.zero,
-                onPressed: () => _confirmKill(context, ref),
-              )),
-            ]),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    group.count > 1 ? 'GRP' : group.primaryPid.toString(),
+                    style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: Text(
+                    displayName,
+                    style: HudTheme.bodyText.copyWith(
+                      color: isSelected ? HudTheme.accentCyan : textColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    group.primaryUser,
+                    style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '${group.totalCpuPercent.toStringAsFixed(1)}%',
+                    style: HudTheme.statGreen.copyWith(
+                      color: isCpuHot
+                          ? HudTheme.accentAmber
+                          : HudTheme.accentCyan,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '${group.totalPercentMem.toStringAsFixed(1)}%',
+                    style: HudTheme.statGreen.copyWith(color: textColor),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Center(child: _StatusBadge(group.dominantStatus)),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.cancel_outlined,
+                      color: HudTheme.accentRed,
+                      size: 18,
+                    ),
+                    tooltip: group.count > 1
+                        ? 'Kill all ${group.name}'
+                        : 'Kill PID ${group.primaryPid}',
+                    padding: EdgeInsets.zero,
+                    onPressed: () => _confirmKill(context, ref),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -393,12 +522,21 @@ class _ProcessRow extends ConsumerWidget {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        title: Text('CONFIRM KILL', style: HudTheme.bodyText.copyWith(color: HudTheme.accentRed, fontWeight: FontWeight.bold)),
+        title: Text(
+          'CONFIRM KILL',
+          style: HudTheme.bodyText.copyWith(
+            color: HudTheme.accentRed,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Text(label, style: HudTheme.bodyText),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('CANCEL', style: HudTheme.bodyText.copyWith(color: HudTheme.textDim)),
+            child: Text(
+              'CANCEL',
+              style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -410,7 +548,13 @@ class _ProcessRow extends ConsumerWidget {
               }
               ref.read(selectedProcessPidProvider.notifier).state = null;
             },
-            child: Text('KILL', style: HudTheme.bodyText.copyWith(color: HudTheme.accentRed, fontWeight: FontWeight.bold)),
+            child: Text(
+              'KILL',
+              style: HudTheme.bodyText.copyWith(
+                color: HudTheme.accentRed,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -441,33 +585,51 @@ class _DetailDrawer extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-          // Stats
-          Wrap(spacing: 32, runSpacing: 8, children: [
-            _DrawerStat('PID',          group.count > 1 ? 'GROUPED (${group.count})' : group.primaryPid.toString()),
-            _DrawerStat('WORKING SET',  '${group.totalRamMb.toStringAsFixed(1)} MB'),
-            _DrawerStat('% CPU',        '${group.totalCpuPercent.toStringAsFixed(2)}%'),
-            _DrawerStat('STATUS',       group.dominantStatus),
-            _DrawerStat('USER',         group.primaryUser),
-          ]),
-          const SizedBox(width: 24),
-          // Actions
-          Row(children: [
-            _ActionButton(
-              label: group.count > 1
-                  ? 'KILL ALL ${group.name.toUpperCase()} (${group.count})'
-                  : 'KILL PID ${group.primaryPid}',
-              color: HudTheme.accentRed,
-              onTap: () => _showKillDialog(context, ref),
+            // Stats
+            Wrap(
+              spacing: 32,
+              runSpacing: 8,
+              children: [
+                _DrawerStat(
+                  'PID',
+                  group.count > 1
+                      ? 'GROUPED (${group.count})'
+                      : group.primaryPid.toString(),
+                ),
+                _DrawerStat(
+                  'WORKING SET',
+                  '${group.totalRamMb.toStringAsFixed(1)} MB',
+                ),
+                _DrawerStat(
+                  '% CPU',
+                  '${group.totalCpuPercent.toStringAsFixed(2)}%',
+                ),
+                _DrawerStat('STATUS', group.dominantStatus),
+                _DrawerStat('USER', group.primaryUser),
+              ],
             ),
-            const SizedBox(width: 8),
-            _ActionButton(
-              label: 'COPY NAME',
-              color: HudTheme.textDim,
-              onTap: () => Clipboard.setData(ClipboardData(text: group.name)),
+            const SizedBox(width: 24),
+            // Actions
+            Row(
+              children: [
+                _ActionButton(
+                  label: group.count > 1
+                      ? 'KILL ALL ${group.name.toUpperCase()} (${group.count})'
+                      : 'KILL PID ${group.primaryPid}',
+                  color: HudTheme.accentRed,
+                  onTap: () => _showKillDialog(context, ref),
+                ),
+                const SizedBox(width: 8),
+                _ActionButton(
+                  label: 'COPY NAME',
+                  color: HudTheme.textDim,
+                  onTap: () =>
+                      Clipboard.setData(ClipboardData(text: group.name)),
+                ),
+              ],
             ),
-          ]),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -478,7 +640,13 @@ class _DetailDrawer extends ConsumerWidget {
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        title: Text('CONFIRM KILL', style: HudTheme.bodyText.copyWith(color: HudTheme.accentRed, fontWeight: FontWeight.bold)),
+        title: Text(
+          'CONFIRM KILL',
+          style: HudTheme.bodyText.copyWith(
+            color: HudTheme.accentRed,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Text(
           group.count > 1
               ? 'Terminate all ${group.count} instances of ${group.name}?'
@@ -488,7 +656,10 @@ class _DetailDrawer extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('CANCEL', style: HudTheme.bodyText.copyWith(color: HudTheme.textDim)),
+            child: Text(
+              'CANCEL',
+              style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -500,7 +671,13 @@ class _DetailDrawer extends ConsumerWidget {
               }
               ref.read(selectedProcessPidProvider.notifier).state = null;
             },
-            child: Text('EXECUTE', style: HudTheme.bodyText.copyWith(color: HudTheme.accentRed, fontWeight: FontWeight.bold)),
+            child: Text(
+              'EXECUTE',
+              style: HudTheme.bodyText.copyWith(
+                color: HudTheme.accentRed,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -515,11 +692,17 @@ class _DrawerStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      HudLabel(label),
-      const SizedBox(height: 2),
-      Text(value, style: HudTheme.bodyText.copyWith(color: HudTheme.accentCyan)),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HudLabel(label),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: HudTheme.bodyText.copyWith(color: HudTheme.accentCyan),
+        ),
+      ],
+    );
   }
 }
 
@@ -527,7 +710,11 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
-  const _ActionButton({required this.label, required this.color, required this.onTap});
+  const _ActionButton({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -540,7 +727,10 @@ class _ActionButton extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(4),
         ),
-        child: Text(label, style: HudTheme.bodyText.copyWith(color: color, fontSize: 11)),
+        child: Text(
+          label,
+          style: HudTheme.bodyText.copyWith(color: color, fontSize: 11),
+        ),
       ),
     );
   }
@@ -554,20 +744,33 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (status) {
-      'RUNNING'  => (HudTheme.accentGreen.withValues(alpha: 0.15), HudTheme.accentGreen),
-      'SLEEPING' => (Colors.white.withValues(alpha: 0.06),          HudTheme.textDim),
-      'ZOMBIE'   => (HudTheme.accentRed.withValues(alpha: 0.15),    HudTheme.accentRed),
-      _          => (HudTheme.accentRed.withValues(alpha: 0.15),    HudTheme.accentRed),
+      'RUNNING' => (
+        HudTheme.accentGreen.withValues(alpha: 0.15),
+        HudTheme.accentGreen,
+      ),
+      'SLEEPING' => (Colors.white.withValues(alpha: 0.06), HudTheme.textDim),
+      'ZOMBIE' => (
+        HudTheme.accentRed.withValues(alpha: 0.15),
+        HudTheme.accentRed,
+      ),
+      _ => (HudTheme.accentRed.withValues(alpha: 0.15), HudTheme.accentRed),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
-      child: Text(status,
-          style: TextStyle(
-              color: fg, fontSize: 10,
-              fontFamily: HudTheme.fontCore,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: fg,
+          fontSize: 10,
+          fontFamily: HudTheme.fontCore,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 }
@@ -577,26 +780,36 @@ class _Footer extends ConsumerWidget {
   final int shown;
   final int total;
   final bool showAll;
-  const _Footer({required this.shown, required this.total, required this.showAll});
+  const _Footer({
+    required this.shown,
+    required this.total,
+    required this.showAll,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.white10))),
+        border: Border(top: BorderSide(color: Colors.white10)),
+      ),
       child: Row(
         children: [
-          Text('Showing $shown of $total processes',
-              style: HudTheme.bodyText.copyWith(color: HudTheme.textDim)),
+          Text(
+            'Showing $shown of $total processes',
+            style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+          ),
           const Spacer(),
           if (total > 100)
             InkWell(
-              onTap: () => ref.read(showAllProcessesProvider.notifier).state = !showAll,
+              onTap: () =>
+                  ref.read(showAllProcessesProvider.notifier).state = !showAll,
               child: Text(
                 showAll ? 'SHOW TOP 100' : 'SHOW ALL ($total)',
                 style: HudTheme.bodyText.copyWith(
-                    color: HudTheme.accentCyan, decoration: TextDecoration.underline),
+                  color: HudTheme.accentCyan,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
         ],

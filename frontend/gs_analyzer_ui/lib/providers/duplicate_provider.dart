@@ -14,13 +14,16 @@ class DuplicateState {
 
   DuplicateState({
     this.isLoading = false,
-    this.duplicateGroups = const[],
+    this.duplicateGroups = const [],
     this.skipHiddenFiles = true,
     this.skipSystemFiles = true,
   });
 
   String get totalWastedSpaceFormatted {
-    int totalBytes = duplicateGroups.fold(0, (sum, group) => sum + group.wastedSizeBytes);
+    int totalBytes = duplicateGroups.fold(
+      0,
+      (sum, group) => sum + group.wastedSizeBytes,
+    );
     if (totalBytes >= 1024 * 1024 * 1024) {
       return '${(totalBytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
     }
@@ -74,7 +77,10 @@ class DuplicateNotifier extends StateNotifier<DuplicateState> {
 
     try {
       final apiService = ApiService();
-      final rawData = await apiService.scanForDuplicates(rootPath, generateUuid());
+      final rawData = await apiService.scanForDuplicates(
+        rootPath,
+        generateUuid(),
+      );
 
       loadFromBackend(rawData);
     } catch (e) {
@@ -91,7 +97,9 @@ class DuplicateNotifier extends StateNotifier<DuplicateState> {
       final List<dynamic> rawPaths = item['FilePaths'] ?? item['filePaths'];
       final List<dynamic> paths = rawPaths;
 
-      final items = paths.map((p) => DuplicateItem.fromPath(p.toString())).toList();
+      final items = paths
+          .map((p) => DuplicateItem.fromPath(p.toString()))
+          .toList();
 
       parsedGroups.add(DuplicateGroup(fileHash: hash, files: items));
     }
@@ -113,10 +121,13 @@ class DuplicateNotifier extends StateNotifier<DuplicateState> {
   }
 
   void clearNukedFiles() {
-    final updatedGroups = state.duplicateGroups.map((group) {
-      group.files.removeWhere((file) => file.isSelected);
-      return group;
-    }).where((group) => group.files.length > 1).toList();
+    final updatedGroups = state.duplicateGroups
+        .map((group) {
+          group.files.removeWhere((file) => file.isSelected);
+          return group;
+        })
+        .where((group) => group.files.length > 1)
+        .toList();
 
     state = state.copyWith(isLoading: false, duplicateGroups: updatedGroups);
   }
@@ -137,13 +148,13 @@ class DuplicateNotifier extends StateNotifier<DuplicateState> {
   }
 
   void abortScan() {
-    state = state.copyWith(
-      isLoading: false,
-      duplicateGroups: []
-    );
+    state = state.copyWith(isLoading: false, duplicateGroups: []);
 
     ApiService().abortScan();
   }
 }
 
-final duplicateProvider = StateNotifierProvider<DuplicateNotifier, DuplicateState>((ref) => DuplicateNotifier(ref));
+final duplicateProvider =
+    StateNotifierProvider<DuplicateNotifier, DuplicateState>(
+      (ref) => DuplicateNotifier(ref),
+    );

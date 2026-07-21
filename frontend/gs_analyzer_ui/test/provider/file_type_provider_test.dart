@@ -73,9 +73,8 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container
-          .read(scanRootProvider(r'C:\').notifier)
-          .state = r'C:\Users\G00dS0ul\Projects';
+      container.read(scanRootProvider(r'C:\').notifier).state =
+          r'C:\Users\G00dS0ul\Projects';
 
       expect(
         container.read(scanRootProvider(r'C:\')),

@@ -4,10 +4,7 @@ import 'package:gs_analyzer_ui/models/telemetry_history_model.dart';
 void main() {
   group('TelemetryHistoryModel', () {
     test('TelemetryPoint fromJson parses correctly', () {
-      final json = {
-        'timestamp': '2023-10-01T12:00:00Z',
-        'value': 42.5,
-      };
+      final json = {'timestamp': '2023-10-01T12:00:00Z', 'value': 42.5};
 
       final point = TelemetryPoint.fromJson(json);
 
@@ -16,12 +13,7 @@ void main() {
     });
 
     test('TelemetryStats fromJson parses correctly', () {
-      final json = {
-        'min': 10.0,
-        'max': 90.0,
-        'avg': 50.0,
-        'current': 60.0,
-      };
+      final json = {'min': 10.0, 'max': 90.0, 'avg': 50.0, 'current': 60.0};
 
       final stats = TelemetryStats.fromJson(json);
 
@@ -40,12 +32,7 @@ void main() {
           {'timestamp': '2023-10-01T12:00:00Z', 'value': 20.0},
           {'timestamp': '2023-10-01T12:01:00Z', 'value': 30.0},
         ],
-        'stats': {
-          'min': 20.0,
-          'max': 30.0,
-          'avg': 25.0,
-          'current': 30.0,
-        }
+        'stats': {'min': 20.0, 'max': 30.0, 'avg': 25.0, 'current': 30.0},
       };
 
       final response = TelemetryHistoryResponse.fromJson(json);

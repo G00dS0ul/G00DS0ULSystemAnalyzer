@@ -7,44 +7,51 @@ import 'package:http/testing.dart';
 import 'dart:convert';
 
 void main() {
-  testWidgets('recycle-bin toggle updates NukePreviewResult correctly', (tester) async {
+  testWidgets('recycle-bin toggle updates NukePreviewResult correctly', (
+    tester,
+  ) async {
     final client = MockClient((req) async {
-      return http.Response(jsonEncode({
-        'success': true,
-        'data': {
-          'totalBytes': 1000,
-          'totalFormatted': '1 KB',
-          'totalFiles': 2,
-          'totalDirectories': 1,
-          'planToken': 'plan-abc',
-          'stagedPaths': ['C:\\temp\\x'],
-          'errors': []
-        }
-      }), 200);
+      return http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {
+            'totalBytes': 1000,
+            'totalFormatted': '1 KB',
+            'totalFiles': 2,
+            'totalDirectories': 1,
+            'planToken': 'plan-abc',
+            'stagedPaths': ['C:\\temp\\x'],
+            'errors': [],
+          },
+        }),
+        200,
+      );
     });
 
     final apiService = ApiService(client);
 
     dynamic dialogResult;
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => ElevatedButton(
-            onPressed: () async {
-              dialogResult = await showDialog(
-                context: context,
-                builder: (context) => NukePreviewDialog(
-                  targetPaths: const ['C:\\temp\\x'],
-                  apiService: apiService,
-                ),
-              );
-            },
-            child: const Text('Show Dialog'),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                dialogResult = await showDialog(
+                  context: context,
+                  builder: (context) => NukePreviewDialog(
+                    targetPaths: const ['C:\\temp\\x'],
+                    apiService: apiService,
+                  ),
+                );
+              },
+              child: const Text('Show Dialog'),
+            ),
           ),
         ),
       ),
-    ));
+    );
 
     // Open dialog
     await tester.tap(find.text('Show Dialog'));

@@ -6,7 +6,8 @@ import 'package:gs_analyzer_ui/providers/settings_provider.dart';
 import 'package:gs_analyzer_ui/providers/window_provider.dart';
 import 'package:gs_analyzer_ui/models/app_settings.dart';
 
-class MockSettingsNotifier extends StateNotifier<SettingsState> implements SettingsNotifier {
+class MockSettingsNotifier extends StateNotifier<SettingsState>
+    implements SettingsNotifier {
   MockSettingsNotifier(SettingsState state) : super(state);
 
   @override
@@ -19,18 +20,20 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           windowMaximizedProvider.overrideWith((ref) => true),
-          settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-                SettingsState(
-                  currentSettings: AppSettings.fromjson({
-                    'appearance': {'compactMode': true}
-                  }),
-                ),
-              )),
+          settingsProvider.overrideWith(
+            (ref) => MockSettingsNotifier(
+              SettingsState(
+                currentSettings: AppSettings.fromjson({
+                  'appearance': {'compactMode': true},
+                }),
+              ),
+            ),
+          ),
         ],
       );
 
       final d = container.read(hudDensityProvider);
-      
+
       // Standard: maximized ignores compact setting
       expect(d.isMax, isTrue);
       expect(d.gap, 16.0);
@@ -41,18 +44,20 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           windowMaximizedProvider.overrideWith((ref) => false),
-          settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-                SettingsState(
-                  currentSettings: AppSettings.fromjson({
-                    'appearance': {'compactMode': true}
-                  }),
-                ),
-              )),
+          settingsProvider.overrideWith(
+            (ref) => MockSettingsNotifier(
+              SettingsState(
+                currentSettings: AppSettings.fromjson({
+                  'appearance': {'compactMode': true},
+                }),
+              ),
+            ),
+          ),
         ],
       );
 
       final d = container.read(hudDensityProvider);
-      
+
       // Compact
       expect(d.isMax, isFalse);
       expect(d.gap, 8.0);
@@ -63,18 +68,20 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           windowMaximizedProvider.overrideWith((ref) => false),
-          settingsProvider.overrideWith((ref) => MockSettingsNotifier(
-                SettingsState(
-                  currentSettings: AppSettings.fromjson({
-                    'appearance': {'compactMode': false}
-                  }),
-                ),
-              )),
+          settingsProvider.overrideWith(
+            (ref) => MockSettingsNotifier(
+              SettingsState(
+                currentSettings: AppSettings.fromjson({
+                  'appearance': {'compactMode': false},
+                }),
+              ),
+            ),
+          ),
         ],
       );
 
       final d = container.read(hudDensityProvider);
-      
+
       // Standard
       expect(d.isMax, isFalse);
       expect(d.gap, 16.0);

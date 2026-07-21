@@ -1,0 +1,50 @@
+name: Feature request
+description: Propose a new panel, service, or capability.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the roadmap in CONTRIBUTING.md and existing issues before proposing.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What can't you do today? Who benefits?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend
+        - Frontend
+        - Both
+        - Benchmarks / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: architecture
+    attributes:
+      label: Architecture impact
+      description: "Remember the boundary: Flutter -> SignalR/REST -> C# backend -> OS APIs. How does this fit?"
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and this isn't a duplicate
+          required: true
+        - label: This fits the current roadmap stage (or I've explained why it should jump ahead)

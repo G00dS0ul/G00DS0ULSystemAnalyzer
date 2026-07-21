@@ -10,10 +10,7 @@ class ThermalState {
   final ThermalTelemetry? telemetry;
   final int thermalThresholdCelsius;
 
-  const ThermalState({
-    this.telemetry,
-    this.thermalThresholdCelsius = 85,
-  });
+  const ThermalState({this.telemetry, this.thermalThresholdCelsius = 85});
 
   bool get isCritical {
     if (telemetry == null) return false;
@@ -27,7 +24,8 @@ class ThermalState {
   }) {
     return ThermalState(
       telemetry: telemetry ?? this.telemetry,
-      thermalThresholdCelsius: thermalThresholdCelsius ?? this.thermalThresholdCelsius,
+      thermalThresholdCelsius:
+          thermalThresholdCelsius ?? this.thermalThresholdCelsius,
     );
   }
 }
@@ -37,16 +35,17 @@ class ThermalNotifier extends StateNotifier<ThermalState> {
   final ApiService _apiService = ApiService();
   final Ref ref;
 
-  ThermalNotifier(this.ref): super(const ThermalState()) {
+  ThermalNotifier(this.ref) : super(const ThermalState()) {
     _fetchInitialSnapshot();
     _initSignalR();
     _listenToSettings();
-}
+  }
 
   void _listenToSettings() {
     ref.listen(settingsProvider, (previous, next) {
       final newThreshold = next.currentSettings?.alerts.thermalThresholdCelsius;
-      if (newThreshold != null && newThreshold != state.thermalThresholdCelsius) {
+      if (newThreshold != null &&
+          newThreshold != state.thermalThresholdCelsius) {
         state = state.copyWith(thermalThresholdCelsius: newThreshold);
       }
     }, fireImmediately: true);
@@ -65,10 +64,13 @@ class ThermalNotifier extends StateNotifier<ThermalState> {
     }
   }
 
-Future<void> _initSignalR() async {
+  Future<void> _initSignalR() async {
     final serverUrl = 'http://localhost:5200/systemHub';
 
-    _hubConnection = HubConnectionBuilder().withUrl(serverUrl).withAutomaticReconnect().build();
+    _hubConnection = HubConnectionBuilder()
+        .withUrl(serverUrl)
+        .withAutomaticReconnect()
+        .build();
 
     _hubConnection?.on("ReceiveThermalTelemetry", _handleThermalUpdate);
 
@@ -98,6 +100,8 @@ Future<void> _initSignalR() async {
   }
 }
 
-final thermalProvider = StateNotifierProvider<ThermalNotifier, ThermalState>((ref) {
+final thermalProvider = StateNotifierProvider<ThermalNotifier, ThermalState>((
+  ref,
+) {
   return ThermalNotifier(ref);
 });

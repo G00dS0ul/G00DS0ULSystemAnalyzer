@@ -1,0 +1,102 @@
+name: Leak & Performance Guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]   # any PR TARGETING main, including PRs from forks
+
+# Least-privilege token. pull-requests: write lets the benchmark job post its
+# comparison comment on same-repo PRs. contents stays read-only.
+permissions:
+  contents: read
+  pull-requests: write
+
+# Cancel superseded runs on the same ref to save (windows) runner minutes.
+concurrency:
+  group: leak-perf-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---- Gate 1: memory / thread leak soak test (runs on ALL PRs, incl. forks) ----
+  backend-leak:
+    runs-on: windows-latest        # net10.0-windows + WMI/Windows discovery paths
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore backend/GSSystemAnalyzer.Tests/GSSystemAnalyzer.Tests.csproj
+      - name: Soak / leak tests
+        run: >
+          dotnet test backend/GSSystemAnalyzer.Tests/GSSystemAnalyzer.Tests.csproj
+          -c Release --filter Category=Soak --logger "console;verbosity=normal"
+
+  # ---- Gate 3: Flutter widget leak tracking (runs on ALL PRs, incl. forks) ----
+  frontend-leak:
+    runs-on: ubuntu-latest         # cheap; no Windows-only code exercised here
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Pub get
+        run: flutter pub get
+        working-directory: frontend/gs_analyzer_ui
+      - name: Flutter tests (leak tracking enabled via test/flutter_test_config.dart)
+        run: flutter test
+        working-directory: frontend/gs_analyzer_ui
+
+  # ---- Gate 2: CPU / allocation regression (runs on ALL PRs, incl. forks) ----
+  # Fork PRs run with a READ-ONLY token: they can READ the baseline cache to compare
+  # and still FAIL the check on a regression, but cannot WRITE the cache or post a PR
+  # comment. The baseline is only updated by push-to-main. Commenting is off so the
+  # job never errors on forks; the failing check + job summary carry the signal.
+  backend-benchmark:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run BenchmarkDotNet (JSON exporter)
+        run: >
+          dotnet run -c Release --framework net10.0-windows
+          --project backend/GSSystemAnalyzer.Benchmarks/GSSystemAnalyzer.Benchmarks.csproj
+          -- --exporters json --filter '*'
+      # Persist the baseline across runs. Caches created on the default branch
+      # are readable by PR runs, which is what enables comparison.
+      - name: Restore / persist benchmark baseline
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: benchmark-baseline-${{ runner.os }}
+      - name: Compare against baseline & fail on regression
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'benchmarkdotnet'
+          # github-action-benchmark does not expand globs, so we provide the exact filename.
+          output-file-path: BenchmarkDotNet.Artifacts/results/GSSystemAnalyzer.Benchmarks.ScannerBenchmarks-report-full-compressed.json
+          external-data-json-path: ./cache/benchmark-data.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          fail-on-alert: true
+          alert-threshold: '150%'      # >50% slower OR more allocation -> fail
+          comment-on-alert: false      # forks can't comment; failing check + summary cover it
+          summary-always: true
+
+  # ---- Optional: Discord ping on any gate failure (matches your other workflows) ----
+  notify:
+    needs: [backend-leak, frontend-leak, backend-benchmark]
+    if: always() && (needs.backend-leak.result == 'failure' || needs.frontend-leak.result == 'failure' || needs.backend-benchmark.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discord failure notification
+        continue-on-error: true   # fork PRs have no DISCORD_WEBHOOK secret; never fail the run on this
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.CI_BUILD }}
+          status: failure
+          title: "Leak & Performance Guard failed"
+          description: "A leak/perf gate failed on ${{ github.ref_name }} (${{ github.sha }})."

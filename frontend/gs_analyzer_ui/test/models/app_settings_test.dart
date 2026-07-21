@@ -5,7 +5,12 @@ void main() {
   group('AppearanceSettings serialization', () {
     test('compactMode defaults to true when parsing empty json', () {
       final settings = AppearanceSettings.fromJson({});
-      expect(settings.compactMode, isTrue, reason: 'Compact Mode must default to true to match native Task Manager feel');
+      expect(
+        settings.compactMode,
+        isTrue,
+        reason:
+            'Compact Mode must default to true to match native Task Manager feel',
+      );
     });
 
     test('fromJson and toJson round-trips correctly', () {
@@ -17,14 +22,14 @@ void main() {
       };
 
       final settings = AppearanceSettings.fromJson(jsonPayload);
-      
+
       expect(settings.theme, 'light');
       expect(settings.accentColor, 'green');
       expect(settings.compactMode, isFalse);
       expect(settings.showAnimations, isTrue);
 
       final outJson = settings.toJson();
-      
+
       expect(outJson['theme'], 'light');
       expect(outJson['accentColor'], 'green');
       expect(outJson['compactMode'], false);

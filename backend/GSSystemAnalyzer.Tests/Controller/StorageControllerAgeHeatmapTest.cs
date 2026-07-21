@@ -7,64 +7,64 @@ using Xunit;
 
 namespace GSSystemAnalyzer.Tests.Controllers
 {
-    public class StorageControllerAgeHeatmapTests
-    {
-        
-        private static StorageController MakeController()
-        {
-            var diskService = new Mock<IDiskOperationService>();
-            var duplicateDetector = new Mock<IDuplicateFileDetector>();
-            var scopeFactory = new Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
-            return new StorageController(diskService.Object, duplicateDetector.Object, scopeFactory.Object);
-        }
+	public class StorageControllerAgeHeatmapTests
+	{
 
-        private static string ExistingRoot => Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
+		private static StorageController MakeController()
+		{
+			var diskService = new Mock<IDiskOperationService>();
+			var duplicateDetector = new Mock<IDuplicateFileDetector>();
+			var scopeFactory = new Mock<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+			return new StorageController(diskService.Object, duplicateDetector.Object, scopeFactory.Object);
+		}
 
-        [Fact]
-        public void GetAgeHeatmap_Returns200_WhenCacheHit()
-        {
-            var fakeResult = new AgeHeatmapResult
-            {
-                Root = ExistingRoot,
-                Nodes = new List<AgeHeatmapNode>(),
-                Summary = new Dictionary<string, AgeBucketSummary>(),
-            };
-            var engine = new Mock<IAgeHeatmapEngine>();
-            engine.Setup(e => e.Analyze(It.IsAny<string>())).Returns(fakeResult);
+		private static string ExistingRoot => Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
 
-            // GetAgeHeatmap(string root, [FromServices] IAgeHeatmapEngine heatmap)
-            var result = MakeController().GetAgeHeatmap(ExistingRoot, engine.Object);
+		[Fact]
+		public void GetAgeHeatmap_Returns200_WhenCacheHit()
+		{
+			var fakeResult = new AgeHeatmapResult
+			{
+				Root = ExistingRoot,
+				Nodes = new List<AgeHeatmapNode>(),
+				Summary = new Dictionary<string, AgeBucketSummary>(),
+			};
+			var engine = new Mock<IAgeHeatmapEngine>();
+			engine.Setup(e => e.Analyze(It.IsAny<string>())).Returns(fakeResult);
 
-            Assert.IsType<OkObjectResult>(result);
-        }
+			// GetAgeHeatmap(string root, [FromServices] IAgeHeatmapEngine heatmap)
+			var result = MakeController().GetAgeHeatmap(ExistingRoot, engine.Object);
 
-        [Fact]
-        public void GetAgeHeatmap_Returns409_WhenNoCacheExists()
-        {
-            var engine = new Mock<IAgeHeatmapEngine>();
-            engine.Setup(e => e.Analyze(It.IsAny<string>())).Returns((AgeHeatmapResult?)null);
+			Assert.IsType<OkObjectResult>(result);
+		}
 
-            var result = MakeController().GetAgeHeatmap(ExistingRoot, engine.Object);
+		[Fact]
+		public void GetAgeHeatmap_Returns409_WhenNoCacheExists()
+		{
+			var engine = new Mock<IAgeHeatmapEngine>();
+			engine.Setup(e => e.Analyze(It.IsAny<string>())).Returns((AgeHeatmapResult?)null);
 
-            Assert.IsType<ConflictObjectResult>(result);
-        }
+			var result = MakeController().GetAgeHeatmap(ExistingRoot, engine.Object);
 
-        [Fact]
-        public void GetAgeHeatmap_Returns400_WhenRootIsEmpty()
-        {
-            var engine = new Mock<IAgeHeatmapEngine>();
-            var result = MakeController().GetAgeHeatmap("", engine.Object);
+			Assert.IsType<ConflictObjectResult>(result);
+		}
 
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
+		[Fact]
+		public void GetAgeHeatmap_Returns400_WhenRootIsEmpty()
+		{
+			var engine = new Mock<IAgeHeatmapEngine>();
+			var result = MakeController().GetAgeHeatmap("", engine.Object);
 
-        [Fact]
-        public void GetAgeHeatmap_Returns400_WhenRootDoesNotExist()
-        {
-            var engine = new Mock<IAgeHeatmapEngine>();
-            var result = MakeController().GetAgeHeatmap("Z:/nonexistent/path", engine.Object);
+			Assert.IsType<BadRequestObjectResult>(result);
+		}
 
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
-    }
+		[Fact]
+		public void GetAgeHeatmap_Returns400_WhenRootDoesNotExist()
+		{
+			var engine = new Mock<IAgeHeatmapEngine>();
+			var result = MakeController().GetAgeHeatmap("Z:/nonexistent/path", engine.Object);
+
+			Assert.IsType<BadRequestObjectResult>(result);
+		}
+	}
 }

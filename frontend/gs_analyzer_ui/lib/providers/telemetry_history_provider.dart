@@ -40,7 +40,7 @@ class TelemetryHistoryNotifier extends StateNotifier<TelemetryHistoryState> {
   Timer? _timer;
 
   TelemetryHistoryNotifier(this._apiService, this._metric)
-      : super(TelemetryHistoryState()) {
+    : super(TelemetryHistoryState()) {
     _fetchHistory();
     _startTimer();
   }
@@ -56,13 +56,23 @@ class TelemetryHistoryNotifier extends StateNotifier<TelemetryHistoryState> {
     if (!silent) {
       state = state.copyWith(isLoading: true, error: null);
     }
-    
+
     try {
-      final response = await _apiService.fetchTelemetryHistory(_metric, state.minutes);
+      final response = await _apiService.fetchTelemetryHistory(
+        _metric,
+        state.minutes,
+      );
       if (response != null) {
-        state = state.copyWith(isLoading: false, response: response, error: null);
+        state = state.copyWith(
+          isLoading: false,
+          response: response,
+          error: null,
+        );
       } else {
-        state = state.copyWith(isLoading: false, error: 'Failed to fetch history for $_metric');
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Failed to fetch history for $_metric',
+        );
       }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -84,7 +94,11 @@ class TelemetryHistoryNotifier extends StateNotifier<TelemetryHistoryState> {
 }
 
 // We use FamilyStateNotifier from riverpod to pass the metric as an argument
-final telemetryHistoryProvider = StateNotifierProvider.autoDispose.family<TelemetryHistoryNotifier, TelemetryHistoryState, String>((ref, metric) {
-  final apiService = ref.watch(apiServiceProvider);
-  return TelemetryHistoryNotifier(apiService, metric);
-});
+final telemetryHistoryProvider = StateNotifierProvider.autoDispose
+    .family<TelemetryHistoryNotifier, TelemetryHistoryState, String>((
+      ref,
+      metric,
+    ) {
+      final apiService = ref.watch(apiServiceProvider);
+      return TelemetryHistoryNotifier(apiService, metric);
+    });

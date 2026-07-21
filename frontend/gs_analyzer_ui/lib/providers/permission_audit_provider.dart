@@ -6,22 +6,32 @@ import 'package:gs_analyzer_ui/providers/telemetry_provider.dart';
 
 final apiServiceProvider = Provider((ref) => ApiService());
 
-final auditProgressProvider = StateProvider<Map<String, dynamic>?>((ref) => null);
+final auditProgressProvider = StateProvider<Map<String, dynamic>?>(
+  (ref) => null,
+);
 
-final permissionAuditProvider = NotifierProvider<PermissionAuditNotifier, AsyncValue<PermissionAuditResult?>>(() {
-  return PermissionAuditNotifier();
-});
+final permissionAuditProvider =
+    NotifierProvider<
+      PermissionAuditNotifier,
+      AsyncValue<PermissionAuditResult?>
+    >(() {
+      return PermissionAuditNotifier();
+    });
 
-class PermissionAuditNotifier extends Notifier<AsyncValue<PermissionAuditResult?>> {
+class PermissionAuditNotifier
+    extends Notifier<AsyncValue<PermissionAuditResult?>> {
   @override
   AsyncValue<PermissionAuditResult?> build() {
     return const AsyncValue.data(null);
   }
 
   Future<void> runAudit(String rootPath) async {
-    ref.read(auditProgressProvider.notifier).state = {'scanned': 0, 'issues': 0};
+    ref.read(auditProgressProvider.notifier).state = {
+      'scanned': 0,
+      'issues': 0,
+    };
     state = const AsyncValue.loading();
-    
+
     // Subscribe to live telemetry
     final telemetry = ref.read(telemetryProvider.notifier).service;
     if (telemetry != null) {

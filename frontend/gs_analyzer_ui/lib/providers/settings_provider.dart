@@ -20,10 +20,12 @@ class SettingsState {
 
   bool get hasUnsavedChanges {
     if (savedSettings == null || currentSettings == null) return false;
-    return jsonEncode(savedSettings!.toJson()) != jsonEncode(currentSettings!.toJson());
+    return jsonEncode(savedSettings!.toJson()) !=
+        jsonEncode(currentSettings!.toJson());
   }
 
-  int get thermalThreshold => currentSettings?.alerts.thermalThresholdCelsius ?? 85;
+  int get thermalThreshold =>
+      currentSettings?.alerts.thermalThresholdCelsius ?? 85;
   int get ramThreshold => currentSettings?.alerts.ramThresholdPercent ?? 85;
   int get cpuThreshold => currentSettings?.alerts.cpuThresholdPercent ?? 95;
 
@@ -44,17 +46,17 @@ class SettingsState {
 
 class SettingsNotifier extends StateNotifier<SettingsState> {
   final ApiService _api = ApiService();
-  
+
   SettingsNotifier() : super(const SettingsState()) {
     _initialize();
   }
-  
+
   Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
 
     final cacheJson = prefs.getString('gs_settings_cache');
-    
+
     if (cacheJson != null) {
       try {
         final saved = AppSettings.fromjson(jsonDecode(cacheJson));
@@ -87,7 +89,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   void updateUI() {
     state = state.copyWith(
       currentSettings: state.currentSettings,
-      validationErrors: []
+      validationErrors: [],
     );
   }
 
@@ -99,15 +101,21 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final response = await _api.saveSettings(state.currentSettings!.toJson());
     if (response?['success'] == true) {
       final newSave = state.currentSettings!.clone();
-      state = state.copyWith(savedSettings: newSave, validationErrors: [], isLoading: false);
+      state = state.copyWith(
+        savedSettings: newSave,
+        validationErrors: [],
+        isLoading: false,
+      );
 
       final prefs = await SharedPreferences.getInstance();
       prefs.setString('gs_settings_cache', jsonEncode(newSave.toJson()));
       return true;
     } else {
       state = state.copyWith(
-        validationErrors: response?['errors'] != null ? List<String>.from(response?['errors']) : [], 
-        isLoading: false
+        validationErrors: response?['errors'] != null
+            ? List<String>.from(response?['errors'])
+            : [],
+        isLoading: false,
       );
       return false;
     }
@@ -144,6 +152,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   }
 }
 
-final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsState>((ref) {
-  return SettingsNotifier();
-});
+final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsState>(
+  (ref) {
+    return SettingsNotifier();
+  },
+);

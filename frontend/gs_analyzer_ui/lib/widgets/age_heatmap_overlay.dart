@@ -87,7 +87,11 @@ class AgeHeatmapOverlay extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_outlined, color: HudTheme.accentAmber, size: 20),
+          const Icon(
+            Icons.warning_amber_outlined,
+            color: HudTheme.accentAmber,
+            size: 20,
+          ),
           const SizedBox(width: 12),
           Text(
             'RUN A SCAN FIRST',
@@ -140,7 +144,11 @@ class AgeHeatmapOverlay extends ConsumerWidget {
   Widget _buildLegendBar() {
     return Row(
       children: [
-        const Icon(Icons.thermostat_outlined, color: HudTheme.accentCyan, size: 16),
+        const Icon(
+          Icons.thermostat_outlined,
+          color: HudTheme.accentCyan,
+          size: 16,
+        ),
         const SizedBox(width: 8),
         Text(
           'FILE AGE MAP',
@@ -173,10 +181,7 @@ class AgeHeatmapOverlay extends ConsumerWidget {
             color: color,
             borderRadius: BorderRadius.circular(2),
             boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.4),
-                blurRadius: 4,
-              ),
+              BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 4),
             ],
           ),
         ),
@@ -202,7 +207,8 @@ class AgeHeatmapOverlay extends ConsumerWidget {
     return Row(
       children: List.generate(buckets.length, (i) {
         final bucket = buckets[i];
-        final data = summary[bucket] ?? const AgeBucketSummary(count: 0, totalBytes: 0);
+        final data =
+            summary[bucket] ?? const AgeBucketSummary(count: 0, totalBytes: 0);
         final color = bucketColor(bucket);
 
         return Expanded(

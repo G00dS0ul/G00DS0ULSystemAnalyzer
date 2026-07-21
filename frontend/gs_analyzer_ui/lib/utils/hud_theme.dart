@@ -26,7 +26,7 @@ class HudTheme {
     color: primaryBorder,
     fontSize: 18,
     fontWeight: FontWeight.bold,
-    letterSpacing: 2
+    letterSpacing: 2,
   );
 
   // for small description text
@@ -42,7 +42,7 @@ class HudTheme {
     fontFamily: fontCore,
     color: accentGreen,
     fontSize: 14,
-    fontWeight: FontWeight.bold
+    fontWeight: FontWeight.bold,
   );
 
   // For numeric data values like sizes, percentages, counts
@@ -82,51 +82,73 @@ class HudTheme {
 
   static Color resolveAccent(String? accentKey) {
     switch (accentKey?.toLowerCase()) {
-      case 'cyan':    return Colors.cyanAccent;
-      case 'green':   return Colors.greenAccent;
-      case 'amber':   return Colors.amber;
-      case 'red':     return Colors.redAccent;
-      case 'purple':  return Colors.purpleAccent;
-      case 'blue':    return Colors.blueAccent;
-      default:        return Colors.cyanAccent;
+      case 'cyan':
+        return Colors.cyanAccent;
+      case 'green':
+        return Colors.greenAccent;
+      case 'amber':
+        return Colors.amber;
+      case 'red':
+        return Colors.redAccent;
+      case 'purple':
+        return Colors.purpleAccent;
+      case 'blue':
+        return Colors.blueAccent;
+      default:
+        return Colors.cyanAccent;
     }
   }
 
   static Color resolveBgBase(String? theme) {
     switch (theme?.toLowerCase()) {
-      case 'cyber_light': return const Color(0xFFF0F0F0);
+      case 'cyber_light':
+        return const Color(0xFFF0F0F0);
       case 'cyber_dark':
-      default:            return const Color(0xFF161616);
+      default:
+        return const Color(0xFF161616);
     }
   }
 
   // Helper for Panel backgrounds in Light Mode
   static Color resolveBgPanel(String? theme) {
     switch (theme?.toLowerCase()) {
-      case 'cyber_light': return const Color(0xFFFFFFFF); // Pure white panel
-      case 'cyber_dark':  return const Color(0xFF1E1E1E); // Original dark panel
-      default:            return const Color(0xFF1E1E1E);
+      case 'cyber_light':
+        return const Color(0xFFFFFFFF); // Pure white panel
+      case 'cyber_dark':
+        return const Color(0xFF1E1E1E); // Original dark panel
+      default:
+        return const Color(0xFF1E1E1E);
     }
   }
 
   // Helper for borders in Light Mode
   static Color resolveBorderColor(String? theme) {
     switch (theme?.toLowerCase()) {
-      case 'cyber_light': return Colors.grey.shade700;
-      case 'cyber_dark':  return Colors.cyanAccent;
-      default:            return Colors.cyanAccent;
+      case 'cyber_light':
+        return Colors.grey.shade700;
+      case 'cyber_dark':
+        return Colors.cyanAccent;
+      default:
+        return Colors.cyanAccent;
     }
   }
 
   static Color fileTypeColor(String category) {
     switch (category.toLowerCase()) {
-      case 'media':       return const Color(0xFF00FFFF);
-      case 'documents':   return const Color(0xFF4CAF50);
-      case 'executables': return const Color(0xFFFF5252);
-      case 'archives':    return const Color(0xFFFFB300);
-      case 'code':        return const Color(0xFF9C27B0);
-      case 'system':      return Colors.white38;
-      default:            return Colors.white12;
+      case 'media':
+        return const Color(0xFF00FFFF);
+      case 'documents':
+        return const Color(0xFF4CAF50);
+      case 'executables':
+        return const Color(0xFFFF5252);
+      case 'archives':
+        return const Color(0xFFFFB300);
+      case 'code':
+        return const Color(0xFF9C27B0);
+      case 'system':
+        return Colors.white38;
+      default:
+        return Colors.white12;
     }
   }
 }

@@ -8,8 +8,8 @@ using System.IO;
 
 namespace GSSystemAnalyzer.Services
 {
-    public class LinuxCpuProvider : ICpuMetricsProvider
-    {
+	public class LinuxCpuProvider : ICpuMetricsProvider
+	{
 #if !WINDOWS
         // Stores the previous tick data for every core to calculate the delta
         private readonly Dictionary<string, (long Idle, long Total)> _prevCoreData = new();
@@ -173,8 +173,8 @@ namespace GSSystemAnalyzer.Services
             return result;
         }
 #else
-        public Task<CpuTelemetryDto> GetNextSampleAsync() =>
-            throw new PlatformNotSupportedException("LinuxCpuProvider is only supported on Linux.");
+		public Task<CpuTelemetryDto> GetNextSampleAsync() =>
+			throw new PlatformNotSupportedException("LinuxCpuProvider is only supported on Linux.");
 #endif
-    }
+	}
 }

@@ -4,5 +4,5 @@ namespace GSSystemAnalyzer.Models;
 
 public class NukePreviewRequest
 {
-    public List<string> Paths { get; set; } = new();
+	public List<string> Paths { get; set; } = new();
 }

@@ -2,8 +2,8 @@ using GSSystemAnalyzer.Models;
 
 namespace GSSystemAnalyzer.Interfaces
 {
-    public interface ICpuMetricsProvider
-    {
-        Task<CpuTelemetryDto> GetNextSampleAsync();
-    }
+	public interface ICpuMetricsProvider
+	{
+		Task<CpuTelemetryDto> GetNextSampleAsync();
+	}
 }

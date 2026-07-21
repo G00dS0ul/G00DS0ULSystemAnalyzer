@@ -15,9 +15,7 @@ void main() {
     setUp(() {
       mockApiService = MockApiService();
       container = ProviderContainer(
-        overrides: [
-          apiServiceProvider.overrideWithValue(mockApiService),
-        ],
+        overrides: [apiServiceProvider.overrideWithValue(mockApiService)],
       );
     });
 
@@ -26,15 +24,16 @@ void main() {
     });
 
     test('initial state is loading with default 5 minutes', () {
-      when(() => mockApiService.fetchTelemetryHistory('cpu', 5))
-          .thenAnswer((_) async {
+      when(() => mockApiService.fetchTelemetryHistory('cpu', 5)).thenAnswer((
+        _,
+      ) async {
         await Future.delayed(const Duration(seconds: 1));
         return null;
       });
 
       container.listen(telemetryHistoryProvider('cpu'), (_, __) {});
       final state = container.read(telemetryHistoryProvider('cpu'));
-      
+
       expect(state.isLoading, true);
       expect(state.minutes, 5);
       expect(state.response, null);
@@ -49,8 +48,9 @@ void main() {
         stats: TelemetryStats(min: 0, max: 0, avg: 0, current: 0),
       );
 
-      when(() => mockApiService.fetchTelemetryHistory('cpu', 5))
-          .thenAnswer((_) async => mockResponse);
+      when(
+        () => mockApiService.fetchTelemetryHistory('cpu', 5),
+      ).thenAnswer((_) async => mockResponse);
 
       container.listen(telemetryHistoryProvider('cpu'), (_, __) {});
       final notifier = container.read(telemetryHistoryProvider('cpu').notifier);
@@ -71,12 +71,13 @@ void main() {
         stats: TelemetryStats(min: 0, max: 0, avg: 0, current: 0),
       );
 
-      when(() => mockApiService.fetchTelemetryHistory('cpu', 30))
-          .thenAnswer((_) async => mockResponse);
+      when(
+        () => mockApiService.fetchTelemetryHistory('cpu', 30),
+      ).thenAnswer((_) async => mockResponse);
 
       container.listen(telemetryHistoryProvider('cpu'), (_, __) {});
       final notifier = container.read(telemetryHistoryProvider('cpu').notifier);
-      
+
       notifier.setMinutes(30);
 
       await Future.delayed(Duration.zero);

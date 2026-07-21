@@ -5,16 +5,16 @@ using GSSystemAnalyzer.Models;
 
 namespace GSSystemAnalyzer.Interfaces
 {
-    public interface INukeProtocolService
-    {
-        Task<NukePreviewResponse> PreviewNukeAsync(List<string> paths, CancellationToken cancellationToken = default);
-        Task<NukeResultDto> ObliterateNodeAsync(List<string> paths, string planToken, bool useRecycleBin = false);
-        void TriggerNukeAbort();
+	public interface INukeProtocolService
+	{
+		Task<NukePreviewResponse> PreviewNukeAsync(List<string> paths, CancellationToken cancellationToken = default);
+		Task<NukeResultDto> ObliterateNodeAsync(List<string> paths, string planToken, bool useRecycleBin = false, CancellationToken cancellationToken = default);
+		void TriggerNukeAbort();
 
-        // Undo stack operations
-        NukeOperation? PeekUndo();
-        NukeResultDto? UndoNuke(string? operationId = null);
-        List<NukeOperation> GetUndoHistory();
-        void ClearUndoStack();
-    }
+		// Undo stack operations
+		NukeOperation? PeekUndo();
+		NukeResultDto? UndoNuke(string? operationId = null);
+		List<NukeOperation> GetUndoHistory();
+		void ClearUndoStack();
+	}
 }

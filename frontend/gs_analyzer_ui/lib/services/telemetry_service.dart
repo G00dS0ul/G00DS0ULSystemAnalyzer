@@ -6,7 +6,15 @@ class TelemetryService {
   late HubConnection _hubConnection;
 
   Function(String)? onSectorChanged;
-  final Function(String? scanId, String? status, int? completed, int? total, double? percentComplete, String? target) onProgressUpdate;
+  final Function(
+    String? scanId,
+    String? status,
+    int? completed,
+    int? total,
+    double? percentComplete,
+    String? target,
+  )
+  onProgressUpdate;
   Function(double percentage, String target, int completed)? onNukeProgress;
   Function()? onNukeAborted;
   Function(Map<String, dynamic>)? onRamUpdate;
@@ -15,12 +23,14 @@ class TelemetryService {
   Function(Map<String, dynamic>)? onCpuUpdate;
   Function(List<dynamic>)? onDriveUpdate;
   Function(Map<String, dynamic>)? onAuditProgress;
+  Function(List<dynamic>)? onScheduleUpdate;
+  Function(Map<String, dynamic>)? onAutoScanComplete;
 
   TelemetryService({
     required this.onProgressUpdate,
-    int backendPort            = 5200,
-    int reconnectDelayMs       = 3000,
-    int maxRetries             = 10,
+    int backendPort = 5200,
+    int reconnectDelayMs = 3000,
+    int maxRetries = 10,
   }) {
     _initRadio(backendPort, reconnectDelayMs, maxRetries);
   }
@@ -38,164 +48,193 @@ class TelemetryService {
         .withAutomaticReconnect(retryDelays: retryDelays)
         .build();
 
-    _hubConnection.on('ScanProgress',            _handleIncomingTelemetry);
-    _hubConnection.on('SectorChanged',           _handleSectorChanged);
-    _hubConnection.on('NukeProgress',            _handleNukeProgress);
-    _hubConnection.on('NukeAborted',             _handleNukeAborted);
-    _hubConnection.on('RamUpdate',               _handleRamUpdate);
-    _hubConnection.on('DirectoryChunk',          _handleDirectoryChunk);
-    _hubConnection.on('DirectoryStreamComplete', _handleDirectoryStreamComplete);
-    _hubConnection.on('ReceiveCpuTelemetry',     _handleCpuUpdate);
-    _hubConnection.on('DriveListUpdate',         _handleDriveUpdate);
-    _hubConnection.on('AuditProgress',           _handleAuditProgress);
+    _hubConnection.on('ScanProgress', _handleIncomingTelemetry);
+    _hubConnection.on('SectorChanged', _handleSectorChanged);
+    _hubConnection.on('NukeProgress', _handleNukeProgress);
+    _hubConnection.on('NukeAborted', _handleNukeAborted);
+    _hubConnection.on('RamUpdate', _handleRamUpdate);
+    _hubConnection.on('DirectoryChunk', _handleDirectoryChunk);
+    _hubConnection.on(
+      'DirectoryStreamComplete',
+      _handleDirectoryStreamComplete,
+    );
+    _hubConnection.on('ReceiveCpuTelemetry', _handleCpuUpdate);
+    _hubConnection.on('DriveListUpdate', _handleDriveUpdate);
+    _hubConnection.on('AuditProgress', _handleAuditProgress);
+    _hubConnection.on('ScheduleUpdate', _handleScheduleUpdate);
+    _hubConnection.on('AutoScanComplete', _handleAutoScanComplete);
   }
 
-    Future<void> startListening() async {
-      if (_hubConnection.state == HubConnectionState.Disconnected) {
-        try {
-          await _hubConnection.start();
-          appLogger.i('TELEMETRY RADIO: CONNECTED TO BASE STATION!');
-          
-          final api = ApiService();
-          api.startRamRadar();
-          api.startCpuRadar();
-        } catch (e) {
-          appLogger.i(
-              'TELEMETRY RADIO ERROR: FAILED TO CONNECT TO BASE STATION! - $e');
-        }
-      }
-    }
-
-    Future<void> stopListening() async {
-      if (_hubConnection.state == HubConnectionState.Connected) {
-        await _hubConnection.stop();
-        appLogger.i('TELEMETRY RADIO: DISCONNECTED FROM BASE STATION!');
-      }
-    }
-
-    void _handleIncomingTelemetry(List<Object?>? arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final data = arguments[0] as Map<String, dynamic>;
-
-        final scanId = data['scanId'] as String?;
-        final status = data['status'] as String?;
-        final completed = (data['completed'] as num?)?.toInt();
-        final total = (data['total'] as num?)?.toInt();
-        final percentageComplete = (data['percentComplete'] as num?)
-            ?.toDouble();
-        final target = data['currentTarget'] as String?;
-
-        onProgressUpdate(scanId, status, completed, total, percentageComplete, target);
-      }
-    }
-
-    void _handleSectorChanged(List<Object?>? arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        String changedFolder = arguments[0].toString();
-        appLogger.i('RADAR ALERT RECEIVED: Changes in $changedFolder');
-
-        if (onSectorChanged != null) {
-          onSectorChanged!(changedFolder);
-        }
-      }
-    }
-
-    void _handleNukeProgress(List<Object?>? arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final data = arguments[0] as Map<String, dynamic>;
-
-        final percentage = (data['percentage'] as num?)?.toDouble() ?? 0.0;
-        final target = data['target'] as String? ?? '';
-        final completed = (data['completed'] as num?)?.toInt() ?? 0;
-        if (onNukeProgress != null) {
-          onNukeProgress!(percentage, target, completed);
-        }
-      }
-    }
-
-    void _handleNukeAborted(List<Object?>? arguments) {
-      appLogger.i('RADIO ALERT: NUKE ABORT SIGNAL RECEIVED FROM BACKEND');
-      if (onNukeAborted != null) {
-        onNukeAborted!();
-      }
-    }
-
-    void _handleRamUpdate(List<Object?>? arguments) {
-      if (arguments == null || arguments.isEmpty) return;
+  Future<void> startListening() async {
+    if (_hubConnection.state == HubConnectionState.Disconnected) {
       try {
-        final rawData = arguments[0];
+        await _hubConnection.start();
+        appLogger.i('TELEMETRY RADIO: CONNECTED TO BASE STATION!');
 
-        if (rawData is Map) {
-          final data = Map<String, dynamic>.from(rawData);
-          if (onRamUpdate != null) {
-            onRamUpdate!(data);
-          }
-        }
-
-        else if (rawData is List) {
-          appLogger.i(
-              'ARCHITECT ALERT: The backend is still sending the old list! The C# engine needs to be rebuilt');
-        }
-
-        else {
-          appLogger.i('UNKNOWN PAYLOAD TYPE: ${rawData.runtimeType}');
-        }
+        final api = ApiService();
+        api.startRamRadar();
+        api.startCpuRadar();
       } catch (e) {
-        appLogger.i('RAM PAYLOAD CRASH: $e');
-      }
-    }
-
-    void _handleDirectoryChunk(List<Object?>? arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final data = arguments[0] as Map<String, dynamic>;
-        onDirectoryChunk?.call(data['scanId'] as String?, data['path'], data['chunk']);
-      }
-    }
-
-    void _handleDirectoryStreamComplete(List<Object?>? arguments) {
-      if (arguments != null && arguments.isNotEmpty) {
-        final data = arguments[0] as Map<String, dynamic>;
-        onDirectoryStreamComplete?.call(data['scanId'] as String?, data['path'].toString());
-      }
-    }
-
-    void _handleCpuUpdate(List<Object?>? arguments) {
-      if (arguments == null || arguments.isEmpty) return;
-
-      try {
-        final rawData = arguments[0];
-
-        if (rawData is Map) {
-          final data = Map<String, dynamic>.from(rawData);
-          if (onCpuUpdate != null) {
-            onCpuUpdate!(data);
-          }
-        }
-      } catch (e) {
-        appLogger.i('CPU TELEMETRY CRASH: $e');
-      }
-    }
-
-    void _handleDriveUpdate(List<Object?>? arguments) {
-        if (arguments != null && arguments.isNotEmpty) return;
-        try {
-          final rawData = arguments?[0];
-
-          if (rawData is List) {
-            if (onDriveUpdate != null) {
-              onDriveUpdate!(rawData);
-            }
-          } else {
-            appLogger.i('UNKNOWN DRIVE PAYLOAD TYPE: ${rawData.runtimeType}');
-          }
-        } catch (e) {
-          appLogger.i('DRIVE TELEMETRY CRASH: $e');
-        }
-    }
-
-    void _handleAuditProgress(List<Object?>? arguments) {
-      if (onAuditProgress != null && arguments != null && arguments.isNotEmpty) {
-        onAuditProgress!(arguments[0] as Map<String, dynamic>);
+        appLogger.i(
+          'TELEMETRY RADIO ERROR: FAILED TO CONNECT TO BASE STATION! - $e',
+        );
       }
     }
   }
+
+  Future<void> stopListening() async {
+    if (_hubConnection.state == HubConnectionState.Connected) {
+      await _hubConnection.stop();
+      appLogger.i('TELEMETRY RADIO: DISCONNECTED FROM BASE STATION!');
+    }
+  }
+
+  void _handleIncomingTelemetry(List<Object?>? arguments) {
+    if (arguments != null && arguments.isNotEmpty) {
+      final data = arguments[0] as Map<String, dynamic>;
+
+      final scanId = data['scanId'] as String?;
+      final status = data['status'] as String?;
+      final completed = (data['completed'] as num?)?.toInt();
+      final total = (data['total'] as num?)?.toInt();
+      final percentageComplete = (data['percentComplete'] as num?)?.toDouble();
+      final target = data['currentTarget'] as String?;
+
+      onProgressUpdate(
+        scanId,
+        status,
+        completed,
+        total,
+        percentageComplete,
+        target,
+      );
+    }
+  }
+
+  void _handleSectorChanged(List<Object?>? arguments) {
+    if (arguments != null && arguments.isNotEmpty) {
+      String changedFolder = arguments[0].toString();
+      appLogger.i('RADAR ALERT RECEIVED: Changes in $changedFolder');
+
+      if (onSectorChanged != null) {
+        onSectorChanged!(changedFolder);
+      }
+    }
+  }
+
+  void _handleNukeProgress(List<Object?>? arguments) {
+    if (arguments != null && arguments.isNotEmpty) {
+      final data = arguments[0] as Map<String, dynamic>;
+
+      final percentage = (data['percentage'] as num?)?.toDouble() ?? 0.0;
+      final target = data['target'] as String? ?? '';
+      final completed = (data['completed'] as num?)?.toInt() ?? 0;
+      if (onNukeProgress != null) {
+        onNukeProgress!(percentage, target, completed);
+      }
+    }
+  }
+
+  void _handleNukeAborted(List<Object?>? arguments) {
+    appLogger.i('RADIO ALERT: NUKE ABORT SIGNAL RECEIVED FROM BACKEND');
+    if (onNukeAborted != null) {
+      onNukeAborted!();
+    }
+  }
+
+  void _handleRamUpdate(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+    try {
+      final rawData = arguments[0];
+
+      if (rawData is Map) {
+        final data = Map<String, dynamic>.from(rawData);
+        if (onRamUpdate != null) {
+          onRamUpdate!(data);
+        }
+      } else if (rawData is List) {
+        appLogger.i(
+          'ARCHITECT ALERT: The backend is still sending the old list! The C# engine needs to be rebuilt',
+        );
+      } else {
+        appLogger.i('UNKNOWN PAYLOAD TYPE: ${rawData.runtimeType}');
+      }
+    } catch (e) {
+      appLogger.i('RAM PAYLOAD CRASH: $e');
+    }
+  }
+
+  void _handleDirectoryChunk(List<Object?>? arguments) {
+    if (arguments != null && arguments.isNotEmpty) {
+      final data = arguments[0] as Map<String, dynamic>;
+      onDirectoryChunk?.call(
+        data['scanId'] as String?,
+        data['path'],
+        data['chunk'],
+      );
+    }
+  }
+
+  void _handleDirectoryStreamComplete(List<Object?>? arguments) {
+    if (arguments != null && arguments.isNotEmpty) {
+      final data = arguments[0] as Map<String, dynamic>;
+      onDirectoryStreamComplete?.call(
+        data['scanId'] as String?,
+        data['path'].toString(),
+      );
+    }
+  }
+
+  void _handleCpuUpdate(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final rawData = arguments[0];
+
+      if (rawData is Map) {
+        final data = Map<String, dynamic>.from(rawData);
+        if (onCpuUpdate != null) {
+          onCpuUpdate!(data);
+        }
+      }
+    } catch (e) {
+      appLogger.i('CPU TELEMETRY CRASH: $e');
+    }
+  }
+
+  void _handleDriveUpdate(List<Object?>? arguments) {
+    if (arguments != null && arguments.isNotEmpty) return;
+    try {
+      final rawData = arguments?[0];
+
+      if (rawData is List) {
+        if (onDriveUpdate != null) {
+          onDriveUpdate!(rawData);
+        }
+      } else {
+        appLogger.i('UNKNOWN DRIVE PAYLOAD TYPE: ${rawData.runtimeType}');
+      }
+    } catch (e) {
+      appLogger.i('DRIVE TELEMETRY CRASH: $e');
+    }
+  }
+
+  void _handleAuditProgress(List<Object?>? arguments) {
+    if (onAuditProgress != null && arguments != null && arguments.isNotEmpty) {
+      onAuditProgress!(arguments[0] as Map<String, dynamic>);
+    }
+  }
+
+  void _handleScheduleUpdate(List<Object?>? arguments) {
+    if (onScheduleUpdate != null && arguments != null && arguments.isNotEmpty) {
+      final data = arguments[0] as Map<String, dynamic>;
+      onScheduleUpdate!(data['schedules'] as List<dynamic>);
+    }
+  }
+
+  void _handleAutoScanComplete(List<Object?>? arguments) {
+    if (onAutoScanComplete != null && arguments != null && arguments.isNotEmpty) {
+      onAutoScanComplete!(arguments[0] as Map<String, dynamic>);
+    }
+  }
+}

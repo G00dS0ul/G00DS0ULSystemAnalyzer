@@ -1,0 +1,29 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+# Windows batch scripts keep CRLF
+[*.{bat,cmd}]
+end_of_line = crlf
+
+# C# — tabs, width 4 (inherits from [*], stated explicitly for clarity)
+[*.cs]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+# Config / markup — 2 spaces
+[*.{json,jsonc,yml,yaml,xml,csproj,props,targets}]
+indent_style = space
+indent_size = 2
+
+# Markdown — keep trailing whitespace (it's meaningful for line breaks)
+[*.md]
+trim_trailing_whitespace = false

@@ -29,17 +29,19 @@ class _DirectorySearchWidget extends ConsumerState<DirectorySearchWidget> {
       controller: _searchController,
       style: HudTheme.bodyText.copyWith(color: HudTheme.accentCyan),
       decoration: InputDecoration(
-        prefixIcon: const Icon(
-          Icons.search_outlined,
-          color: HudTheme.textDim,
-        ),
-        suffixIcon: dirState.searchQuery.isNotEmpty ? IconButton(
-          icon: const Icon(Icons.clear_outlined, color: HudTheme.accentRed),
-          onPressed: () {
-            _searchController.clear();
-            dirNotifier.updateSearchQuery('');
-          },
-        ) : null,
+        prefixIcon: const Icon(Icons.search_outlined, color: HudTheme.textDim),
+        suffixIcon: dirState.searchQuery.isNotEmpty
+            ? IconButton(
+                icon: const Icon(
+                  Icons.clear_outlined,
+                  color: HudTheme.accentRed,
+                ),
+                onPressed: () {
+                  _searchController.clear();
+                  dirNotifier.updateSearchQuery('');
+                },
+              )
+            : null,
         hintText: 'QUERY DIRECTORY....',
         hintStyle: HudTheme.labelMuted,
         filled: true,

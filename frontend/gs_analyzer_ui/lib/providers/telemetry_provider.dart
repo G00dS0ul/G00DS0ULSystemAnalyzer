@@ -1,9 +1,15 @@
 import 'package:gs_analyzer_ui/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:gs_analyzer_ui/providers/ram_provider.dart';
 import 'package:gs_analyzer_ui/providers/settings_provider.dart';
+import 'package:gs_analyzer_ui/providers/ram_provider.dart';
+import 'package:gs_analyzer_ui/providers/startup_provider.dart';
+import 'package:gs_analyzer_ui/providers/schedule_provider.dart';
+import 'package:gs_analyzer_ui/providers/navigation_provider.dart';
 import 'package:gs_analyzer_ui/services/telemetry_service.dart';
+import 'package:gs_analyzer_ui/utils/globals.dart';
+import 'package:flutter/material.dart';
+import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/providers/directory_provider.dart';
 import 'package:gs_analyzer_ui/providers/drive_stats_provider.dart';
 
@@ -60,27 +66,33 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
     final settingsState = ref.read(settingsProvider);
     final adv = settingsState.savedSettings?.advanced;
 
-    final backendPort        = adv?.backendPort            ?? 5200;
-    final reconnectDelayMs   = adv?.signalrReconnectDelaysMs ?? 3000;
-    final maxRetries         = adv?.maxSignalrRetries        ?? 10;
+    final backendPort = adv?.backendPort ?? 5200;
+    final reconnectDelayMs = adv?.signalrReconnectDelaysMs ?? 3000;
+    final maxRetries = adv?.maxSignalrRetries ?? 10;
 
     _telemetryService = TelemetryService(
       backendPort: backendPort,
       reconnectDelayMs: reconnectDelayMs,
       maxRetries: maxRetries,
-      onProgressUpdate: (scanId, status, completed, total, percentComplete, target) {
-        if (status == 'INITIALIZING' || state.currentScanId == null || state.currentScanId == scanId) {
-          final isDone = status == 'COMPLETED' || status == 'ABORTED' || status == 'FAILED';
-          state = state.copyWith(
-            status: status,
-            completed: completed,
-            total: total,
-            percentComplete: percentComplete,
-            target: target,
-            currentScanId: isDone ? null : scanId,
-          );
-        }
-      },
+      onProgressUpdate:
+          (scanId, status, completed, total, percentComplete, target) {
+            if (status == 'INITIALIZING' ||
+                state.currentScanId == null ||
+                state.currentScanId == scanId) {
+              final isDone =
+                  status == 'COMPLETED' ||
+                  status == 'ABORTED' ||
+                  status == 'FAILED';
+              state = state.copyWith(
+                status: status,
+                completed: completed,
+                total: total,
+                percentComplete: percentComplete,
+                target: target,
+                currentScanId: isDone ? null : scanId,
+              );
+            }
+          },
     );
 
     _telemetryService?.onRamUpdate = (data) {
@@ -92,7 +104,9 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
     };
 
     _telemetryService?.onDirectoryChunk = (scanId, path, chunk) {
-      ref.read(directoryProvider.notifier).receiveStreamChunk(scanId, path, chunk);
+      ref
+          .read(directoryProvider.notifier)
+          .receiveStreamChunk(scanId, path, chunk);
     };
 
     _telemetryService?.onDirectoryStreamComplete = (scanId, path) {
@@ -115,8 +129,12 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
       if (currentProgress > 0.0 && currentProgress < 100.0) return;
 
       final currentPath = ref.read(directoryProvider).currentPath;
-      final normalizedCurrent = currentPath.replaceAll('\\\\', '/').toLowerCase();
-      final normalizedChanged = changedFolder.replaceAll('\\\\', '/').toLowerCase();
+      final normalizedCurrent = currentPath
+          .replaceAll('\\\\', '/')
+          .toLowerCase();
+      final normalizedChanged = changedFolder
+          .replaceAll('\\\\', '/')
+          .toLowerCase();
 
       if (normalizedCurrent == normalizedChanged) {
         appLogger.i('LIVE UPDATE: REFRESHING UI FOR $currentPath');
@@ -125,6 +143,33 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
 
       ref.read(drivesProvider.notifier).refresh();
     };
+
+    _telemetryService?.onScheduleUpdate = (jsonList) {
+      ref.read(scheduleProvider.notifier).updateFromSignalR(jsonList);
+    };
+
+    _telemetryService?.onAutoScanComplete = (data) {
+      final root = data['root'] as String;
+      
+      // The spec mentions invalidating scanResultFamily(root) and scanDiffProvider(root)
+      // which will be added in the next PR. For now, we refresh the directory tree unconditionally:
+      // TODO: ref.invalidate(scanResultFamily(root));
+      // TODO: ref.invalidate(scanDiffProvider(root));
+      ref.read(directoryProvider.notifier).scanDirectory(root);
+
+      snackbarKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+            'AUTO-SCAN COMPLETE',
+            style: HudTheme.headerCyan.copyWith(color: Colors.white),
+          ),
+          backgroundColor: HudTheme.bgPanel,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    };
+
 
     _telemetryService?.startListening();
   }
@@ -138,5 +183,5 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
 
 final telemetryProvider =
     StateNotifierProvider<TelemetryNotifier, TelemetryState>((ref) {
-  return TelemetryNotifier(ref);
-});
+      return TelemetryNotifier(ref);
+    });

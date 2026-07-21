@@ -20,6 +20,7 @@ import 'package:gs_analyzer_ui/providers/storage_mode_provider.dart';
 import 'package:gs_analyzer_ui/widgets/duplicate_scanner_pannel.dart';
 import 'package:gs_analyzer_ui/providers/storage_view_provider.dart';
 import 'package:gs_analyzer_ui/widgets/permission_audit_panel.dart';
+import 'package:gs_analyzer_ui/widgets/temp_cleaner_panel.dart';
 
 class AnalyzerDashboard extends ConsumerStatefulWidget {
   const AnalyzerDashboard({super.key});
@@ -43,12 +44,14 @@ class _AnalyzerDashboardState extends ConsumerState<AnalyzerDashboard> {
             IconButton(
               icon: const Icon(Icons.arrow_back, color: HudTheme.accentCyan),
               tooltip: 'Back to Drives',
-              onPressed: () =>
-              ref.read(storageViewProvider.notifier).state = StorageView.drivePicker,
+              onPressed: () => ref.read(storageViewProvider.notifier).state =
+                  StorageView.drivePicker,
             ),
             IconButton(
               icon: Icon(
-                ref.watch(treeExpandedProvider) ? Icons.menu_open_outlined : Icons.menu_outlined,
+                ref.watch(treeExpandedProvider)
+                    ? Icons.menu_open_outlined
+                    : Icons.menu_outlined,
                 color: HudTheme.accentCyan,
               ),
               tooltip: 'Toggle Data Tree',
@@ -135,20 +138,25 @@ class _AnalyzerDashboardState extends ConsumerState<AnalyzerDashboard> {
                 return TextButton.icon(
                   icon: Icon(
                     isHeatmapOn ? Icons.thermostat : Icons.thermostat_outlined,
-                    color: isHeatmapOn ? HudTheme.accentAmber : HudTheme.textDim,
+                    color: isHeatmapOn
+                        ? HudTheme.accentAmber
+                        : HudTheme.textDim,
                     size: 18,
                   ),
                   label: Text(
                     'AGE MAP',
                     style: HudTheme.bodyText.copyWith(
-                      color: isHeatmapOn ? HudTheme.accentAmber : HudTheme.textDim,
+                      color: isHeatmapOn
+                          ? HudTheme.accentAmber
+                          : HudTheme.textDim,
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                       letterSpacing: 1,
                     ),
                   ),
                   onPressed: () {
-                    ref.read(ageHeatmapEnabledProvider.notifier).state = !isHeatmapOn;
+                    ref.read(ageHeatmapEnabledProvider.notifier).state =
+                        !isHeatmapOn;
                   },
                 );
               },
@@ -198,7 +206,9 @@ class _AnalyzerDashboardState extends ConsumerState<AnalyzerDashboard> {
                 ref.read(directoryProvider.notifier).toggleSelectionMode();
               },
               child: Text(
-                dirState.isSelectionMode ? 'CANCEL SELECTION' : 'SELECT MULTIPLE',
+                dirState.isSelectionMode
+                    ? 'CANCEL SELECTION'
+                    : 'SELECT MULTIPLE',
                 style: HudTheme.bodyText.copyWith(
                   color: HudTheme.accentCyan,
                   fontWeight: FontWeight.bold,
@@ -220,7 +230,10 @@ class _AnalyzerDashboardState extends ConsumerState<AnalyzerDashboard> {
                 color: HudTheme.accentCyan,
               ),
               tooltip: 'Refresh',
-              onPressed: () => dirNotifier.scanDirectory(dirState.currentPath, forceRefresh: true),
+              onPressed: () => dirNotifier.scanDirectory(
+                dirState.currentPath,
+                forceRefresh: true,
+              ),
             ),
           ],
         ],
@@ -285,9 +298,7 @@ class _AnalyzerDashboardState extends ConsumerState<AnalyzerDashboard> {
       return const LargeFileScannerPanel();
     }
     if (currentMode == StorageMode.tempFileCleaner) {
-      return const Center(
-        child: Text('TEMP FILE CLEANER OFFLINE', style: HudTheme.actionRed),
-      );
+      return const TempCleanerPanel();
     }
     if (currentMode == StorageMode.permissionAudit) {
       return const PermissionAuditPanel();
@@ -311,11 +322,16 @@ class _AnalyzerDashboardState extends ConsumerState<AnalyzerDashboard> {
         // Age Heatmap overlay (legend + summary) — shown when toggle is on
         if (isHeatmapOn) const AgeHeatmapOverlay(),
         DirectoryTableHeader(),
-        if (dirState.currentPath != 'C:/' && dirState.searchQuery.isEmpty) GoUpRowWidget(),
+        if (dirState.currentPath != 'C:/' && dirState.searchQuery.isEmpty)
+          GoUpRowWidget(),
         Expanded(
-          child: dirState.displayNodes.isEmpty && dirState.searchQuery.isNotEmpty
+          child:
+              dirState.displayNodes.isEmpty && dirState.searchQuery.isNotEmpty
               ? const Center(
-                  child: Text('NO DATA FOUND IN SECTOR', style: HudTheme.labelMuted),
+                  child: Text(
+                    'NO DATA FOUND IN SECTOR',
+                    style: HudTheme.labelMuted,
+                  ),
                 )
               : ListView.builder(
                   itemCount: dirState.displayNodes.length,

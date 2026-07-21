@@ -3,9 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gs_analyzer_ui/providers/age_heatmap_provider.dart';
 
 void main() {
-
   group('ageHeatmapEnabledProvider', () {
-
     test('defaults to false', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);

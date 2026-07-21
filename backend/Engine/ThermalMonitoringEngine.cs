@@ -8,62 +8,62 @@ using Microsoft.Extensions.Logging;
 
 namespace GSSystemAnalyzer.Engine
 {
-    public class ThermalMonitoringEngine : BackgroundService
-    {
-        private readonly IHubContext<SystemHub> _hubContext;
-        private readonly IThermalProvider _thermalProvider;
-        private readonly ITelemetryHistoryBuffer _historyBuffer;
-        private readonly ILogger<ThermalMonitoringEngine> _logger;
-        private TimeSpan _pollInterval;
+	public class ThermalMonitoringEngine : BackgroundService
+	{
+		private readonly IHubContext<SystemHub> _hubContext;
+		private readonly IThermalProvider _thermalProvider;
+		private readonly ITelemetryHistoryBuffer _historyBuffer;
+		private readonly ILogger<ThermalMonitoringEngine> _logger;
+		private TimeSpan _pollInterval;
 
-        public ThermalMonitoringEngine(IHubContext<SystemHub> hubContext, IThermalProvider thermalProvider, ISettingService settings, ITelemetryHistoryBuffer historyBuffer, ILogger<ThermalMonitoringEngine> logger)
-        {
-            _hubContext = hubContext;
-            _thermalProvider = thermalProvider;
-            _historyBuffer = historyBuffer;
-            _logger = logger;
-            
-            _pollInterval = TimeSpan.FromMilliseconds(settings.Current.Monitoring.ThermalPollIntervalMs);
+		public ThermalMonitoringEngine(IHubContext<SystemHub> hubContext, IThermalProvider thermalProvider, ISettingService settings, ITelemetryHistoryBuffer historyBuffer, ILogger<ThermalMonitoringEngine> logger)
+		{
+			_hubContext = hubContext;
+			_thermalProvider = thermalProvider;
+			_historyBuffer = historyBuffer;
+			_logger = logger;
 
-            settings.OnSettingsChanged += (_, s) => _pollInterval = TimeSpan.FromMilliseconds(s.Monitoring.ThermalPollIntervalMs);
-        }
+			_pollInterval = TimeSpan.FromMilliseconds(settings.Current.Monitoring.ThermalPollIntervalMs);
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            await Task.Delay(5000, stoppingToken);
+			settings.OnSettingsChanged += (_, s) => _pollInterval = TimeSpan.FromMilliseconds(s.Monitoring.ThermalPollIntervalMs);
+		}
 
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    ThermalTelemetryDto payload = null;
+		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+		{
+			await Task.Delay(5000, stoppingToken);
 
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    {
-                        payload = await _thermalProvider.GetThermalDataAsync();
-                    }
-                    else
-                    {
-                        payload = new ThermalTelemetryDto();
-                    }
+			while (!stoppingToken.IsCancellationRequested)
+			{
+				try
+				{
+					ThermalTelemetryDto payload = null;
 
-                    if (payload != null)
-                    {
-                        await _hubContext.Clients.All.SendAsync("ReceiveThermalTelemetry", payload, stoppingToken);
+					if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+					{
+						payload = await _thermalProvider.GetThermalDataAsync();
+					}
+					else
+					{
+						payload = new ThermalTelemetryDto();
+					}
 
-                        // Record to history buffer for historical charts
-                        if (payload.CpuPackageCelsius != null)
-                            _historyBuffer.Record("thermal_cpu_package", payload.CpuPackageCelsius.Value);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Thermal engine radar failure");
-                }
+					if (payload != null)
+					{
+						await _hubContext.Clients.All.SendAsync("ReceiveThermalTelemetry", payload, stoppingToken);
 
-                await Task.Delay(_pollInterval, stoppingToken);
-            }
-        }
-    }
+						// Record to history buffer for historical charts
+						if (payload.CpuPackageCelsius != null)
+							_historyBuffer.Record("thermal_cpu_package", payload.CpuPackageCelsius.Value);
+					}
+				}
+				catch (Exception ex)
+				{
+					_logger.LogWarning(ex, "Thermal engine radar failure");
+				}
+
+				await Task.Delay(_pollInterval, stoppingToken);
+			}
+		}
+	}
 }
 

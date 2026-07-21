@@ -3,8 +3,8 @@ using DellOemTelemetry = GSSystemAnalyzer.Services.Oem.Dell.DellOemTelemetry;
 
 namespace GSSystemAnalyzer.Interfaces
 {
-    public interface IDellOemTelemetry
-    {
-        DellOemDto? TryGetDellOemTelemetry();
-    }
+	public interface IDellOemTelemetry
+	{
+		DellOemDto? TryGetDellOemTelemetry();
+	}
 }

@@ -14,7 +14,9 @@ final ageHeatmapEnabledProvider = StateProvider<bool>((ref) => false);
 /// Fetches age heatmap data for [root].
 /// Throws [AgeHeatmapNoScanException] when no Directory scan has run yet.
 /// Not auto-disposed — data persists across toggle ON/OFF cycles for the session.
-final ageHeatmapProvider = FutureProvider
-    .family<AgeHeatmapResult, String>((ref, root) async {
+final ageHeatmapProvider = FutureProvider.family<AgeHeatmapResult, String>((
+  ref,
+  root,
+) async {
   return ApiService().getAgeHeatmap(root);
 });

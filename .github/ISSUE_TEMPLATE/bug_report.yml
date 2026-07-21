@@ -1,0 +1,74 @@
+name: Bug report
+description: Something isn't working the way it should.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. **Search open issues first** to avoid duplicates, and remember the backend must be running (as Administrator) for telemetry to appear.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend (/backend, C#/SignalR)
+        - Frontend (/frontend/gs_analyzer_ui, Flutter)
+        - Benchmarks (gs-benchmark)
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      multiple: true
+      options:
+        - Windows
+        - Linux
+        - macOS
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: .NET / Flutter versions
+      placeholder: ".NET 10.0.x, Flutter stable x.x.x"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Backend console output, Flutter logs, or screenshots. Paste text in code fences.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and this isn't a duplicate
+          required: true
+        - label: I ran the backend as Administrator (thermal/sensor reads need elevation)
+        - label: The backend was running when I saw this (the frontend shows no data without it)

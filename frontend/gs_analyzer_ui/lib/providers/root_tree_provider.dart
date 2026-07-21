@@ -6,8 +6,9 @@ import 'dart:math';
 String generateUuid() {
   final random = Random();
   final chars = '0123456789abcdef';
-  String randomString(int length) => String.fromCharCodes(Iterable.generate(
-      length, (_) => chars.codeUnitAt(random.nextInt(16))));
+  String randomString(int length) => String.fromCharCodes(
+    Iterable.generate(length, (_) => chars.codeUnitAt(random.nextInt(16))),
+  );
   return '${randomString(8)}-${randomString(4)}-4${randomString(3)}-a${randomString(3)}-${randomString(12)}';
 }
 

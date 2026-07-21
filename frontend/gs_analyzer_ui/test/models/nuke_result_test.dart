@@ -31,9 +31,14 @@ void main() {
   group('NukeResultDto.fromJson', () {
     test('parses a recoverable recycle-bin result', () {
       final dto = NukeResultDto.fromJson({
-        'deletedFiles': 2, 'freedBytes': 0, 'freedFormatted': '0 B',
-        'stagedBytes': 100, 'stagedFormatted': '100 B',
-        'skippedFiles': 1, 'recycleBinUsed': true, 'recoverable': true,
+        'deletedFiles': 2,
+        'freedBytes': 0,
+        'freedFormatted': '0 B',
+        'stagedBytes': 100,
+        'stagedFormatted': '100 B',
+        'skippedFiles': 1,
+        'recycleBinUsed': true,
+        'recoverable': true,
         'operationId': 'op-9',
       });
       expect(dto.recycleBinUsed, isTrue);

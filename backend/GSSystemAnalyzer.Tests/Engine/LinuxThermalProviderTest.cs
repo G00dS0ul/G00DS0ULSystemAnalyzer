@@ -9,9 +9,9 @@ using Xunit;
 
 namespace GSSystemAnalyzer.Tests.Engine
 {
-    public class LinuxThermalProviderTests
-    {
-        private readonly bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+	public class LinuxThermalProviderTests
+	{
+		private readonly bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
 #if !WINDOWS
         // ??? 1 & 2: Thermal Zones and Mapping
@@ -135,14 +135,14 @@ namespace GSSystemAnalyzer.Tests.Engine
             Assert.Equal(41.2, result.NvmeCelsius);
         }
 #else
-        [Fact]
-        public async Task LinuxThermalProvider_OnWindows_ThrowsPlatformNotSupportedException()
-        {
-            var provider = new LinuxThermalProvider();
-            var exception = await Record.ExceptionAsync(() => provider.GetThermalDataAsync());
-            Assert.NotNull(exception);
-            Assert.IsType<PlatformNotSupportedException>(exception);
-        }
+		[Fact]
+		public async Task LinuxThermalProvider_OnWindows_ThrowsPlatformNotSupportedException()
+		{
+			var provider = new LinuxThermalProvider();
+			var exception = await Record.ExceptionAsync(() => provider.GetThermalDataAsync());
+			Assert.NotNull(exception);
+			Assert.IsType<PlatformNotSupportedException>(exception);
+		}
 #endif
-    }
+	}
 }

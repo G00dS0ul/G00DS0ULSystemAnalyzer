@@ -10,63 +10,66 @@ final ebSortColumnProvider = StateProvider<String>((ref) => 'totalBytes');
 final ebSortAscendingProvider = StateProvider<bool>((ref) => false);
 
 // Future Provider for fetching data
-final extensionBreakdownProvider = FutureProvider.family<ExtensionBreakdownResult, String>((ref, root) async {
-  return await ApiService().getExtensionBreakdown(root);
-});
+final extensionBreakdownProvider =
+    FutureProvider.family<ExtensionBreakdownResult, String>((ref, root) async {
+      return await ApiService().getExtensionBreakdown(root);
+    });
 
 // Computed Provider for filtering and sorting
-final filteredExtensionBreakdownProvider = Provider.family<List<ExtensionBreakdownItem>, String>((ref, root) {
-  final asyncResult = ref.watch(extensionBreakdownProvider(root));
-  
-  return asyncResult.maybeWhen(
-    data: (result) {
-      final items = result.extensions;
-      final query = ref.watch(ebSearchQueryProvider).toLowerCase();
-      final selectedCategories = ref.watch(ebSelectedCategoriesProvider);
-      final sortColumn = ref.watch(ebSortColumnProvider);
-      final isAscending = ref.watch(ebSortAscendingProvider);
+final filteredExtensionBreakdownProvider =
+    Provider.family<List<ExtensionBreakdownItem>, String>((ref, root) {
+      final asyncResult = ref.watch(extensionBreakdownProvider(root));
 
-      // Filtering
-      var filtered = items.where((item) {
-        if (query.isNotEmpty && !item.ext.toLowerCase().contains(query)) {
-          return false;
-        }
-        if (selectedCategories.isNotEmpty && !selectedCategories.contains(item.category)) {
-          return false;
-        }
-        return true;
-      }).toList();
+      return asyncResult.maybeWhen(
+        data: (result) {
+          final items = result.extensions;
+          final query = ref.watch(ebSearchQueryProvider).toLowerCase();
+          final selectedCategories = ref.watch(ebSelectedCategoriesProvider);
+          final sortColumn = ref.watch(ebSortColumnProvider);
+          final isAscending = ref.watch(ebSortAscendingProvider);
 
-      // Sorting
-      filtered.sort((a, b) {
-        int cmp;
-        switch (sortColumn) {
-          case 'ext':
-            cmp = a.ext.compareTo(b.ext);
-            break;
-          case 'category':
-            cmp = a.category.compareTo(b.category);
-            break;
-          case 'fileCount':
-            cmp = a.fileCount.compareTo(b.fileCount);
-            break;
-          case 'totalBytes':
-            cmp = a.totalBytes.compareTo(b.totalBytes);
-            break;
-          case 'averageFileSizeBytes':
-            cmp = a.averageFileSizeBytes.compareTo(b.averageFileSizeBytes);
-            break;
-          case 'percentOfDisk':
-            cmp = a.percentOfDisk.compareTo(b.percentOfDisk);
-            break;
-          default:
-            cmp = 0;
-        }
-        return isAscending ? cmp : -cmp;
-      });
+          // Filtering
+          var filtered = items.where((item) {
+            if (query.isNotEmpty && !item.ext.toLowerCase().contains(query)) {
+              return false;
+            }
+            if (selectedCategories.isNotEmpty &&
+                !selectedCategories.contains(item.category)) {
+              return false;
+            }
+            return true;
+          }).toList();
 
-      return filtered;
-    },
-    orElse: () => [],
-  );
-});
+          // Sorting
+          filtered.sort((a, b) {
+            int cmp;
+            switch (sortColumn) {
+              case 'ext':
+                cmp = a.ext.compareTo(b.ext);
+                break;
+              case 'category':
+                cmp = a.category.compareTo(b.category);
+                break;
+              case 'fileCount':
+                cmp = a.fileCount.compareTo(b.fileCount);
+                break;
+              case 'totalBytes':
+                cmp = a.totalBytes.compareTo(b.totalBytes);
+                break;
+              case 'averageFileSizeBytes':
+                cmp = a.averageFileSizeBytes.compareTo(b.averageFileSizeBytes);
+                break;
+              case 'percentOfDisk':
+                cmp = a.percentOfDisk.compareTo(b.percentOfDisk);
+                break;
+              default:
+                cmp = 0;
+            }
+            return isAscending ? cmp : -cmp;
+          });
+
+          return filtered;
+        },
+        orElse: () => [],
+      );
+    });

@@ -87,10 +87,10 @@ public class LinuxProcessOwnerResolver : IProcessOwnerResolver
         }
     }
 #else
-    public void RefreshCache() =>
-        throw new PlatformNotSupportedException("LinuxProcessOwnerResolver is only supported on Linux.");
+	public void RefreshCache() =>
+		throw new PlatformNotSupportedException("LinuxProcessOwnerResolver is only supported on Linux.");
 
-    public string Resolve(int processId) =>
-        throw new PlatformNotSupportedException("LinuxProcessOwnerResolver is only supported on Linux.");
+	public string Resolve(int processId) =>
+		throw new PlatformNotSupportedException("LinuxProcessOwnerResolver is only supported on Linux.");
 #endif
 }

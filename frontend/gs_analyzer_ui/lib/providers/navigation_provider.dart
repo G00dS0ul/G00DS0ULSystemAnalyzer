@@ -6,6 +6,7 @@ enum AppRoute {
   cpuMetics,
   memory,
   storage,
+  startup,
   network,
   thermal,
   telemetryHistory,

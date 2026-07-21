@@ -13,6 +13,7 @@ import 'package:gs_analyzer_ui/providers/storage_view_provider.dart';
 import 'package:gs_analyzer_ui/providers/telemetry_provider.dart';
 import 'package:gs_analyzer_ui/screen/process_explorer_screen.dart';
 import 'package:gs_analyzer_ui/screen/telemetry_history_screen.dart';
+import 'package:gs_analyzer_ui/screen/startup_manager_screen.dart';
 import 'cpu_metrics_screen.dart';
 
 class MasterLayout extends ConsumerWidget {
@@ -53,11 +54,16 @@ class MasterLayout extends ConsumerWidget {
         return const CpuMetricsScreen();
 
       case AppRoute.network:
-        return const Center(child: Text('NETWORK MODULE OFFLINE', style: HudTheme.headerCyan,));
+        return const Center(
+          child: Text('NETWORK MODULE OFFLINE', style: HudTheme.headerCyan),
+        );
+
+      case AppRoute.startup:
+        return const StartupManagerScreen();
 
       case AppRoute.thermal:
         return const ThermalModuleScreen();
-        
+
       case AppRoute.telemetryHistory:
         return const TelemetryHistoryScreen();
 
@@ -69,9 +75,7 @@ class MasterLayout extends ConsumerWidget {
 
       case AppRoute.dashboard:
       return const DashboardScreen();
-
-      // case AppRoute.dashboard:
-      //   return const Center(child: Text('MAIN DASHBOARD OFFLINE', style: HudTheme.headerCyan));
+        );
     }
   }
 }
