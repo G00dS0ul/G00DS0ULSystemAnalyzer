@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gs_analyzer_ui/features/dashboard/screens/dashboard_screen.dart';
 import 'package:gs_analyzer_ui/providers/navigation_provider.dart';
 import 'package:gs_analyzer_ui/screen/analyzer_dashboard.dart';
 import 'package:gs_analyzer_ui/screen/ram_scannner_screen.dart';
@@ -67,7 +68,10 @@ class MasterLayout extends ConsumerWidget {
         return const SettingsScreen();
 
       case AppRoute.dashboard:
-        return const Center(child: Text('MAIN DASHBOARD OFFLINE', style: HudTheme.headerCyan));
+      return const DashboardScreen();
+
+      // case AppRoute.dashboard:
+      //   return const Center(child: Text('MAIN DASHBOARD OFFLINE', style: HudTheme.headerCyan));
     }
   }
 }
