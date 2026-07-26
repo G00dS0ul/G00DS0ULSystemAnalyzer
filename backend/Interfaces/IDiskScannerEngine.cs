@@ -5,6 +5,7 @@ namespace GSSystemAnalyzer.Interfaces
 {
 	public interface IDiskScannerEngine
 	{
+		bool IsScanning { get; }
 		void ClearCache();
 		CancellationToken NukeToken();
 		void TriggerNukeAbort();

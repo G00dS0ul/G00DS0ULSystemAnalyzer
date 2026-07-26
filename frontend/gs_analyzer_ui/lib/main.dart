@@ -5,6 +5,7 @@ import 'package:gs_analyzer_ui/providers/settings_provider.dart';
 import 'package:gs_analyzer_ui/screen/master_layout.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/providers/window_provider.dart';
+import 'package:gs_analyzer_ui/utils/globals.dart';
 import 'package:window_manager/window_manager.dart';
 
 const kCompactSize = Size(900, 640);
@@ -78,6 +79,7 @@ class _GSAnalyzerAppState extends ConsumerState<GSAnalyzerApp>
     final bgColor = HudTheme.resolveBgBase(appearance?.theme);
 
     return MaterialApp(
+      scaffoldMessengerKey: snackbarKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: bgColor,

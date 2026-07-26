@@ -26,6 +26,10 @@ public class DiskScannerEngine : IDiskScannerEngine
 	private CancellationTokenSource? _nukeCts;
 	private readonly ConcurrentDictionary<Guid, ScanSession> _activeSessions = new();
 	private readonly SemaphoreSlim _scanLock = new SemaphoreSlim(1, 1);
+
+	/// <summary>True when a scan is actively running (the scan semaphore is held).</summary>
+	public bool IsScanning => _scanLock.CurrentCount == 0;
+
 	private readonly object _fileWriteLock = new object();
 	private int _deepScanThrottle = 0;
 	private readonly string _cacheFilePath = Path.Combine(

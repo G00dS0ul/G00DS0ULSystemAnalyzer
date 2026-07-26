@@ -39,6 +39,8 @@ builder.Services.AddSingleton<ISettingService, SettingsServices>();
 builder.Services.AddSingleton<IProcessOwnerResolver, ProcessOwnerResolver>();
 builder.Services.AddSingleton<IFileTypeScanner, FileTypeScanner>();
 builder.Services.AddSingleton<IAgeHeatmapEngine, AgeHeatmapEngine>();
+builder.Services.AddSingleton<IScanSnapshotStore, ScanSnapshotStore>();
+builder.Services.AddSingleton<IScanDiffService, ScanDiffService>();
 
 builder.Services.AddSingleton<ITelemetryHistoryBuffer, TelemetryHistoryBuffer>();
 
@@ -89,6 +91,11 @@ else
 builder.Services.AddHostedService<CpuSamplerEngine>();
 builder.Services.AddHostedService<ThermalMonitoringEngine>();
 builder.Services.AddHostedService<DriveMonitorService>();
+
+// Schedule services
+builder.Services.AddSingleton<IScheduleStore, ScheduleStore>();
+builder.Services.AddSingleton<IScheduleService, ScheduleService>();
+builder.Services.AddHostedService<ScheduledScanWorker>();
 
 // Scoped services (per-request)
 builder.Services.AddScoped<IDiskOperationService, DiskOperationsService>();
