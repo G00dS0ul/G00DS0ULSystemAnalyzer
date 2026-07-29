@@ -75,7 +75,7 @@ class MasterLayout extends ConsumerWidget {
 
       case AppRoute.dashboard:
       return const DashboardScreen();
-        );
+        
     }
   }
 }
