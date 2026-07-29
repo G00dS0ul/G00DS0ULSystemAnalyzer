@@ -7,11 +7,11 @@ class DuplicateItem {
   bool isSelected;
 
   DuplicateItem({
-   required this.path,
-   required this.lastModified,
-   required this.sizeBytes,
-   this.isSelected = false,
-});
+    required this.path,
+    required this.lastModified,
+    required this.sizeBytes,
+    this.isSelected = false,
+  });
 
   factory DuplicateItem.fromPath(String filePath) {
     final file = File(filePath);

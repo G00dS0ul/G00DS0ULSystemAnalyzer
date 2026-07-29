@@ -174,12 +174,12 @@ namespace GSSystemAnalyzer.Services
         public void Dispose() { }
     }
 #else
-    public class LinuxThermalProvider : IThermalProvider
-    {
-        public Task<ThermalTelemetryDto> GetThermalDataAsync() =>
-            throw new PlatformNotSupportedException("LinuxThermalProvider is only supported on Linux.");
+	public class LinuxThermalProvider : IThermalProvider
+	{
+		public Task<ThermalTelemetryDto> GetThermalDataAsync() =>
+			throw new PlatformNotSupportedException("LinuxThermalProvider is only supported on Linux.");
 
-        public void Dispose() { }
-    }
+		public void Dispose() { }
+	}
 #endif
 }

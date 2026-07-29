@@ -7,7 +7,8 @@ class HudLabel extends StatelessWidget {
   final TextOverflow? overflow;
   final int? maxLines;
 
-  const HudLabel(this.text, {
+  const HudLabel(
+    this.text, {
     super.key,
     this.textAlign,
     this.overflow = TextOverflow.ellipsis,

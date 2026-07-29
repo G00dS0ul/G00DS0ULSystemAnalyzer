@@ -5,7 +5,9 @@ import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 
 class CsvExporter {
   static Future<void> exportExtensionBreakdown(
-      BuildContext context, List<ExtensionBreakdownItem> items) async {
+    BuildContext context,
+    List<ExtensionBreakdownItem> items,
+  ) async {
     try {
       final userProfile = Platform.environment['USERPROFILE'];
       if (userProfile == null) {
@@ -20,12 +22,18 @@ class CsvExporter {
         }
       }
 
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+      final timestamp = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '-')
+          .split('.')
+          .first;
       final file = File('${targetDir.path}\\ExtensionBreakdown_$timestamp.csv');
 
       final buffer = StringBuffer();
       // CSV Header
-      buffer.writeln('Extension,Category,File Count,Total Size (Bytes),Size Formatted,% of Disk,Avg Size (Bytes),Avg Size Formatted,Largest File Bytes,Largest Size Formatted,Largest File Path');
+      buffer.writeln(
+        'Extension,Category,File Count,Total Size (Bytes),Size Formatted,% of Disk,Avg Size (Bytes),Avg Size Formatted,Largest File Bytes,Largest Size Formatted,Largest File Path',
+      );
 
       // CSV Rows
       for (final item in items) {
@@ -60,7 +68,10 @@ class CsvExporter {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to export CSV: $e', style: HudTheme.actionRed),
+            content: Text(
+              'Failed to export CSV: $e',
+              style: HudTheme.actionRed,
+            ),
             backgroundColor: HudTheme.bgPanel,
             duration: const Duration(seconds: 4),
           ),

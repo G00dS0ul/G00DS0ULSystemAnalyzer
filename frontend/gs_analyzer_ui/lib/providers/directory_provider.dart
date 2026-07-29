@@ -8,16 +8,13 @@ import 'dart:math';
 String generateUuid() {
   final random = Random();
   final chars = '0123456789abcdef';
-  String randomString(int length) => String.fromCharCodes(Iterable.generate(
-      length, (_) => chars.codeUnitAt(random.nextInt(16))));
+  String randomString(int length) => String.fromCharCodes(
+    Iterable.generate(length, (_) => chars.codeUnitAt(random.nextInt(16))),
+  );
   return '${randomString(8)}-${randomString(4)}-4${randomString(3)}-a${randomString(3)}-${randomString(12)}';
 }
 
-enum SortMethod {
-  name,
-  size,
-  date,
-}
+enum SortMethod { name, size, date }
 
 class DirectoryState {
   final String currentPath;
@@ -46,22 +43,22 @@ class DirectoryState {
     this.errorMessage,
     this.skipHiddenFiles = true,
     this.skipSystemFiles = true,
-});
+  });
 
   DirectoryState copyWith({
-  String? currentPath,
-  List<StorageNode>? allNodes,
-  List<StorageNode>? displayNodes,
-  Set<String>? selectedPath,
-  String? searchQuery,
-  SortMethod? sortMethod,
-  bool? isAscending,
-  bool? isLoading,
-  bool? isSelectionMode,
-  String? errorMessage,
-  bool? skipHiddenFiles,
-  bool? skipSystemFiles,
-}) {
+    String? currentPath,
+    List<StorageNode>? allNodes,
+    List<StorageNode>? displayNodes,
+    Set<String>? selectedPath,
+    String? searchQuery,
+    SortMethod? sortMethod,
+    bool? isAscending,
+    bool? isLoading,
+    bool? isSelectionMode,
+    String? errorMessage,
+    bool? skipHiddenFiles,
+    bool? skipSystemFiles,
+  }) {
     return DirectoryState(
       currentPath: currentPath ?? this.currentPath,
       allNodes: allNodes ?? this.allNodes,
@@ -81,7 +78,7 @@ class DirectoryState {
 
 class DirectoryNotifier extends StateNotifier<DirectoryState> {
   final ApiService _apiService = ApiService();
-  final Map<String, List<StorageNode>> _sectorCache ={};
+  final Map<String, List<StorageNode>> _sectorCache = {};
   final Ref ref;
 
   DirectoryNotifier(this.ref) : super(const DirectoryState()) {
@@ -90,56 +87,68 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
   }
 
   void _listenToSettings() {
-  ref.listen(settingsProvider, (previous, next) {
-    final scanSettings = next.savedSettings?.scan; // ← use savedSettings (post-save)
-    final prevScan = previous?.savedSettings?.scan;
-    if (scanSettings == null) return;
+    ref.listen(settingsProvider, (previous, next) {
+      final scanSettings =
+          next.savedSettings?.scan; // ← use savedSettings (post-save)
+      final prevScan = previous?.savedSettings?.scan;
+      if (scanSettings == null) return;
 
-    final hiddenChanged = scanSettings.skipHiddenFiles != state.skipHiddenFiles;
-    final systemChanged = scanSettings.skipSystemFiles != state.skipSystemFiles;
-    final excludedChanged = scanSettings.excludedPaths != prevScan?.excludedPaths;
+      final hiddenChanged =
+          scanSettings.skipHiddenFiles != state.skipHiddenFiles;
+      final systemChanged =
+          scanSettings.skipSystemFiles != state.skipSystemFiles;
+      final excludedChanged =
+          scanSettings.excludedPaths != prevScan?.excludedPaths;
 
-    if (hiddenChanged || systemChanged) {
-      state = state.copyWith(
-        skipHiddenFiles: scanSettings.skipHiddenFiles,
-        skipSystemFiles: scanSettings.skipSystemFiles,
-      );
-      scanDirectory(state.currentPath, forceRefresh: true);
-    } else if (excludedChanged) {
-      _applyFiltersAndSort();
-    }
-  });
-}
-  
+      if (hiddenChanged || systemChanged) {
+        state = state.copyWith(
+          skipHiddenFiles: scanSettings.skipHiddenFiles,
+          skipSystemFiles: scanSettings.skipSystemFiles,
+        );
+        scanDirectory(state.currentPath, forceRefresh: true);
+      } else if (excludedChanged) {
+        _applyFiltersAndSort();
+      }
+    });
+  }
+
   void _applyFiltersAndSort({
     List<StorageNode>? nodes,
     String? searchQuery,
     SortMethod? sortMethod,
     bool? isAscending,
-}) {
+  }) {
     final activeNodes = nodes ?? state.allNodes;
     final activeSearchQuery = searchQuery ?? state.searchQuery;
     final activeSortMethod = sortMethod ?? state.sortMethod;
     final activeIsAscending = isAscending ?? state.isAscending;
-      
-    List<StorageNode> filteredNodes = activeSearchQuery.isEmpty ? List.from(activeNodes) : activeNodes.where((n) => n.name.toLowerCase().contains(activeSearchQuery.toLowerCase())).toList();
 
-    final excluded = ref.read(settingsProvider)
-      .savedSettings?.scan.excludedPaths ?? [];
+    List<StorageNode> filteredNodes = activeSearchQuery.isEmpty
+        ? List.from(activeNodes)
+        : activeNodes
+              .where(
+                (n) => n.name.toLowerCase().contains(
+                  activeSearchQuery.toLowerCase(),
+                ),
+              )
+              .toList();
+
+    final excluded =
+        ref.read(settingsProvider).savedSettings?.scan.excludedPaths ?? [];
 
     if (excluded.isNotEmpty) {
       filteredNodes = filteredNodes.where((n) {
-      final nodePath = n.path.replaceAll('\\', '/').toLowerCase();
-      return !excluded.any((ex) {
-        final exPath = ex.replaceAll('\\', '/').toLowerCase();
-        return nodePath == exPath;
+        final nodePath = n.path.replaceAll('\\', '/').toLowerCase();
+        return !excluded.any((ex) {
+          final exPath = ex.replaceAll('\\', '/').toLowerCase();
+          return nodePath == exPath;
         });
       }).toList();
     }
 
     filteredNodes.sort((a, b) {
       int comparison;
-      switch(activeSortMethod) {
+      switch (activeSortMethod) {
         case SortMethod.name:
           comparison = a.name.toLowerCase().compareTo(b.name.toLowerCase());
           break;
@@ -167,7 +176,10 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
   String? _currentScanId;
   String? get currentScanId => _currentScanId;
 
-  Future<void> scanDirectory(String targetPath, {bool forceRefresh = false}) async {
+  Future<void> scanDirectory(
+    String targetPath, {
+    bool forceRefresh = false,
+  }) async {
     String safePath = targetPath.replaceAll('\\', '/');
     final scanId = generateUuid();
     _currentScanId = scanId;
@@ -180,10 +192,14 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
         errorMessage: null,
       );
 
-      _apiService.scanDirectory(safePath, scanId).then((freshNodes) {
-        _sectorCache[safePath] = freshNodes;
-        if (state.currentPath == safePath) _applyFiltersAndSort(nodes: freshNodes);
-      }).catchError((_) {});
+      _apiService
+          .scanDirectory(safePath, scanId)
+          .then((freshNodes) {
+            _sectorCache[safePath] = freshNodes;
+            if (state.currentPath == safePath)
+              _applyFiltersAndSort(nodes: freshNodes);
+          })
+          .catchError((_) {});
       return;
     }
 
@@ -199,7 +215,14 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
     _scanStartTime = DateTime.now();
     _wasForceRefresh = forceRefresh;
 
-    state = state.copyWith(currentPath: safePath, isLoading: true, searchQuery: '', errorMessage: null, allNodes: [], displayNodes: []);
+    state = state.copyWith(
+      currentPath: safePath,
+      isLoading: true,
+      searchQuery: '',
+      errorMessage: null,
+      allNodes: [],
+      displayNodes: [],
+    );
 
     try {
       await _apiService.requestDirectoryStream(safePath, scanId);
@@ -208,24 +231,33 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
     }
   }
 
-  void receiveStreamChunk(String? scanId, String path, List<dynamic> chunkData) {
+  void receiveStreamChunk(
+    String? scanId,
+    String path,
+    List<dynamic> chunkData,
+  ) {
     if (scanId != null && scanId != _currentScanId) return;
 
     String incomingPath = path.replaceAll('\\', '/').toLowerCase();
     String currentPath = state.currentPath.replaceAll('\\', '/').toLowerCase();
-    if (incomingPath.endsWith('/')) incomingPath = incomingPath.substring(0, incomingPath.length - 1);
-    if (currentPath.endsWith('/')) currentPath = currentPath.substring(0, currentPath.length - 1);
+    if (incomingPath.endsWith('/'))
+      incomingPath = incomingPath.substring(0, incomingPath.length - 1);
+    if (currentPath.endsWith('/'))
+      currentPath = currentPath.substring(0, currentPath.length - 1);
 
-    if(incomingPath != currentPath) return;
+    if (incomingPath != currentPath) return;
 
-    final parsedChunk = chunkData.map((json) => StorageNode.fromJson(json)).toList();
+    final parsedChunk = chunkData
+        .map((json) => StorageNode.fromJson(json))
+        .toList();
 
     if (!_sectorCache.containsKey(state.currentPath)) {
       _sectorCache[state.currentPath] = [];
     }
     _sectorCache[state.currentPath]!.addAll(parsedChunk);
 
-    final updatedList = List<StorageNode>.from(state.allNodes)..addAll(parsedChunk);
+    final updatedList = List<StorageNode>.from(state.allNodes)
+      ..addAll(parsedChunk);
 
     state = state.copyWith(allNodes: updatedList, displayNodes: updatedList);
   }
@@ -236,9 +268,10 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
     String incomingPath = path.replaceAll('\\', '/').toLowerCase();
     String currentPath = state.currentPath.replaceAll('\\', '/').toLowerCase();
 
-    if (incomingPath.endsWith('/')) incomingPath = incomingPath.substring(0, incomingPath.length - 1);
-    if (currentPath.endsWith('/')) currentPath = currentPath.substring(0, currentPath.length - 1);
-
+    if (incomingPath.endsWith('/'))
+      incomingPath = incomingPath.substring(0, incomingPath.length - 1);
+    if (currentPath.endsWith('/'))
+      currentPath = currentPath.substring(0, currentPath.length - 1);
 
     if (incomingPath == currentPath) {
       _applyFiltersAndSort();
@@ -246,13 +279,14 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
       if (_wasForceRefresh && _scanStartTime != null) {
         final elapsed = DateTime.now().difference(_scanStartTime!);
         if (elapsed.inMilliseconds < 2500) {
-          await Future.delayed(Duration(milliseconds: 2500 - elapsed.inMilliseconds));
+          await Future.delayed(
+            Duration(milliseconds: 2500 - elapsed.inMilliseconds),
+          );
         }
       }
 
       state = state.copyWith(isLoading: false);
     }
-
   }
 
   Future<List<StorageNode>> fetchChildrenForTree(String path) async {
@@ -264,10 +298,11 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
     _sectorCache[safePath] = nodes;
     return nodes;
   }
+
   // Navigate to previous Directory
   void navigateUp() {
     String normalized = state.currentPath.replaceAll('\\', '/');
-    if(normalized == 'C:/' || normalized == 'C:' || normalized.isEmpty) return;
+    if (normalized == 'C:/' || normalized == 'C:' || normalized.isEmpty) return;
 
     List<String> parts = normalized.split('/');
     parts.removeWhere((part) => part.isEmpty);
@@ -275,7 +310,7 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
     if (parts.length > 1) {
       parts.removeLast();
       String newPath = parts.join('/');
-      if(newPath.endsWith(':')) newPath += '/';
+      if (newPath.endsWith(':')) newPath += '/';
       scanDirectory(newPath);
     } else {
       scanDirectory('C:/');
@@ -301,7 +336,7 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
   void toggleSelection(String path) {
     final currentSelection = Set<String>.from(state.selectedPath);
 
-    if(currentSelection.contains(path)) {
+    if (currentSelection.contains(path)) {
       currentSelection.remove(path);
     } else {
       currentSelection.add(path);
@@ -324,12 +359,11 @@ class DirectoryNotifier extends StateNotifier<DirectoryState> {
     _sectorCache.remove(current);
     state = state.copyWith(allNodes: [], displayNodes: [], isLoading: false);
   }
-
-
 }
 
-final directoryProvider = StateNotifierProvider<DirectoryNotifier, DirectoryState>((ref) {
-  return DirectoryNotifier(ref);
-});
+final directoryProvider =
+    StateNotifierProvider<DirectoryNotifier, DirectoryState>((ref) {
+      return DirectoryNotifier(ref);
+    });
 
 final treeExpandedProvider = StateProvider<bool>((ref) => true);

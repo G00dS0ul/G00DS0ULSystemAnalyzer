@@ -11,7 +11,6 @@ class DriveInfo {
   final double percentageFree;
   final double percentageUsed;
 
-
   DriveInfo({
     required this.name,
     required this.label,
@@ -22,7 +21,7 @@ class DriveInfo {
     required this.usedBytes,
     required this.percentageFree,
     required this.percentageUsed,
-});
+  });
 
   factory DriveInfo.fromJson(Map<String, dynamic> json) {
     final int total = json['totalBytes'] ?? 0;

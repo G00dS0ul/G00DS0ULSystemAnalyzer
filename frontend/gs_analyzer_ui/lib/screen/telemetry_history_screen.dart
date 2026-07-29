@@ -28,10 +28,7 @@ class TelemetryHistoryScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'SYSTEM-WIDE METRIC TRENDS',
-              style: HudTheme.labelMuted,
-            ),
+            const Text('SYSTEM-WIDE METRIC TRENDS', style: HudTheme.labelMuted),
             const SizedBox(height: 24),
             Expanded(
               child: ListView(
@@ -48,7 +45,9 @@ class TelemetryHistoryScreen extends ConsumerWidget {
                   SizedBox(height: d.gap * 2),
                   SizedBox(
                     height: 400,
-                    child: TelemetryHistoryChart(metricKey: 'thermal_cpu_package'),
+                    child: TelemetryHistoryChart(
+                      metricKey: 'thermal_cpu_package',
+                    ),
                   ),
                   SizedBox(height: 48), // Padding at bottom
                 ],

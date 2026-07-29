@@ -10,148 +10,148 @@ using GSSystemAnalyzer.Models;
 
 namespace GSSystemAnalyzer.Services
 {
-    public class DuplicateFileDetector : IDuplicateFileDetector
-    {
-        private readonly ISettingService _settings;
-        private readonly IDiskScannerEngine _scanner;
+	public class DuplicateFileDetector : IDuplicateFileDetector
+	{
+		private readonly ISettingService _settings;
+		private readonly IDiskScannerEngine _scanner;
 
-        public DuplicateFileDetector(ISettingService settings, IDiskScannerEngine scanner)
-        {
-            _settings = settings;
-            _scanner = scanner;
-        }
-        /// Scans a root directory and returns a dictionary of duplicate files grouped by their SHA256 hash.
-        public async Task<List<DuplicateGroup>> FindDuplicatesAsync(string rootPath, Guid scanId)
-        {
-            try
-            {
-                var cancellationToken = _scanner.GetScanToken(scanId);
+		public DuplicateFileDetector(ISettingService settings, IDiskScannerEngine scanner)
+		{
+			_settings = settings;
+			_scanner = scanner;
+		}
+		/// Scans a root directory and returns a dictionary of duplicate files grouped by their SHA256 hash.
+		public async Task<List<DuplicateGroup>> FindDuplicatesAsync(string rootPath, Guid scanId)
+		{
+			try
+			{
+				var cancellationToken = _scanner.GetScanToken(scanId);
 
-                // 1. Safely gather all files, ignoring protected system folders (This fixes the "Ghost Reading" crash)
-                var allFiles = SafeEnumerateFiles(rootPath, cancellationToken);
-            var filesToHash = allFiles
-                .Where(f => f.Length > 0)
-                .GroupBy(f => f.Length)
-                .Where(group => group.Count() > 1)
-                .SelectMany(group => group)
-                .ToList();
+				// 1. Safely gather all files, ignoring protected system folders (This fixes the "Ghost Reading" crash)
+				var allFiles = SafeEnumerateFiles(rootPath, cancellationToken);
+				var filesToHash = allFiles
+					.Where(f => f.Length > 0)
+					.GroupBy(f => f.Length)
+					.Where(group => group.Count() > 1)
+					.SelectMany(group => group)
+					.ToList();
 
-            // --- PASS 2: The Parallel Hash ---
-            // Thread-safe dictionary to handle multiple CPU cores writing at the same time
-            var hashedFiles = new ConcurrentDictionary<string, ConcurrentBag<string>>();
+				// --- PASS 2: The Parallel Hash ---
+				// Thread-safe dictionary to handle multiple CPU cores writing at the same time
+				var hashedFiles = new ConcurrentDictionary<string, ConcurrentBag<string>>();
 
-            var parallelOptions = new ParallelOptions
-            {
-                CancellationToken = cancellationToken,
-                MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2)
-            };
+				var parallelOptions = new ParallelOptions
+				{
+					CancellationToken = cancellationToken,
+					MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2)
+				};
 
-            // Process the remaining files across all available CPU cores
-            await Parallel.ForEachAsync(filesToHash, parallelOptions, async (file, ct) =>
-            {
-                try
-                {
-                    using var sha256 = SHA256.Create();
-                    using var stream = File.OpenRead(file.FullName);
-                    
-                    byte[] hashBytes = await sha256.ComputeHashAsync(stream, ct);
-                    string hashString = BitConverter.ToString(hashBytes).Replace("-", "");
+				// Process the remaining files across all available CPU cores
+				await Parallel.ForEachAsync(filesToHash, parallelOptions, async (file, ct) =>
+				{
+					try
+					{
+						using var sha256 = SHA256.Create();
+						using var stream = File.OpenRead(file.FullName);
 
-                    hashedFiles.AddOrUpdate(
-                        hashString,
-                        new ConcurrentBag<string> { file.FullName },
-                        (key, existingBag) => 
-                        {
-                            existingBag.Add(file.FullName);
-                            return existingBag;
-                        });
-                }
-                catch (IOException) 
-                {
-                    // Skip files that are currently locked or open in another program
-                }
-                catch (UnauthorizedAccessException) 
-                {
-                    // Skip files we don't have permission to read
-                }
-            });
+						byte[] hashBytes = await sha256.ComputeHashAsync(stream, ct);
+						string hashString = BitConverter.ToString(hashBytes).Replace("-", "");
 
-            // 3. Final Cleanup: Convert back to standard collections and filter out unique files
-            return hashedFiles
-                .Where(kvp => kvp.Value.Count > 1)
-                .Select(kvp =>
-                {
+						hashedFiles.AddOrUpdate(
+							hashString,
+							new ConcurrentBag<string> { file.FullName },
+							(key, existingBag) =>
+							{
+								existingBag.Add(file.FullName);
+								return existingBag;
+							});
+					}
+					catch (IOException)
+					{
+						// Skip files that are currently locked or open in another program
+					}
+					catch (UnauthorizedAccessException)
+					{
+						// Skip files we don't have permission to read
+					}
+				});
 
-                    var paths = kvp.Value.ToList();
-                    long sizeBytes = new FileInfo(paths.First()).Length;
+				// 3. Final Cleanup: Convert back to standard collections and filter out unique files
+				return hashedFiles
+					.Where(kvp => kvp.Value.Count > 1)
+					.Select(kvp =>
+					{
 
-                    return new DuplicateGroup
-                    {
-                        FileSizeBytes = sizeBytes,
-                        FileHash = kvp.Key,
-                        FilePaths = paths
-                    };
-                })
-                .OrderByDescending(d => d.WastedBytes)
-                .ToList();
-            }
-            finally
-            {
-                _scanner.EndScanSession(scanId);
-            }
-        }
+						var paths = kvp.Value.ToList();
+						long sizeBytes = new FileInfo(paths.First()).Length;
 
-        /// Helper method to traverse directories without crashing on UnauthorizedAccessException.
-        private IEnumerable<FileInfo> SafeEnumerateFiles(string rootPath, CancellationToken token)
-        {
-            var config = _settings.Current.Scan;
+						return new DuplicateGroup
+						{
+							FileSizeBytes = sizeBytes,
+							FileHash = kvp.Key,
+							FilePaths = paths
+						};
+					})
+					.OrderByDescending(d => d.WastedBytes)
+					.ToList();
+			}
+			finally
+			{
+				_scanner.EndScanSession(scanId);
+			}
+		}
 
-            var rootDir = new DirectoryInfo(rootPath);
+		/// Helper method to traverse directories without crashing on UnauthorizedAccessException.
+		private IEnumerable<FileInfo> SafeEnumerateFiles(string rootPath, CancellationToken token)
+		{
+			var config = _settings.Current.Scan;
 
-            var options = new EnumerationOptions
-            {
-                IgnoreInaccessible = true,
-                RecurseSubdirectories = true,
-                ReturnSpecialDirectories = false,
-                AttributesToSkip = 0
-            };
+			var rootDir = new DirectoryInfo(rootPath);
 
-            if (config.SkipHiddenFiles) options.AttributesToSkip |= FileAttributes.Hidden;
-            if (config.SkipSystemFiles) options.AttributesToSkip |= FileAttributes.System;
+			var options = new EnumerationOptions
+			{
+				IgnoreInaccessible = true,
+				RecurseSubdirectories = true,
+				ReturnSpecialDirectories = false,
+				AttributesToSkip = 0
+			};
 
-            var files = Enumerable.Empty<FileInfo>();
+			if (config.SkipHiddenFiles) options.AttributesToSkip |= FileAttributes.Hidden;
+			if (config.SkipSystemFiles) options.AttributesToSkip |= FileAttributes.System;
 
-            try
-            {
-                files = rootDir.EnumerateFiles("*.*", options);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                /* Ignore protected folders */
-            }
-            catch (DirectoryNotFoundException)
-            {
-                /* Ignore deleted folders */
-            }
-            catch (Exception)
-            {
+			var files = Enumerable.Empty<FileInfo>();
 
-            }
+			try
+			{
+				files = rootDir.EnumerateFiles("*.*", options);
+			}
+			catch (UnauthorizedAccessException)
+			{
+				/* Ignore protected folders */
+			}
+			catch (DirectoryNotFoundException)
+			{
+				/* Ignore deleted folders */
+			}
+			catch (Exception)
+			{
 
-            foreach (var file in files)
-            {
-                token.ThrowIfCancellationRequested();
+			}
 
-                string appDataSegment = $"{Path.DirectorySeparatorChar}AppData{Path.DirectorySeparatorChar}";
-                if (!rootPath.Contains(appDataSegment, StringComparison.OrdinalIgnoreCase)
-                    && file.FullName.Contains(appDataSegment, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
+			foreach (var file in files)
+			{
+				token.ThrowIfCancellationRequested();
 
-                yield return file; 
-            }
+				string appDataSegment = $"{Path.DirectorySeparatorChar}AppData{Path.DirectorySeparatorChar}";
+				if (!rootPath.Contains(appDataSegment, StringComparison.OrdinalIgnoreCase)
+					&& file.FullName.Contains(appDataSegment, StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
 
-        }
-    }
+				yield return file;
+			}
+
+		}
+	}
 }

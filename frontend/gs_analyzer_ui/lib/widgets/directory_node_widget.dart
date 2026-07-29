@@ -38,7 +38,8 @@ class DirectoryNodeWidget extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<DirectoryNodeWidget> createState() => _DirectoryNodeWidgetState();
+  ConsumerState<DirectoryNodeWidget> createState() =>
+      _DirectoryNodeWidgetState();
 }
 
 class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
@@ -47,7 +48,7 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
   List<StorageNode>? _children;
 
   Future<void> _toggleExpand() async {
-    if(!widget.node.isDirectory) return;
+    if (!widget.node.isDirectory) return;
 
     setState(() {
       _isExpanded = !_isExpanded;
@@ -60,14 +61,24 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
 
       try {
         final dirNotifier = ref.read(directoryProvider.notifier);
-        final children = await dirNotifier.fetchChildrenForTree(widget.node.path);
+        final children = await dirNotifier.fetchChildrenForTree(
+          widget.node.path,
+        );
 
-        final excluded = ref.read(settingsProvider).currentSettings?.scan.excludedPaths ?? [];
+        final excluded =
+            ref.read(settingsProvider).currentSettings?.scan.excludedPaths ??
+            [];
 
         final filtered = children.where((n) {
           if (!n.isDirectory) return true;
-          return !excluded.any((ex) =>
-          n.path.toLowerCase() == ex.toLowerCase() || n.path.toLowerCase().startsWith(ex.toLowerCase().endsWith('\\') ? ex.toLowerCase() : '${ex.toLowerCase()}\\',)
+          return !excluded.any(
+            (ex) =>
+                n.path.toLowerCase() == ex.toLowerCase() ||
+                n.path.toLowerCase().startsWith(
+                  ex.toLowerCase().endsWith('\\')
+                      ? ex.toLowerCase()
+                      : '${ex.toLowerCase()}\\',
+                ),
           );
         }).toList();
         if (mounted) {
@@ -110,7 +121,9 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
         children: [
           InkWell(
             onTap: isDir ? _toggleExpand : null,
-            onDoubleTap: isDir ? () => widget.onNavigate(widget.node.path) : null,
+            onDoubleTap: isDir
+                ? () => widget.onNavigate(widget.node.path)
+                : null,
             hoverColor: HudTheme.accentCyan.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -123,12 +136,21 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
                         ? AnimatedRotation(
                             turns: _isExpanded ? 0.25 : 0.0,
                             duration: const Duration(milliseconds: 200),
-                            child: const Icon(Icons.keyboard_arrow_right_outlined, color: HudTheme.accentCyan, size: 16),
+                            child: const Icon(
+                              Icons.keyboard_arrow_right_outlined,
+                              color: HudTheme.accentCyan,
+                              size: 16,
+                            ),
                           )
                         : const SizedBox(),
                   ),
-                  Icon(isDir ? Icons.folder_outlined : Icons.insert_drive_file_outlined,
-                      color: isDir ? HudTheme.accentAmber : HudTheme.accentGreen, size: 16),
+                  Icon(
+                    isDir
+                        ? Icons.folder_outlined
+                        : Icons.insert_drive_file_outlined,
+                    color: isDir ? HudTheme.accentAmber : HudTheme.accentGreen,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -144,23 +166,38 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
           if (_isExpanded) ...[
             if (_isLoading)
               Padding(
-                padding: EdgeInsets.only(left: leftPadding + 32, top: 4, bottom: 4),
-                child: const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1, color: HudTheme.primaryBorder)),
+                padding: EdgeInsets.only(
+                  left: leftPadding + 32,
+                  top: 4,
+                  bottom: 4,
+                ),
+                child: const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1,
+                    color: HudTheme.primaryBorder,
+                  ),
+                ),
               )
             else if (_children != null)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: _children!.where((n) => n.isDirectory).map((child) => DirectoryNodeWidget(
-                  node: child,
-                  apiService: widget.apiService,
-                  onNuke: widget.onNuke,
-                  onNavigate: widget.onNavigate,
-                  depth: widget.depth + 1,
-                  isTreeView: true,
-                  )).toList(),
+                children: _children!
+                    .where((n) => n.isDirectory)
+                    .map(
+                      (child) => DirectoryNodeWidget(
+                        node: child,
+                        apiService: widget.apiService,
+                        onNuke: widget.onNuke,
+                        onNavigate: widget.onNavigate,
+                        depth: widget.depth + 1,
+                        isTreeView: true,
+                      ),
+                    )
+                    .toList(),
               ),
-
-          ]
+          ],
         ],
       );
     }
@@ -171,14 +208,19 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
     if (heatmapEnabled) {
       final currentPath = ref.watch(directoryProvider).currentPath;
       final heatmapAsync = ref.watch(ageHeatmapProvider(currentPath));
-      final normalizedNodePath = widget.node.path.replaceAll('\\', '/').toLowerCase();
+      final normalizedNodePath = widget.node.path
+          .replaceAll('\\', '/')
+          .toLowerCase();
       heatmapAsync.whenData((result) {
         final match = result.lookupByPath[normalizedNodePath];
         if (match != null) nodeBucket = match.ageBucket;
       });
     }
-    final Color? heatmapColor = nodeBucket != null ? bucketColor(nodeBucket!) : null;
-    final bool showReviewBadge = nodeBucket == 'stale' && isDir && widget.node.sizeBytes > 1073741824;
+    final Color? heatmapColor = nodeBucket != null
+        ? bucketColor(nodeBucket!)
+        : null;
+    final bool showReviewBadge =
+        nodeBucket == 'stale' && isDir && widget.node.sizeBytes > 1073741824;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,11 +251,16 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
                     ),
                   ),
                 // Checkbox for select
-                if(ref.watch(directoryProvider).isSelectionMode)
+                if (ref.watch(directoryProvider).isSelectionMode)
                   Checkbox(
-                    value: ref.watch(directoryProvider).selectedPath.contains(widget.node.path),
+                    value: ref
+                        .watch(directoryProvider)
+                        .selectedPath
+                        .contains(widget.node.path),
                     onChanged: (bool? value) {
-                      ref.read(directoryProvider.notifier).toggleSelection(widget.node.path);
+                      ref
+                          .read(directoryProvider.notifier)
+                          .toggleSelection(widget.node.path);
                     },
                     activeColor: HudTheme.accentCyan,
                     side: BorderSide(color: HudTheme.textDim),
@@ -226,14 +273,19 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
                       if (heatmapColor == null) const SizedBox(width: 32),
                       Icon(
                         isDir ? Icons.folder : Icons.insert_drive_file_outlined,
-                        color: isDir ? HudTheme.accentAmber : HudTheme.accentGreen,
+                        color: isDir
+                            ? HudTheme.accentAmber
+                            : HudTheme.accentGreen,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           widget.node.name,
-                          style: HudTheme.bodyText.copyWith(color: HudTheme.textMain, fontWeight: FontWeight.w500),
+                          style: HudTheme.bodyText.copyWith(
+                            color: HudTheme.textMain,
+                            fontWeight: FontWeight.w500,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -241,11 +293,18 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
                       if (showReviewBadge)
                         Container(
                           margin: const EdgeInsets.only(left: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: HudTheme.accentAmber.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: HudTheme.accentAmber.withValues(alpha: 0.4)),
+                            border: Border.all(
+                              color: HudTheme.accentAmber.withValues(
+                                alpha: 0.4,
+                              ),
+                            ),
                           ),
                           child: const Text(
                             '⚠ REVIEW',
@@ -273,7 +332,7 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
                 // TYPE Column
                 Expanded(
                   flex: 2,
-                  child: Center(child: HudLabel(widget.node.type))
+                  child: Center(child: HudLabel(widget.node.type)),
                 ),
                 // SIZE Column — colored by bucket when heatmap is active
                 Expanded(
@@ -292,11 +351,14 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
                   child: Center(
                     child: IconButton(
                       icon: Icon(
-                        isDir ? Icons.folder_delete_outlined : Icons.delete_forever_outlined,
+                        isDir
+                            ? Icons.folder_delete_outlined
+                            : Icons.delete_forever_outlined,
                         color: HudTheme.accentRed,
                         size: 20,
                       ),
-                      onPressed: () => widget.onNuke(widget.node.name, widget.node.path),
+                      onPressed: () =>
+                          widget.onNuke(widget.node.name, widget.node.path),
                     ),
                   ),
                 ),
@@ -307,22 +369,31 @@ class _DirectoryNodeWidgetState extends ConsumerState<DirectoryNodeWidget> {
         if (_isExpanded) ...[
           if (_isLoading)
             Padding(
-              padding: EdgeInsets.only(left: leftPadding + 64, top: 8, bottom: 8),
+              padding: EdgeInsets.only(
+                left: leftPadding + 64,
+                top: 8,
+                bottom: 8,
+              ),
               child: const SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: HudTheme.primaryBorder),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: HudTheme.primaryBorder,
+                ),
               ),
             )
           else if (_children != null)
-            ..._children!.map((childNode) => DirectoryNodeWidget(
-                  node: childNode,
-                  apiService: widget.apiService,
-                  onNuke: widget.onNuke,
-                  onNavigate: widget.onNavigate,
-                  depth: widget.depth + 1,
-                )),
-        ]
+            ..._children!.map(
+              (childNode) => DirectoryNodeWidget(
+                node: childNode,
+                apiService: widget.apiService,
+                onNuke: widget.onNuke,
+                onNavigate: widget.onNavigate,
+                depth: widget.depth + 1,
+              ),
+            ),
+        ],
       ],
     );
   }

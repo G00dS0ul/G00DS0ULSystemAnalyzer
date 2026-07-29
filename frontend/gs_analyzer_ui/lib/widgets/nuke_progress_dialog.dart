@@ -19,16 +19,25 @@ class NukeProgressDialog extends ConsumerWidget {
         backgroundColor: HudTheme.bgPanel,
         shape: RoundedRectangleBorder(
           side: const BorderSide(color: HudTheme.accentRed, width: 2),
-          borderRadius: BorderRadius.circular(8),),
+          borderRadius: BorderRadius.circular(8),
+        ),
         title: const Text('NUKE IN PROGRESS...', style: HudTheme.actionRed),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Target: $target', style: HudTheme.bodyText,maxLines: 1, overflow: TextOverflow.ellipsis,
+            Text(
+              'Target: $target',
+              style: HudTheme.bodyText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
-            Text('Completed: $completed', style: HudTheme.bodyText, maxLines: 1, overflow: TextOverflow.ellipsis,
+            Text(
+              'Completed: $completed',
+              style: HudTheme.bodyText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 16),
             LinearProgressIndicator(
@@ -55,14 +64,19 @@ class NukeProgressDialog extends ConsumerWidget {
               side: const BorderSide(color: HudTheme.accentRed),
             ),
             icon: const Icon(Icons.cancel_outlined, color: HudTheme.accentRed),
-            label: const Text('ABORT', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: HudTheme.fontCore)),
+            label: const Text(
+              'ABORT',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontFamily: HudTheme.fontCore,
+              ),
+            ),
             onPressed: () async {
               await ApiService().abortNuke();
-            }
+            },
           ),
         ],
       ),
     );
-
   }
 }

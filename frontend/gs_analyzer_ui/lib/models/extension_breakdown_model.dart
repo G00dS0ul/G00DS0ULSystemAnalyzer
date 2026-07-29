@@ -2,15 +2,13 @@ class ExtensionBreakdownResult {
   final String root;
   final List<ExtensionBreakdownItem> extensions;
 
-  ExtensionBreakdownResult({
-    required this.root,
-    required this.extensions,
-  });
+  ExtensionBreakdownResult({required this.root, required this.extensions});
 
   factory ExtensionBreakdownResult.fromJson(Map<String, dynamic> json) {
     return ExtensionBreakdownResult(
       root: json['root'] ?? '',
-      extensions: (json['extensions'] as List<dynamic>?)
+      extensions:
+          (json['extensions'] as List<dynamic>?)
               ?.map((e) => ExtensionBreakdownItem.fromJson(e))
               .toList() ??
           [],

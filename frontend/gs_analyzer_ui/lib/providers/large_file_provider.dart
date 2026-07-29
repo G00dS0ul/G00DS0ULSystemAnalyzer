@@ -18,7 +18,7 @@ class LargeFileState {
     this.errorMessage,
     this.skipHiddenFiles = true,
     this.skipSystemFiles = true,
-});
+  });
 
   LargeFileState copyWith({
     bool? isLoading,
@@ -63,12 +63,18 @@ class LargeFileNotifier extends StateNotifier<LargeFileState> {
       final apiService = ApiService();
       final rawData = await apiService.scanForLargeFiles(rootPath, topN);
 
-      final parsedFiles = rawData.map((json) => LargeFileModel.fromJson(json)).toList();
+      final parsedFiles = rawData
+          .map((json) => LargeFileModel.fromJson(json))
+          .toList();
 
       state = state.copyWith(isLoading: false, largeFiles: parsedFiles);
     } catch (e) {
       appLogger.i('LARGE FILE SCAN CRACHED: $e');
-      state = state.copyWith(isLoading: false, largeFiles: [], errorMessage: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        largeFiles: [],
+        errorMessage: e.toString(),
+      );
     }
   }
 
@@ -83,11 +89,14 @@ class LargeFileNotifier extends StateNotifier<LargeFileState> {
     state = state.copyWith(
       isLoading: false,
       largeFiles: [],
-      errorMessage: 'SCAN ABORTED BY USER'
+      errorMessage: 'SCAN ABORTED BY USER',
     );
 
     ApiService().abortScan();
   }
 }
 
-final largeFileProvider = StateNotifierProvider<LargeFileNotifier, LargeFileState>((ref) => LargeFileNotifier(ref));
+final largeFileProvider =
+    StateNotifierProvider<LargeFileNotifier, LargeFileState>(
+      (ref) => LargeFileNotifier(ref),
+    );

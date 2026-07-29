@@ -13,6 +13,7 @@ class DrivesNotifier extends Notifier<List<DriveInfo>> {
     Future.microtask(() => refresh());
     return [];
   }
+
   Future<void> refresh() async {
     final api = ApiService();
     final initialData = await api.getDrives();
@@ -20,17 +21,15 @@ class DrivesNotifier extends Notifier<List<DriveInfo>> {
       state = initialData.map((item) {
         return DriveInfo.fromJson(Map<String, dynamic>.from(item as Map));
       }).toList();
-      }
     }
+  }
 
-    void updateFromTelemetry(List<dynamic> data) {
+  void updateFromTelemetry(List<dynamic> data) {
     state = data.map((item) {
       return DriveInfo.fromJson(Map<String, dynamic>.from(item as Map));
     }).toList();
   }
 }
-
-
 
 final selectedDriveNameProvider = StateProvider<String?>((ref) => null);
 
@@ -41,8 +40,14 @@ final currentDriveProvider = Provider<DriveInfo?>((ref) {
   final selectedName = ref.watch(selectedDriveNameProvider);
 
   if (selectedName == null) {
-    return drives.firstWhere((d) => d.type == 'fixed', orElse: () => drives.first);
+    return drives.firstWhere(
+      (d) => d.type == 'fixed',
+      orElse: () => drives.first,
+    );
   }
 
-  return drives.firstWhere((d) => d.name == selectedName, orElse: () => drives.first);
+  return drives.firstWhere(
+    (d) => d.name == selectedName,
+    orElse: () => drives.first,
+  );
 });

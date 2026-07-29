@@ -6,16 +6,15 @@ class StorageNode {
   final DateTime lastModified;
   bool get isDirectory => type.toLowerCase() == 'directory';
 
-
   StorageNode({
     required this.name,
     required this.path,
     required this.type,
     required this.sizeBytes,
     required this.lastModified,
-});
+  });
 
-  factory StorageNode.fromJson(Map<String, dynamic> json){
+  factory StorageNode.fromJson(Map<String, dynamic> json) {
     return StorageNode(
       name: json['name'] ?? '',
       path: json['path'] ?? '',
@@ -24,5 +23,4 @@ class StorageNode {
       lastModified: DateTime.parse(json['lastModified']),
     );
   }
-
 }

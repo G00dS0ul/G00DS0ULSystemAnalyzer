@@ -24,9 +24,9 @@ final hudDensityProvider = Provider<HudDensity>((ref) {
   final settings = ref.watch(settingsProvider);
   final isMax = ref.watch(windowMaximizedProvider);
   final savedCompact = settings.currentSettings?.appearance.compactMode ?? true;
-  
+
   final isCompact = isMax ? false : savedCompact;
-  
+
   if (isCompact) {
     return HudDensity(
       gap: 8.0,

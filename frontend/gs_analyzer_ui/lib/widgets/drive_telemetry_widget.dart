@@ -7,7 +7,6 @@ import 'dart:math';
 
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 
-
 String formatBytes(int bytes) {
   if (bytes < 0) return "--";
   if (bytes == 0) return "0 B";
@@ -30,7 +29,9 @@ class DriveTelemetryWidget extends ConsumerWidget {
     if (stats == null) {
       return const SizedBox(
         height: 60,
-        child: Center(child: LinearProgressIndicator(color: HudTheme.accentCyan)),
+        child: Center(
+          child: LinearProgressIndicator(color: HudTheme.accentCyan),
+        ),
       );
     }
 
@@ -41,7 +42,12 @@ class DriveTelemetryWidget extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: HudTheme.bgBase,
-        border: Border(top: BorderSide(color: isCritical ? HudTheme.accentRed : Colors.white10, width: 1)),
+        border: Border(
+          top: BorderSide(
+            color: isCritical ? HudTheme.accentRed : Colors.white10,
+            width: 1,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +58,9 @@ class DriveTelemetryWidget extends ConsumerWidget {
               HudLabel('CAPACITY (${stats.name})'),
               if (isCritical)
                 const Text('LOW SPACE ALERT', style: HudTheme.actionRed),
-              Text('${stats.percentageFree.toStringAsFixed(1)}% FREE', style: isCritical ? HudTheme.actionRed : HudTheme.statGreen,
+              Text(
+                '${stats.percentageFree.toStringAsFixed(1)}% FREE',
+                style: isCritical ? HudTheme.actionRed : HudTheme.statGreen,
               ),
             ],
           ),

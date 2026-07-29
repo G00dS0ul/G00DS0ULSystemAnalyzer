@@ -7,7 +7,7 @@ class ProcessTelemetry {
   final double cpuPercent;
   final String user;
 
-  ProcessTelemetry ({
+  ProcessTelemetry({
     required this.pid,
     required this.name,
     required this.ramMb,
@@ -15,9 +15,12 @@ class ProcessTelemetry {
     required this.status,
     required this.cpuPercent,
     required this.user,
-});
+  });
 
-  factory ProcessTelemetry.fromJson(Map<String, dynamic> json, double totalSystemRamMb) {
+  factory ProcessTelemetry.fromJson(
+    Map<String, dynamic> json,
+    double totalSystemRamMb,
+  ) {
     double mb = (json['ramMb'] ?? 0.0).toDouble();
     return ProcessTelemetry(
       pid: json['processId'] ?? 0,
@@ -35,20 +38,20 @@ class ProcessGroup {
   final String name;
   final List<ProcessTelemetry> processes;
 
-  ProcessGroup({
-    required this.name,
-    required this.processes,
-  });
+  ProcessGroup({required this.name, required this.processes});
 
   double get totalRamMb => processes.fold(0, (sum, p) => sum + p.ramMb);
-  double get totalPercentMem => processes.fold(0, (sum, p) => sum + p.percentMem);
-  double get totalCpuPercent => processes.fold(0, (sum, p) => sum + p.cpuPercent);
+  double get totalPercentMem =>
+      processes.fold(0, (sum, p) => sum + p.percentMem);
+  double get totalCpuPercent =>
+      processes.fold(0, (sum, p) => sum + p.cpuPercent);
   int get count => processes.length;
   int get primaryPid => processes.isNotEmpty ? processes.first.pid : 0;
-  String get primaryUser => processes.isNotEmpty ? processes.first.user : 'UNKNOWN';
+  String get primaryUser =>
+      processes.isNotEmpty ? processes.first.user : 'UNKNOWN';
 
   String get dominantStatus {
-    if (processes.any((p) => p.status == 'RUNNING'))  return 'RUNNING';
+    if (processes.any((p) => p.status == 'RUNNING')) return 'RUNNING';
     if (processes.any((p) => p.status == 'SLEEPING')) return 'SLEEPING';
     return 'STOPPED';
   }

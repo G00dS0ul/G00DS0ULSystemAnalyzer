@@ -9,77 +9,119 @@ void main() {
   SharedPreferences.setMockInitialValues({});
 
   group('Nuke Operation Safety Test', () {
-    test('Nuke Targeter should correctly identify all items for destruction', () {
-     final container = ProviderContainer();
-     final notifier = container.read(directoryProvider.notifier);
+    test(
+      'Nuke Targeter should correctly identify all items for destruction',
+      () {
+        final container = ProviderContainer();
+        final notifier = container.read(directoryProvider.notifier);
 
-     notifier.state = notifier.state.copyWith(currentPath: 'C:/Downloads');
+        notifier.state = notifier.state.copyWith(currentPath: 'C:/Downloads');
 
+        final nukeList = MockFactory.generateNukeTarget(10, 'C:/Downloads');
 
-     final nukeList = MockFactory.generateNukeTarget(10, 'C:/Downloads');
+        notifier.receiveStreamChunk(null, 'c:/Downloads', nukeList);
 
-     notifier.receiveStreamChunk(null, 'c:/Downloads', nukeList);
+        final targetCount = notifier.state.displayNodes
+            .where((node) => node.name.contains('target_item'))
+            .length;
 
-     final targetCount = notifier.state.displayNodes.where((node) => node.name.contains('target_item')).length;
-
-     expect(targetCount, 10, reason: 'The Nuke Targeter missed some files!');
-    });
+        expect(targetCount, 10, reason: 'The Nuke Targeter missed some files!');
+      },
+    );
   });
 
   group('Nuclear Clearance (Recursive Delete', () {
-    test('Nuke Targeter should identify a full directory for total removal', () {
-      final container = ProviderContainer();
-      final notifier = container.read(directoryProvider.notifier);
+    test(
+      'Nuke Targeter should identify a full directory for total removal',
+      () {
+        final container = ProviderContainer();
+        final notifier = container.read(directoryProvider.notifier);
 
-      notifier.state = notifier.state.copyWith(currentPath: 'C:/Downloads');
+        notifier.state = notifier.state.copyWith(currentPath: 'C:/Downloads');
 
-      final folderPath = 'C:/Downloads/OldProject';
-      final rootFolder = MockFactory.createFakeNodeMap(name: 'OldProject', path: folderPath, isDirectory: true);
+        final folderPath = 'C:/Downloads/OldProject';
+        final rootFolder = MockFactory.createFakeNodeMap(
+          name: 'OldProject',
+          path: folderPath,
+          isDirectory: true,
+        );
 
-      notifier.receiveStreamChunk(null, 'c:/Downloads', [rootFolder]);
+        notifier.receiveStreamChunk(null, 'c:/Downloads', [rootFolder]);
 
-      final target = notifier.state.displayNodes.firstWhere((node) => node.name == 'OldProject');
+        final target = notifier.state.displayNodes.firstWhere(
+          (node) => node.name == 'OldProject',
+        );
 
-      expect(target.type, 'Directory');
-      expect(target.path, folderPath);
-    });
+        expect(target.type, 'Directory');
+        expect(target.path, folderPath);
+      },
+    );
   });
 
   group('Multi-Select Nuke Protocol Tests', () {
-    test('Nuke Targeter isolates multiple selected items while keeping unselected items safe', () {
-      final container = ProviderContainer();
-      final notifier = container.read(directoryProvider.notifier);
-      notifier.state = notifier.state.copyWith(currentPath: 'C:/Downloads');
+    test(
+      'Nuke Targeter isolates multiple selected items while keeping unselected items safe',
+      () {
+        final container = ProviderContainer();
+        final notifier = container.read(directoryProvider.notifier);
+        notifier.state = notifier.state.copyWith(currentPath: 'C:/Downloads');
 
-      final mixedChunk = [
-      MockFactory.createFakeNodeMap(name: 'keep_me_safe.pdf', path: 'C:/Downloads/keep_me_safe.pdf', size: 5000),
-      MockFactory.createFakeNodeMap(name: 'do_not_delete.png', path: 'C:/Downloads/do_not_delete.png', size: 12000),
+        final mixedChunk = [
+          MockFactory.createFakeNodeMap(
+            name: 'keep_me_safe.pdf',
+            path: 'C:/Downloads/keep_me_safe.pdf',
+            size: 5000,
+          ),
+          MockFactory.createFakeNodeMap(
+            name: 'do_not_delete.png',
+            path: 'C:/Downloads/do_not_delete.png',
+            size: 12000,
+          ),
 
-      MockFactory.createFakeNodeMap(name: 'trash_1.tmp', path: 'C:/Downloads/trash_1.tmp', size: 1024),
-      MockFactory.createFakeNodeMap(name: 'trash_2.tmp', path: 'C:/Downloads/trash_2.tmp', size: 1024),
-      MockFactory.createFakeNodeMap(name: 'Old_Cache_Folder', path: 'C:/Downloads/Old_Cache_Folder', isDirectory: true)
-      ];
+          MockFactory.createFakeNodeMap(
+            name: 'trash_1.tmp',
+            path: 'C:/Downloads/trash_1.tmp',
+            size: 1024,
+          ),
+          MockFactory.createFakeNodeMap(
+            name: 'trash_2.tmp',
+            path: 'C:/Downloads/trash_2.tmp',
+            size: 1024,
+          ),
+          MockFactory.createFakeNodeMap(
+            name: 'Old_Cache_Folder',
+            path: 'C:/Downloads/Old_Cache_Folder',
+            isDirectory: true,
+          ),
+        ];
 
-      notifier.receiveStreamChunk(null, 'c:/downloads', mixedChunk);
+        notifier.receiveStreamChunk(null, 'c:/downloads', mixedChunk);
 
-      notifier.toggleSelectionMode();
+        notifier.toggleSelectionMode();
 
-      notifier.toggleSelection('C:/Downloads/trash_1.tmp');
-      notifier.toggleSelection('C:/Downloads/trash_2.tmp');
-      notifier.toggleSelection('C:/Downloads/Old_Cache_Folder');
+        notifier.toggleSelection('C:/Downloads/trash_1.tmp');
+        notifier.toggleSelection('C:/Downloads/trash_2.tmp');
+        notifier.toggleSelection('C:/Downloads/Old_Cache_Folder');
 
-      final armedBlastZone = notifier.state.selectedPath;
+        final armedBlastZone = notifier.state.selectedPath;
 
-      expect(
-        armedBlastZone.contains('C:/Downloads/keep_me_safe.pdf'), false, reason: 'CRITICAL: The Nuke list grabbed the wrong number of items!'
-      );
+        expect(
+          armedBlastZone.contains('C:/Downloads/keep_me_safe.pdf'),
+          false,
+          reason: 'CRITICAL: The Nuke list grabbed the wrong number of items!',
+        );
 
-      expect(armedBlastZone.contains('C:/Downloads/do_not_delete.png'), false, reason: 'CRITICAL FAILURE: do_not_delete.png was targeted for deletion!');
+        expect(
+          armedBlastZone.contains('C:/Downloads/do_not_delete.png'),
+          false,
+          reason:
+              'CRITICAL FAILURE: do_not_delete.png was targeted for deletion!',
+        );
 
-      expect(armedBlastZone.contains('C:/Downloads/trash_1.tmp'), true);
-      expect(armedBlastZone.contains('C:/Downloads/trash_2.tmp'), true);
-      expect(armedBlastZone.contains('C:/Downloads/Old_Cache_Folder'), true);
-
-    });
+        expect(armedBlastZone.contains('C:/Downloads/trash_1.tmp'), true);
+        expect(armedBlastZone.contains('C:/Downloads/trash_2.tmp'), true);
+        expect(armedBlastZone.contains('C:/Downloads/Old_Cache_Folder'), true);
+      },
+    );
   });
 }

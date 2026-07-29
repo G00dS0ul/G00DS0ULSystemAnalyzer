@@ -1,8 +1,8 @@
 namespace GSSystemAnalyzer
 {
-    public static class InteractiveAnalyzer
-    {
-        /*
+	public static class InteractiveAnalyzer
+	{
+		/*
         public static async Task Main()
         {
             var scanner = new DiskScannerEngine();
@@ -155,6 +155,6 @@ namespace GSSystemAnalyzer
             }
         }
         */
-    }
-        
+	}
+
 }

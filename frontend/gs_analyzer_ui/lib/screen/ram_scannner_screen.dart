@@ -23,7 +23,7 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      children: [
         // Critical banner
         if (ramState.isCritical && !_showHistory)
           Container(
@@ -37,7 +37,7 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
               ),
             ),
           ),
-          
+
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           child: Row(
@@ -80,7 +80,9 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
                         'ACTIVE MEMORY',
                         '${ramState.activeGb.toStringAsFixed(1)} / ${ramState.totalGb.toStringAsFixed(1)} GB',
                         HudTheme.accentCyan,
-                        ramState.totalGb > 0 ? ramState.activeGb / ramState.totalGb : 0.0,
+                        ramState.totalGb > 0
+                            ? ramState.activeGb / ramState.totalGb
+                            : 0.0,
                         d,
                       ),
                     ),
@@ -91,7 +93,9 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
                         'CACHE (STANDBY)',
                         '${ramState.cacheGb.toStringAsFixed(1)} / ${ramState.totalGb.toStringAsFixed(1)} GB',
                         HudTheme.accentGreen,
-                        ramState.totalGb > 0 ? ramState.cacheGb / ramState.totalGb : 0.0,
+                        ramState.totalGb > 0
+                            ? ramState.cacheGb / ramState.totalGb
+                            : 0.0,
                         d,
                       ),
                     ),
@@ -102,7 +106,9 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
                         'SWAP / PAGEFILE',
                         '${ramState.swapGb.toStringAsFixed(1)} / ${ramState.totalSwapGb.toStringAsFixed(1)} GB',
                         HudTheme.accentAmber,
-                        ramState.totalSwapGb > 0 ? ramState.swapGb / ramState.totalSwapGb : 0.0,
+                        ramState.totalSwapGb > 0
+                            ? ramState.swapGb / ramState.totalSwapGb
+                            : 0.0,
                         d,
                       ),
                     ),
@@ -117,97 +123,122 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
               ? const Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(color: HudTheme.primaryBorder),
+                    child: CircularProgressIndicator(
+                      color: HudTheme.primaryBorder,
+                    ),
                   ),
                 )
               : Expanded(
                   child: ListView.builder(
                     itemCount: ramState.groupedProcesses.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) return _buildTableHeader(d);
+                    itemBuilder: (context, index) {
+                      if (index == 0) return _buildTableHeader(d);
 
-                    final group = ramState.groupedProcesses[index - 1];
-                    final isMemHot = group.totalPercentMem > 10.0;
-                    final isHot    = isMemHot;
-                    final textColor = isHot ? HudTheme.accentAmber : HudTheme.textMain;
-                    final displayName = group.count > 1
-                        ? '${group.name} (x${group.count})'
-                        : group.name;
+                      final group = ramState.groupedProcesses[index - 1];
+                      final isMemHot = group.totalPercentMem > 10.0;
+                      final isHot = isMemHot;
+                      final textColor = isHot
+                          ? HudTheme.accentAmber
+                          : HudTheme.textMain;
+                      final displayName = group.count > 1
+                          ? '${group.name} (x${group.count})'
+                          : group.name;
 
-                    return Container(
-                      height: d.rowHeight + 16,
-                      padding: EdgeInsets.symmetric(horizontal: d.panelPad, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isHot
-                            ? HudTheme.accentAmber.withValues(alpha: 0.05)
-                            : Colors.transparent,
-                        border: const Border(
-                          bottom: BorderSide(color: Colors.white10),
+                      return Container(
+                        height: d.rowHeight + 16,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: d.panelPad,
+                          vertical: 8,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              group.count > 1 ? 'GRP' : group.primaryPid.toString(),
-                              style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
-                              textAlign: TextAlign.center,
-                            ),
+                        decoration: BoxDecoration(
+                          color: isHot
+                              ? HudTheme.accentAmber.withValues(alpha: 0.05)
+                              : Colors.transparent,
+                          border: const Border(
+                            bottom: BorderSide(color: Colors.white10),
                           ),
-                          Expanded(
-                            flex: 4,
-                            child: Text(
-                              displayName,
-                              style: HudTheme.bodyText.copyWith(
-                                color: textColor,
-                                fontWeight: FontWeight.bold,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                group.count > 1
+                                    ? 'GRP'
+                                    : group.primaryPid.toString(),
+                                style: HudTheme.bodyText.copyWith(
+                                  color: HudTheme.textDim,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              group.primaryUser,
-                              style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
+                            Expanded(
+                              flex: 4,
+                              child: Text(
+                                displayName,
+                                style: HudTheme.bodyText.copyWith(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '${group.totalRamMb.toStringAsFixed(1)} MB',
-                              style: HudTheme.statGreen.copyWith(color: textColor),
-                              textAlign: TextAlign.center,
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                group.primaryUser,
+                                style: HudTheme.bodyText.copyWith(
+                                  color: HudTheme.textDim,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: Center(child: _StatusBadge(group.dominantStatus)),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: IconButton(
-                              icon: const Icon(Icons.cancel_outlined, color: HudTheme.accentRed, size: 20),
-                              tooltip: 'Kill Process',
-                              onPressed: () {
-                                if (group.count > 1) {
-                                  ref.read(ramProvider.notifier).killProcessGroup(group.name);
-                                } else {
-                                  ref.read(ramProvider.notifier).killProcess(group.primaryPid);
-                                }
-                              },
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${group.totalRamMb.toStringAsFixed(1)} MB',
+                                style: HudTheme.statGreen.copyWith(
+                                  color: textColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            Expanded(
+                              flex: 3,
+                              child: Center(
+                                child: _StatusBadge(group.dominantStatus),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.cancel_outlined,
+                                  color: HudTheme.accentRed,
+                                  size: 20,
+                                ),
+                                tooltip: 'Kill Process',
+                                onPressed: () {
+                                  if (group.count > 1) {
+                                    ref
+                                        .read(ramProvider.notifier)
+                                        .killProcessGroup(group.name);
+                                  } else {
+                                    ref
+                                        .read(ramProvider.notifier)
+                                        .killProcess(group.primaryPid);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
         ],
       ],
     );
@@ -223,8 +254,12 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? HudTheme.accentCyan.withValues(alpha: 0.1) : Colors.transparent,
-          border: Border.all(color: isSelected ? HudTheme.accentCyan : Colors.white10),
+          color: isSelected
+              ? HudTheme.accentCyan.withValues(alpha: 0.1)
+              : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? HudTheme.accentCyan : Colors.white10,
+          ),
         ),
         child: Text(
           label,
@@ -249,12 +284,27 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
       ),
       child: const Row(
         children: [
-          Expanded(flex: 2, child: HudLabel('PID', textAlign: TextAlign.center)),
-          Expanded(flex: 4, child: HudLabel('COMMAND', textAlign: TextAlign.center)),
-          Expanded(flex: 3, child: HudLabel('USER', textAlign: TextAlign.center)),
+          Expanded(
+            flex: 2,
+            child: HudLabel('PID', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 4,
+            child: HudLabel('COMMAND', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 3,
+            child: HudLabel('USER', textAlign: TextAlign.center),
+          ),
           Expanded(flex: 2, child: HudLabel('MB', textAlign: TextAlign.center)),
-          Expanded(flex: 3, child: HudLabel('STATUS', textAlign: TextAlign.center)),
-          Expanded(flex: 1, child: HudLabel('ACTION', textAlign: TextAlign.center)),
+          Expanded(
+            flex: 3,
+            child: HudLabel('STATUS', textAlign: TextAlign.center),
+          ),
+          Expanded(
+            flex: 1,
+            child: HudLabel('ACTION', textAlign: TextAlign.center),
+          ),
         ],
       ),
     );
@@ -308,10 +358,16 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (Color bg, Color fg) = switch (status) {
-      'RUNNING'  => (HudTheme.accentGreen.withValues(alpha: 0.15), HudTheme.accentGreen),
-      'SLEEPING' => (Colors.white.withValues(alpha: 0.06),          HudTheme.textDim),
-      'ZOMBIE'   => (HudTheme.accentRed.withValues(alpha: 0.15),    HudTheme.accentRed),
-      _          => (HudTheme.accentRed.withValues(alpha: 0.15),    HudTheme.accentRed),
+      'RUNNING' => (
+        HudTheme.accentGreen.withValues(alpha: 0.15),
+        HudTheme.accentGreen,
+      ),
+      'SLEEPING' => (Colors.white.withValues(alpha: 0.06), HudTheme.textDim),
+      'ZOMBIE' => (
+        HudTheme.accentRed.withValues(alpha: 0.15),
+        HudTheme.accentRed,
+      ),
+      _ => (HudTheme.accentRed.withValues(alpha: 0.15), HudTheme.accentRed),
     };
 
     return Container(

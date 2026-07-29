@@ -12,7 +12,9 @@ class TelemetryHudWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final telemetry = ref.watch(telemetryProvider);
-    final double calculateProgress = telemetry.total > 0 ? telemetry.completed / telemetry.total : 0.0;
+    final double calculateProgress = telemetry.total > 0
+        ? telemetry.completed / telemetry.total
+        : 0.0;
     final double displayPercentage = calculateProgress * 100;
 
     return Center(
@@ -29,7 +31,10 @@ class TelemetryHudWidget extends ConsumerWidget {
                 const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyan),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.cyan,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -65,10 +70,7 @@ class TelemetryHudWidget extends ConsumerWidget {
                 ],
               ),
             ] else ...[
-              const Text(
-                'CALCULATING SECTORS...',
-                style: HudTheme.statGreen,
-              ),
+              const Text('CALCULATING SECTORS...', style: HudTheme.statGreen),
             ],
             const SizedBox(height: 16),
             Text(
@@ -85,16 +87,19 @@ class TelemetryHudWidget extends ConsumerWidget {
                   await ApiService().abortScan();
                   ref.read(directoryProvider.notifier).purgeStaleCache();
                   snackbarKey.currentState?.showSnackBar(
-                      const SnackBar(
-                        content: Text('Scan Aborted', style: TextStyle(fontFamily: HudTheme.fontCore, fontWeight: FontWeight.bold)),
-                        backgroundColor: HudTheme.accentAmber,
-                      )
+                    const SnackBar(
+                      content: Text(
+                        'Scan Aborted',
+                        style: TextStyle(
+                          fontFamily: HudTheme.fontCore,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      backgroundColor: HudTheme.accentAmber,
+                    ),
                   );
                 },
-                child: const Text(
-                  'ABORT SCAN',
-                  style: HudTheme.actionRed,
-                ),
+                child: const Text('ABORT SCAN', style: HudTheme.actionRed),
               ),
             ),
           ],

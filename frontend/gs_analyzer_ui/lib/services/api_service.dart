@@ -1,4 +1,5 @@
 import 'package:gs_analyzer_ui/utils/logger.dart';
+import 'package:gs_analyzer_ui/models/temp_cleaner_model.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:gs_analyzer_ui/models/age_heatmap_model.dart';
@@ -13,26 +14,34 @@ import 'package:gs_analyzer_ui/providers/age_heatmap_provider.dart';
 import 'package:gs_analyzer_ui/providers/file_type_provider.dart';
 import 'package:gs_analyzer_ui/models/permission_audit_models.dart';
 import 'package:gs_analyzer_ui/models/telemetry_history_model.dart';
+import 'package:gs_analyzer_ui/models/startup_program.dart';
+import 'package:gs_analyzer_ui/models/scheduled_scan_model.dart';
 
 class ApiService {
   final http.Client _client;
   ApiService([http.Client? client]) : _client = client ?? http.Client();
 
-  static  const String storageUrl = 'http://localhost:5200/api/storage';
+  static const String storageUrl = 'http://localhost:5200/api/storage';
   static const String telemetryUrl = 'http://localhost:5200/api/Telemetry';
   static const String nukeUrl = 'http://localhost:5200/api/nuke';
   static const String thermalUrl = 'http://localhost:5200/api/thermal';
   static const String settingsUrl = 'http://localhost:5200/api/settings';
   static const String driveUrl = 'http://localhost:5200/api/drives';
   static const String auditUrl = 'http://localhost:5200/api/audit';
-  static const String telemetryHistoryUrl = 'http://localhost:5200/api/telemetry/history';
+  static const String telemetryHistoryUrl =
+      'http://localhost:5200/api/telemetry/history';
+  static const String tempFilesUrl = 'http://localhost:5200/api/tempfiles';
+  static const String startupUrl = 'http://localhost:5200/api/startup';
+  static const String schedulesUrl = 'http://localhost:5200/api/schedules';
 
-  Future<TelemetryHistoryResponse?> fetchTelemetryHistory(String metric, int minutes) async {
-    final uri = Uri.parse(telemetryHistoryUrl).replace(queryParameters: {
-      'metric': metric,
-      'minutes': minutes.toString(),
-    });
-    
+  Future<TelemetryHistoryResponse?> fetchTelemetryHistory(
+    String metric,
+    int minutes,
+  ) async {
+    final uri = Uri.parse(telemetryHistoryUrl).replace(
+      queryParameters: {'metric': metric, 'minutes': minutes.toString()},
+    );
+
     // appLogger.i('MATRIX BRIDGE FIRING TO: \$uri');
     final response = await _client.get(uri);
 
@@ -40,11 +49,12 @@ class ApiService {
       final jsonBody = jsonDecode(response.body);
       return TelemetryHistoryResponse.fromJson(jsonBody);
     } else {
-      appLogger.i('Failed to fetch telemetry history: \${response.statusCode} - \${response.body}');
+      appLogger.i(
+        'Failed to fetch telemetry history: \${response.statusCode} - \${response.body}',
+      );
       return null;
     }
   }
-
 
   Future<List<StorageNode>> scanDirectory(String path, String scanId) async {
     final uri = Uri.parse('$storageUrl/scan');
@@ -67,7 +77,9 @@ class ApiService {
         throw Exception(jsonBody['message']);
       }
     } else {
-      throw Exception('Bridge Failed with Status: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Bridge Failed with Status: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -91,7 +103,9 @@ class ApiService {
       } else if (response.statusCode == 499) {
         throw Exception('AUDIT CANCELLED BY USER');
       } else {
-        throw Exception('Audit Failed with Status: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'Audit Failed with Status: ${response.statusCode} - ${response.body}',
+        );
       }
     } finally {
       _auditClient?.close();
@@ -108,9 +122,11 @@ class ApiService {
   }
 
   Future<DriveStats> getDriveTelemetry(String driveLetter) async {
-    final response = await _client.get(Uri.parse('$storageUrl/drive-stats?driveLetter=$driveLetter'));
+    final response = await _client.get(
+      Uri.parse('$storageUrl/drive-stats?driveLetter=$driveLetter'),
+    );
 
-    if(response.statusCode == 200) {
+    if (response.statusCode == 200) {
       final jsonBody = json.decode(response.body);
 
       if (jsonBody['success'] == true) {
@@ -123,18 +139,26 @@ class ApiService {
     }
   }
 
-  Future<NukeResultDto> executeNuke(List<String> paths, String planToken, {bool useRecycleBin = false}) async {
+  Future<NukeResultDto> executeNuke(
+    List<String> paths,
+    String planToken, {
+    bool useRecycleBin = false,
+  }) async {
     final uri = Uri.parse('$nukeUrl/execute');
 
     appLogger.i("INITIATING NUKE PROTOCOL ON: $uri");
 
-    final response = await _client.delete(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode({
-      'paths': paths,
-      'planToken': planToken,
-      'useRecycleBin': useRecycleBin
-    }));
+    final response = await _client.delete(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'paths': paths,
+        'planToken': planToken,
+        'useRecycleBin': useRecycleBin,
+      }),
+    );
 
-    if(response.statusCode == 200) {
+    if (response.statusCode == 200) {
       final jsonBody = json.decode(response.body);
 
       if (jsonBody['success'] == true) {
@@ -148,7 +172,9 @@ class ApiService {
   }
 
   Future<NukeResultDto> undoNuke([String? operationId]) async {
-    final uriStr = operationId != null ? '$nukeUrl/undo/$operationId' : '$nukeUrl/undo';
+    final uriStr = operationId != null
+        ? '$nukeUrl/undo/$operationId'
+        : '$nukeUrl/undo';
     final uri = Uri.parse(uriStr);
     final response = await _client.post(uri);
 
@@ -177,7 +203,9 @@ class ApiService {
         throw Exception(jsonBody['message']);
       }
     } else {
-      throw Exception('Failed to load undo history: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Failed to load undo history: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -210,17 +238,25 @@ class ApiService {
       appLogger.i('Failed to send abort signal: $e');
     }
   }
-  
+
   Future<bool> killRamProcesses(List<int> pids) async {
     final uri = Uri.parse('$telemetryUrl/ram/kill');
-    appLogger.i('INITIATING ASSASSINATION PROTOCOL ON ${pids.length}: TARGETS AT:  $uri');
+    appLogger.i(
+      'INITIATING ASSASSINATION PROTOCOL ON ${pids.length}: TARGETS AT:  $uri',
+    );
 
-    final response = await _client.post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode(pids));
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(pids),
+    );
 
-    if(response.statusCode == 200) {
+    if (response.statusCode == 200) {
       return true;
     } else {
-      throw Exception('Failed to terminate PID Status: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Failed to terminate PID Status: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -231,7 +267,7 @@ class ApiService {
       if (response.statusCode == 200) {
         appLogger.i('FLUTTER COMMAND: RAM Radar Started Successfully!');
       }
-      } catch (e) {
+    } catch (e) {
       appLogger.i('FLUTTER ERROR: Failed to start RAM Radar - $e');
     }
   }
@@ -251,16 +287,17 @@ class ApiService {
   }
 
   Future<void> requestDirectoryStream(String path, String scanId) async {
-    final uri = Uri.parse('$storageUrl/stream-sector').replace(queryParameters: {
-      'path': path,
-      'scanId': scanId
-    });
+    final uri = Uri.parse(
+      '$storageUrl/stream-sector',
+    ).replace(queryParameters: {'path': path, 'scanId': scanId});
     await _client.post(uri);
   }
 
   Future<List<dynamic>> scanForDuplicates(String path, String scanId) async {
     final uri = Uri.parse('$storageUrl/duplicates');
-    appLogger.i('INITIATING DUPLICATE HUNTER ON: $uri (root: $path, scanId: $scanId)');
+    appLogger.i(
+      'INITIATING DUPLICATE HUNTER ON: $uri (root: $path, scanId: $scanId)',
+    );
 
     final response = await _client.post(
       uri,
@@ -280,15 +317,16 @@ class ApiService {
       // Backend signalled the duplicate scan was cancelled by the user — not an error.
       return <dynamic>[];
     } else {
-      throw Exception('Bridge Failed with Status: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Bridge Failed with Status: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
   Future<List<dynamic>> scanForLargeFiles(String rootPath, int topN) async {
-    final uri = Uri.parse('$storageUrl/scan-largefiles').replace(queryParameters: {
-      'root': rootPath,
-      'top': topN.toString(),
-    });
+    final uri = Uri.parse(
+      '$storageUrl/scan-largefiles',
+    ).replace(queryParameters: {'root': rootPath, 'top': topN.toString()});
 
     appLogger.i('INITIATING LARGE FILE HUNTER ON: $uri');
 
@@ -317,7 +355,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final jsonBody = jsonDecode(response.body);
 
-        if (jsonBody['success'] == true && jsonBody['data'] != null){
+        if (jsonBody['success'] == true && jsonBody['data'] != null) {
           return jsonBody['data'] as Map<String, dynamic>;
         } else {
           appLogger.i('THERMAL SNAPSHOT FAILED: ${jsonBody['message']}');
@@ -335,7 +373,9 @@ class ApiService {
 
   Future<NukePreviewResponse> previewNuke(List<String> paths) async {
     final uri = Uri.parse('$nukeUrl/preview');
-    appLogger.i('MATRIX BRIDGE: REQUESTING BLAST RADIUS FOR ${paths.length} TARGETTs');
+    appLogger.i(
+      'MATRIX BRIDGE: REQUESTING BLAST RADIUS FOR ${paths.length} TARGETTs',
+    );
 
     final response = await _client.post(
       uri,
@@ -352,7 +392,9 @@ class ApiService {
         throw Exception(jsonBody['message']);
       }
     } else {
-      throw Exception('Bridge Failed with Status: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Bridge Failed with Status: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -366,9 +408,15 @@ class ApiService {
     return null;
   }
 
-  Future<Map<String, dynamic>?> saveSettings(Map<String, dynamic> payload) async {
+  Future<Map<String, dynamic>?> saveSettings(
+    Map<String, dynamic> payload,
+  ) async {
     try {
-      final response = await _client.post(Uri.parse(settingsUrl), headers: {'Content-Type': 'application/json'}, body: jsonEncode(payload));
+      final response = await _client.post(
+        Uri.parse(settingsUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
       return jsonDecode(response.body);
     } catch (e) {
       return {'success': false, 'message': 'Network Error'};
@@ -402,29 +450,31 @@ class ApiService {
   }
 
   Future<FileTypeResult> getFileTypes(String root) async {
-  final uri = Uri.parse('$storageUrl/scan/filetypes')
-      .replace(queryParameters: {'root': root});
+    final uri = Uri.parse(
+      '$storageUrl/scan/filetypes',
+    ).replace(queryParameters: {'root': root});
 
-  final response = await _client.get(uri);
+    final response = await _client.get(uri);
 
-  if (response.statusCode == 409) {
-    throw FileTypeNoScanException();
-  }
+    if (response.statusCode == 409) {
+      throw FileTypeNoScanException();
+    }
 
-  if (response.statusCode != 200) {
-    throw Exception(
-      'FileTypes fetch failed [${response.statusCode}]: ${response.body}',
-    );
-  }
+    if (response.statusCode != 200) {
+      throw Exception(
+        'FileTypes fetch failed [${response.statusCode}]: ${response.body}',
+      );
+    }
 
-  return FileTypeResult.fromJson(
-    jsonDecode(response.body) as Map<String, dynamic>
+    return FileTypeResult.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
 
   Future<ExtensionBreakdownResult> getExtensionBreakdown(String root) async {
-    final uri = Uri.parse('$storageUrl/scan/extensions')
-        .replace(queryParameters: {'root': root});
+    final uri = Uri.parse(
+      '$storageUrl/scan/extensions',
+    ).replace(queryParameters: {'root': root});
 
     final response = await _client.get(uri);
 
@@ -442,23 +492,26 @@ class ApiService {
   }
 
   Future<bool> clearCache() async {
-  try {
-    final response = await _client.post(Uri.parse('$settingsUrl/cache/clear'));
-    if (response.statusCode == 200) {
-      appLogger.i('[API] Cache cleared successfully.');
-      return true;
-    }
-    appLogger.i('[API] Cache clear failed: ${response.statusCode}');
-    return false;
-  } catch (e) {
-    appLogger.i('[API] Cache clear error: $e');
-    return false;
+    try {
+      final response = await _client.post(
+        Uri.parse('$settingsUrl/cache/clear'),
+      );
+      if (response.statusCode == 200) {
+        appLogger.i('[API] Cache cleared successfully.');
+        return true;
+      }
+      appLogger.i('[API] Cache clear failed: ${response.statusCode}');
+      return false;
+    } catch (e) {
+      appLogger.i('[API] Cache clear error: $e');
+      return false;
     }
   }
 
   Future<AgeHeatmapResult> getAgeHeatmap(String root) async {
-    final uri = Uri.parse('$storageUrl/scan/ageheatmap')
-        .replace(queryParameters: {'root': root});
+    final uri = Uri.parse(
+      '$storageUrl/scan/ageheatmap',
+    ).replace(queryParameters: {'root': root});
 
     appLogger.i('MATRIX BRIDGE: Requesting Age Heatmap for $root');
 
@@ -478,12 +531,202 @@ class ApiService {
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
+
+  Future<TempPreviewResponse> getTempPreview() async {
+    final uri = Uri.parse('$tempFilesUrl/preview');
+    appLogger.i('MATRIX BRIDGE: Requesting Temp Folder Preview...');
+
+    final response = await _client.get(uri);
+
+    if (response.statusCode == 200) {
+      final jsonBody = jsonDecode(response.body);
+
+      if (jsonBody['success'] == true) {
+        return TempPreviewResponse.fromJson(jsonBody['data']);
+      } else {
+        throw Exception(jsonBody['message']);
+      }
+    } else {
+      throw Exception(
+        'Bridge Failed with Status: ${response.statusCode} - ${response.body}',
+      );
+    }
+  }
+
+  Future<TempCleanResult> cleanTempFiles(List<String> paths) async {
+    final uri = Uri.parse('$tempFilesUrl/clean');
+    appLogger.i(
+      'INITIATING TEMP CLEAN PROTOCOL ON: $uri (${paths.length} locations)',
+    );
+
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'paths': paths}),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonBody = jsonDecode(response.body);
+
+      if (jsonBody['success'] == true) {
+        return TempCleanResult.fromJson(jsonBody['data']);
+      } else {
+        throw Exception(jsonBody['message']);
+      }
+    } else {
+      throw Exception(
+        'Temp Clean Failed: ${response.statusCode} - ${response.body}',
+      );
+    }
+  }
+
+  Future<List<StartupProgram>> getStartupPrograms() async {
+    final response = await _client.get(Uri.parse(startupUrl));
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      final List data = decoded is List ? decoded : (decoded['data'] ?? []);
+      return data
+          .map((e) => StartupProgram.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw Exception(
+      'Startup fetch failed [${response.statusCode}]: ${response.body}',
+    );
+  }
+
+  Future<void> setStartupEnabled(String id, bool enable) async {
+    final action = enable ? 'enable' : 'disable';
+    final uri = Uri.parse('$startupUrl/${Uri.encodeComponent(id)}/$action');
+    appLogger.i('STARTUP BRIDGE: ${action.toUpperCase()} -> $uri');
+    final response = await _client.post(uri);
+    _ensureStartupSuccess(response);
+  }
+
+  Future<void> deleteStartupProgram(String id) async {
+    final uri = Uri.parse('$startupUrl/${Uri.encodeComponent(id)}');
+    appLogger.i('STARTUP BRIDGE: DELETE -> $uri');
+    final response = await _client.delete(uri);
+    _ensureStartupSuccess(response);
+  }
+
+  void _ensureStartupSuccess(http.Response response) {
+    if (response.statusCode == 200) return;
+
+    String message;
+    try {
+      final body = jsonDecode(response.body);
+      message = body['error'] ?? body['message'] ?? response.body;
+    } catch (_) {
+      message = response.body;
+    }
+
+    if (response.statusCode == 403) {
+      throw StartupAdminRequiredException(message);
+    }
+    throw Exception('Startup action failed [${response.statusCode}]: $message');
+  }
+
+  // --- SCHEDULED SCANS ---
+
+  Future<List<ScheduledScan>> getSchedules() async {
+    final uri = Uri.parse(schedulesUrl);
+    final response = await _client.get(uri);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = jsonDecode(response.body);
+      return jsonList.map((j) => ScheduledScan.fromJson(j)).toList();
+    } else {
+      throw Exception('Failed to load schedules: ${response.body}');
+    }
+  }
+
+  Future<ScheduledScan> createSchedule(Map<String, dynamic> data) async {
+    final uri = Uri.parse(schedulesUrl);
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 201) {
+      return ScheduledScan.fromJson(jsonDecode(response.body));
+    } else {
+      _throwDetailedError('Failed to create schedule', response);
+      throw Exception('Unreachable');
+    }
+  }
+
+  Future<ScheduledScan> updateSchedule(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final uri = Uri.parse('$schedulesUrl/$id');
+    final response = await _client.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200) {
+      return ScheduledScan.fromJson(jsonDecode(response.body));
+    } else {
+      _throwDetailedError('Failed to update schedule', response);
+      throw Exception('Unreachable');
+    }
+  }
+
+  Future<void> deleteSchedule(String id) async {
+    final uri = Uri.parse('$schedulesUrl/$id');
+    final response = await _client.delete(uri);
+
+    if (response.statusCode != 200) {
+      _throwDetailedError('Failed to delete schedule', response);
+    }
+  }
+
+  Future<void> runScheduleNow(String id) async {
+    final uri = Uri.parse('$schedulesUrl/$id/run-now');
+    final response = await _client.post(uri);
+
+    if (response.statusCode == 409) {
+      throw ScheduleBusyException();
+    } else if (response.statusCode != 200) {
+      _throwDetailedError('Failed to run schedule', response);
+    }
+  }
+
+  void _throwDetailedError(String prefix, http.Response response) {
+    try {
+      final body = jsonDecode(response.body);
+      final message = body['message'] ?? response.body;
+      throw Exception('$prefix: $message');
+    } catch (_) {
+      throw Exception('$prefix [${response.statusCode}]: ${response.body}');
+    }
+  }
 }
 
 ExtensionBreakdownResult _parseBreakdown(String body) {
   return ExtensionBreakdownResult.fromJson(
-    jsonDecode(body) as Map<String, dynamic>
+    jsonDecode(body) as Map<String, dynamic>,
   );
 }
 
+class StartupAdminRequiredException implements Exception {
+  final String message;
+  const StartupAdminRequiredException([
+    this.message =
+        'Administrator privileges are required to modify system-scope startup entries.',
+  ]);
 
+  @override
+  String toString() => message;
+}
+
+class ScheduleBusyException implements Exception {
+  const ScheduleBusyException();
+  @override
+  String toString() => 'A scan is already in progress. Try again later.';
+}

@@ -8,108 +8,108 @@ using Xunit;
 
 namespace GSSystemAnalyzer.Tests.Integration
 {
-    public class SettingsIntegrationTests : IDisposable
-    {
-        private readonly string _tempFile;
+	public class SettingsIntegrationTests : IDisposable
+	{
+		private readonly string _tempFile;
 
-        public SettingsIntegrationTests()
-        {
-            _tempFile = Path.GetTempFileName();
-            File.Delete(_tempFile); // Ensure it doesn't exist yet for Test 1
-        }
+		public SettingsIntegrationTests()
+		{
+			_tempFile = Path.GetTempFileName();
+			File.Delete(_tempFile); // Ensure it doesn't exist yet for Test 1
+		}
 
-        public void Dispose()
-        {
-            if (File.Exists(_tempFile)) File.Delete(_tempFile);
-        }
+		public void Dispose()
+		{
+			if (File.Exists(_tempFile)) File.Delete(_tempFile);
+		}
 
-        [Fact]
-        public void Service_WhenNoFileExists_LoadsFactoryDefaults()
-        {
-            var service = new SettingsServices(_tempFile);
-            Assert.True(File.Exists(_tempFile)); // Proves it immediately generated the missing file!
-        }
+		[Fact]
+		public void Service_WhenNoFileExists_LoadsFactoryDefaults()
+		{
+			var service = new SettingsServices(_tempFile);
+			Assert.True(File.Exists(_tempFile)); // Proves it immediately generated the missing file!
+		}
 
-        [Fact]
-        public async Task Service_PersistsValues_AcrossRestarts()
-        {
-            var service1 = new SettingsServices(_tempFile);
-            var settings = service1.Current;
-            settings.Advanced.BackendPort = 8080;
-            await service1.SaveAsync(settings);
+		[Fact]
+		public async Task Service_PersistsValues_AcrossRestarts()
+		{
+			var service1 = new SettingsServices(_tempFile);
+			var settings = service1.Current;
+			settings.Advanced.BackendPort = 8080;
+			await service1.SaveAsync(settings);
 
-            var service2 = new SettingsServices(_tempFile);
-            Assert.Equal(8080, service2.Current.Advanced.BackendPort); // It remembered!
-        }
+			var service2 = new SettingsServices(_tempFile);
+			Assert.Equal(8080, service2.Current.Advanced.BackendPort); // It remembered!
+		}
 
-        [Fact]
-        public void Service_WithCorruptJson_RecoversAndLoadsDefaults()
-        {
-            File.WriteAllText(_tempFile, "{ THIS IS NOT VALID JSON!!! : [ ] }");
+		[Fact]
+		public void Service_WithCorruptJson_RecoversAndLoadsDefaults()
+		{
+			File.WriteAllText(_tempFile, "{ THIS IS NOT VALID JSON!!! : [ ] }");
 
-            var service = new SettingsServices(_tempFile);
+			var service = new SettingsServices(_tempFile);
 
-            Assert.Equal(10, service.Current.Scan.Depth);
-        }
+			Assert.Equal(10, service.Current.Scan.Depth);
+		}
 
-        [Fact]
-        public void Validate_WithFactoryDefaults_ReturnsNoErrors()
-        {
-            var settings = AppSettingDto.GetFactoryDefaults();
+		[Fact]
+		public void Validate_WithFactoryDefaults_ReturnsNoErrors()
+		{
+			var settings = AppSettingDto.GetFactoryDefaults();
 
-            var errors = settings.Validate();
+			var errors = settings.Validate();
 
-            Assert.Empty(errors); // Factory defaults must ALWAYS be perfectly valid
-        }
+			Assert.Empty(errors); // Factory defaults must ALWAYS be perfectly valid
+		}
 
-        [Fact]
-        public void Validate_WithIllegalCpuInterval_ReturnsSpecificError()
-        {
-            var settings = AppSettingDto.GetFactoryDefaults();
-            settings.Monitoring.CpuPollIntervalMs = 100; // Illegal! Min is 500.
+		[Fact]
+		public void Validate_WithIllegalCpuInterval_ReturnsSpecificError()
+		{
+			var settings = AppSettingDto.GetFactoryDefaults();
+			settings.Monitoring.CpuPollIntervalMs = 100; // Illegal! Min is 500.
 
-            var errors = settings.Validate();
+			var errors = settings.Validate();
 
-            Assert.Single(errors);
-            Assert.Contains("CPU Poll Interval must be between 500ms and 60000ms.", errors[0]);
-        }
+			Assert.Single(errors);
+			Assert.Contains("CPU Poll Interval must be between 500ms and 60000ms.", errors[0]);
+		}
 
-        [Fact]
-        public void Validate_WithMultipleViolations_AccumulatesAllErrors()
-        {
-            var settings = AppSettingDto.GetFactoryDefaults();
-            settings.Scan.Depth = 999; // Illegal
-            settings.Alerts.ThermalThresholdCelsius = 200; // Illegal
+		[Fact]
+		public void Validate_WithMultipleViolations_AccumulatesAllErrors()
+		{
+			var settings = AppSettingDto.GetFactoryDefaults();
+			settings.Scan.Depth = 999; // Illegal
+			settings.Alerts.ThermalThresholdCelsius = 200; // Illegal
 
-            var errors = settings.Validate();
+			var errors = settings.Validate();
 
-            Assert.Equal(2, errors.Count);
-            Assert.Contains("Scan Depth must be between 1 and 50.", errors);
-            Assert.Contains("Thermal Threshold must be between 40°C and 110°C.", errors);
-        }
+			Assert.Equal(2, errors.Count);
+			Assert.Contains("Scan Depth must be between 1 and 50.", errors);
+			Assert.Contains("Thermal Threshold must be between 40Â°C and 110Â°C.", errors);
+		}
 
-        [Fact]
-        public async Task SaveAsync_RapidConcurrentWrites_MaintainsAtomicIntegrity()
-        {
-            var service = new SettingsServices(_tempFile);
-            var tasks = new List<Task>();
+		[Fact]
+		public async Task SaveAsync_RapidConcurrentWrites_MaintainsAtomicIntegrity()
+		{
+			var service = new SettingsServices(_tempFile);
+			var tasks = new List<Task>();
 
-            for (int i = 0; i < 100; i++)
-            {
-                var iteration = i;
-                tasks.Add(Task.Run(async () =>
-                {
-                    var settings = AppSettingDto.GetFactoryDefaults();
-                    settings.Scan.Depth = (iteration % 50) + 1; // Valid depth between 1 and 50
-                    await service.SaveAsync(settings);
-                }));
-            }
+			for (int i = 0; i < 100; i++)
+			{
+				var iteration = i;
+				tasks.Add(Task.Run(async () =>
+				{
+					var settings = AppSettingDto.GetFactoryDefaults();
+					settings.Scan.Depth = (iteration % 50) + 1; // Valid depth between 1 and 50
+					await service.SaveAsync(settings);
+				}));
+			}
 
-            await Task.WhenAll(tasks);
+			await Task.WhenAll(tasks);
 
-            var finalService = new SettingsServices(_tempFile);
+			var finalService = new SettingsServices(_tempFile);
 
-            Assert.True(finalService.Current.Scan.Depth > 0);
-        }
-    }
+			Assert.True(finalService.Current.Scan.Depth > 0);
+		}
+	}
 }

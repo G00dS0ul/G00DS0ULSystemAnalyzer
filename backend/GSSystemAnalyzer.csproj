@@ -7,6 +7,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="GSSystemAnalyzer.Tests" />
+  </ItemGroup>
+
 
 
   <ItemGroup>
@@ -14,11 +18,17 @@
     <Content Remove="GSSystemAnalyzer.Tests\**" />
     <EmbeddedResource Remove="GSSystemAnalyzer.Tests\**" />
     <None Remove="GSSystemAnalyzer.Tests\**" />
+
+    <Compile Remove="GSSystemAnalyzer.Benchmarks\**" />
+    <Content Remove="GSSystemAnalyzer.Benchmarks\**" />
+    <EmbeddedResource Remove="GSSystemAnalyzer.Benchmarks\**" />
+    <None Remove="GSSystemAnalyzer.Benchmarks\**" />
   </ItemGroup>
 
 
 
   <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.8.4" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.8" />
     <PackageReference Include="System.Management" Version="10.0.8" />

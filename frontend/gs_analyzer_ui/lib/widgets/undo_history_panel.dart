@@ -9,14 +9,17 @@ import 'package:gs_analyzer_ui/providers/root_tree_provider.dart';
 import 'package:gs_analyzer_ui/providers/drive_stats_provider.dart';
 import 'package:intl/intl.dart';
 
-final undoHistoryProvider = FutureProvider.autoDispose<List<NukeOperation>>((ref) async {
+final undoHistoryProvider = FutureProvider.autoDispose<List<NukeOperation>>((
+  ref,
+) async {
   final api = ApiService();
   return await api.getUndoHistory();
 });
 
 class UndoHistoryPanel extends ConsumerStatefulWidget {
   final ApiService apiService;
-  UndoHistoryPanel({super.key, ApiService? apiService}) : apiService = apiService ?? ApiService();
+  UndoHistoryPanel({super.key, ApiService? apiService})
+    : apiService = apiService ?? ApiService();
 
   @override
   ConsumerState<UndoHistoryPanel> createState() => _UndoHistoryPanelState();
@@ -47,13 +50,22 @@ class _UndoHistoryPanelState extends ConsumerState<UndoHistoryPanel> {
                     children: [
                       Icon(Icons.history, color: HudTheme.accentCyan),
                       const SizedBox(width: 12),
-                      Text('UNDO HISTORY', style: HudTheme.headerCyan.copyWith(color: HudTheme.accentCyan)),
+                      Text(
+                        'UNDO HISTORY',
+                        style: HudTheme.headerCyan.copyWith(
+                          color: HudTheme.accentCyan,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.refresh, color: HudTheme.accentCyan, size: 20),
+                        icon: Icon(
+                          Icons.refresh,
+                          color: HudTheme.accentCyan,
+                          size: 20,
+                        ),
                         onPressed: () {
                           ref.invalidate(undoHistoryProvider);
                         },
@@ -62,7 +74,11 @@ class _UndoHistoryPanelState extends ConsumerState<UndoHistoryPanel> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        icon: const Icon(Icons.delete_forever, color: HudTheme.accentRed, size: 20),
+                        icon: const Icon(
+                          Icons.delete_forever,
+                          color: HudTheme.accentRed,
+                          size: 20,
+                        ),
                         tooltip: 'Empty Recycle Bin',
                         onPressed: () async {
                           final api = widget.apiService;
@@ -74,7 +90,10 @@ class _UndoHistoryPanelState extends ConsumerState<UndoHistoryPanel> {
                         constraints: const BoxConstraints(),
                       ),
                       const SizedBox(width: 16),
-                      Icon(_isExpanded ? Icons.expand_less : Icons.expand_more, color: HudTheme.accentCyan),
+                      Icon(
+                        _isExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: HudTheme.accentCyan,
+                      ),
                     ],
                   ),
                 ],
@@ -87,47 +106,93 @@ class _UndoHistoryPanelState extends ConsumerState<UndoHistoryPanel> {
                 if (history.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text('NO OPERATIONS RECORDED', style: HudTheme.bodyText.copyWith(color: HudTheme.textDim)),
+                    child: Text(
+                      'NO OPERATIONS RECORDED',
+                      style: HudTheme.bodyText.copyWith(
+                        color: HudTheme.textDim,
+                      ),
+                    ),
                   );
                 }
 
                 return ListView.separated(
                   shrinkWrap: true,
                   itemCount: history.length,
-                  separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 1),
+                  separatorBuilder: (context, index) =>
+                      const Divider(color: Colors.white10, height: 1),
                   itemBuilder: (context, index) {
                     final op = history[index];
-                    final timeFormatted = DateFormat('HH:mm:ss').format(op.executedAt.toLocal());
+                    final timeFormatted = DateFormat(
+                      'HH:mm:ss',
+                    ).format(op.executedAt.toLocal());
                     final targets = op.deletedFiles;
-                    
+
                     return ListTile(
-                      title: Text('$targets ITEMS', style: const TextStyle(fontFamily: HudTheme.fontCore, fontWeight: FontWeight.bold, color: Colors.white)),
-                      subtitle: Text(timeFormatted, style: TextStyle(color: HudTheme.textDim, fontFamily: HudTheme.fontCore)),
+                      title: Text(
+                        '$targets ITEMS',
+                        style: const TextStyle(
+                          fontFamily: HudTheme.fontCore,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      subtitle: Text(
+                        timeFormatted,
+                        style: TextStyle(
+                          color: HudTheme.textDim,
+                          fontFamily: HudTheme.fontCore,
+                        ),
+                      ),
                       trailing: op.usedRecycleBin
                           ? ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: HudTheme.accentAmber.withValues(alpha: 0.2),
-                                side: const BorderSide(color: HudTheme.accentAmber),
+                                backgroundColor: HudTheme.accentAmber
+                                    .withValues(alpha: 0.2),
+                                side: const BorderSide(
+                                  color: HudTheme.accentAmber,
+                                ),
                               ),
                               onPressed: () => _handleUndo(op.operationId),
-                              child: const Text('UNDO', style: TextStyle(color: HudTheme.accentAmber, fontWeight: FontWeight.bold)),
+                              child: const Text(
+                                'UNDO',
+                                style: TextStyle(
+                                  color: HudTheme.accentAmber,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             )
                           : Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.black45,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text('🔒 PERMANENT', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 12)),
+                              child: const Text(
+                                '🔒 PERMANENT',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                     );
                   },
                 );
               },
-              loading: () => const Padding(padding: EdgeInsets.all(16.0), child: Center(child: CircularProgressIndicator())),
+              loading: () => const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
               error: (err, stack) => Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text('ERROR: $err', style: const TextStyle(color: HudTheme.accentRed)),
+                child: Text(
+                  'ERROR: $err',
+                  style: const TextStyle(color: HudTheme.accentRed),
+                ),
               ),
             ),
         ],
@@ -139,24 +204,36 @@ class _UndoHistoryPanelState extends ConsumerState<UndoHistoryPanel> {
     final api = widget.apiService;
     try {
       final undoResult = await api.undoNuke(operationId);
-      snackbarKey.currentState?.showSnackBar(SnackBar(
-        content: Text('RESTORED ${undoResult.deletedFiles} FILES', style: const TextStyle(fontFamily: HudTheme.fontCore, fontWeight: FontWeight.bold)),
-        backgroundColor: HudTheme.accentGreen,
-      ));
-      
+      snackbarKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+            'RESTORED ${undoResult.deletedFiles} FILES',
+            style: const TextStyle(
+              fontFamily: HudTheme.fontCore,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: HudTheme.accentGreen,
+        ),
+      );
+
       ref.invalidate(rootTreeProvider);
       ref.read(drivesProvider.notifier).refresh();
       final currentPath = ref.read(directoryProvider).currentPath;
       await ref.read(directoryProvider.notifier).scanDirectory(currentPath);
-      
+
       // Refresh the history panel
       ref.invalidate(undoHistoryProvider);
     } catch (e) {
-      snackbarKey.currentState?.showSnackBar(SnackBar(
-        content: Text('UNDO FAILED: $e', style: const TextStyle(fontFamily: HudTheme.fontCore)),
-        backgroundColor: HudTheme.accentRed,
-      ));
+      snackbarKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+            'UNDO FAILED: $e',
+            style: const TextStyle(fontFamily: HudTheme.fontCore),
+          ),
+          backgroundColor: HudTheme.accentRed,
+        ),
+      );
     }
   }
 }
-

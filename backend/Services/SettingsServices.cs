@@ -5,78 +5,92 @@ using Microsoft.Extensions.Logging;
 
 namespace GSSystemAnalyzer.Services
 {
-    public class SettingsServices : ISettingService
-    {
-        private readonly string _settingsFilePath;
-        private readonly JsonSerializerOptions _jsonOptions;
-        private readonly ILogger<SettingsServices> _logger;
-        private readonly object _fileLoack = new();
+	public class SettingsServices : ISettingService
+	{
+		private readonly string _settingsFilePath;
+		private readonly JsonSerializerOptions _jsonOptions;
+		private readonly ILogger<SettingsServices> _logger;
+		private readonly object _fileLoack = new();
 
-        public AppSettingDto Current { get; private set; }
-        public event EventHandler<AppSettingDto>? OnSettingsChanged;
+		public AppSettingDto Current { get; private set; }
+		public event EventHandler<AppSettingDto>? OnSettingsChanged;
 
 
-        public SettingsServices(string? testFilePath = null, ILogger<SettingsServices>? logger = null)
-        {
-            _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<SettingsServices>.Instance;
-            if (testFilePath != null)
-            {
-                _settingsFilePath = testFilePath;
-            }
-            else
-            {
-                var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                var appFolder = Path.Combine(appData, "GSAnalyzer");
-                Directory.CreateDirectory(appFolder);
+		public SettingsServices(string? testFilePath = null, ILogger<SettingsServices>? logger = null)
+		{
+			_logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<SettingsServices>.Instance;
+			if (testFilePath != null)
+			{
+				_settingsFilePath = testFilePath;
+			}
+			else
+			{
+				var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+				var appFolder = Path.Combine(appData, "GSAnalyzer");
+				Directory.CreateDirectory(appFolder);
 
-                _settingsFilePath = Path.Combine(appFolder, "appsettings.user.json");
-            }
-            
-            _jsonOptions = new JsonSerializerOptions
-                { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+				_settingsFilePath = Path.Combine(appFolder, "appsettings.user.json");
+			}
 
-            Current = LoadAsync().GetAwaiter().GetResult();
-        }
+			_jsonOptions = new JsonSerializerOptions
+			{ WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-        public async Task<AppSettingDto> LoadAsync()
-        {
-            if (!File.Exists(_settingsFilePath))
-            {
-                var defaults = AppSettingDto.GetFactoryDefaults();
-                await SaveAsync(defaults);
-                return defaults;
-            }
+			Current = LoadAsync().GetAwaiter().GetResult();
+		}
 
-            try
-            {
-                var json = await File.ReadAllTextAsync(_settingsFilePath);
-                var settings = JsonSerializer.Deserialize<AppSettingDto>(json, _jsonOptions);
-                return settings ?? AppSettingDto.GetFactoryDefaults();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Corrupt config file detected, restoring defaults");
-                var defaults = AppSettingDto.GetFactoryDefaults();
-                await SaveAsync(defaults);
-                return defaults;
-            }
-        }
+		public async Task<AppSettingDto> LoadAsync()
+		{
+			if (!File.Exists(_settingsFilePath))
+			{
+				var defaults = AppSettingDto.GetFactoryDefaults();
+				await SaveAsync(defaults);
+				return defaults;
+			}
 
-        public async Task SaveAsync(AppSettingDto settings)
-        {
-            Current = settings;
-            var json = JsonSerializer.Serialize(settings, _jsonOptions);
-            var tempPath = _settingsFilePath + ".tmp";
+			try
+			{
+				var json = await File.ReadAllTextAsync(_settingsFilePath);
+				var settings = JsonSerializer.Deserialize<AppSettingDto>(json, _jsonOptions);
+				return settings ?? AppSettingDto.GetFactoryDefaults();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "Corrupt config file detected, restoring defaults");
+				var defaults = AppSettingDto.GetFactoryDefaults();
+				await SaveAsync(defaults);
+				return defaults;
+			}
+		}
 
-            lock (_fileLoack)
-            {
-                File.WriteAllText(tempPath, json);
-                File.Move(tempPath, _settingsFilePath, overwrite: true);
-            }
+		public async Task SaveAsync(AppSettingDto settings)
+		{
+			Current = settings;
+			var json = JsonSerializer.Serialize(settings, _jsonOptions);
+			var tempPath = _settingsFilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
 
-            OnSettingsChanged?.Invoke(this, Current);
+			lock (_fileLoack)
+			{
+				File.WriteAllText(tempPath, json);
+				int retries = 5;
+				while (true)
+				{
+					try
+					{
+						File.Move(tempPath, _settingsFilePath, overwrite: true);
+						break;
+					}
+					catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException)
+					{
+						retries--;
+						if (retries == 0) throw;
+						Thread.Sleep(20);
+					}
+				}
+			}
 
-            await Task.CompletedTask;
-        }
-    }
+			OnSettingsChanged?.Invoke(this, Current);
+
+			await Task.CompletedTask;
+		}
+	}
 }

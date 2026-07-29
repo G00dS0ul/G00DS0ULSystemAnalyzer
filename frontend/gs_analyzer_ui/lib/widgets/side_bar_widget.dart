@@ -19,7 +19,9 @@ class SideBarTreeWidget extends ConsumerWidget {
     final dirNotifier = ref.read(directoryProvider.notifier);
     final isExpanded = ref.watch(treeExpandedProvider);
     final excludedPaths = ref.watch(
-      settingsProvider.select((s) => s.savedSettings?.scan.excludedPaths ?? <String>[])
+      settingsProvider.select(
+        (s) => s.savedSettings?.scan.excludedPaths ?? <String>[],
+      ),
     );
 
     return AnimatedContainer(
@@ -28,7 +30,11 @@ class SideBarTreeWidget extends ConsumerWidget {
       width: isExpanded ? 300.0 : 0.0,
       decoration: BoxDecoration(
         color: HudTheme.bgBase,
-        border: Border(right: BorderSide(color: isExpanded ? Colors.white10 : Colors.transparent)),
+        border: Border(
+          right: BorderSide(
+            color: isExpanded ? Colors.white10 : Colors.transparent,
+          ),
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -39,51 +45,68 @@ class SideBarTreeWidget extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   color: HudTheme.bgPanel,
                   border: Border(bottom: BorderSide(color: Colors.white10)),
                 ),
-                child: const HudLabel('DATA TREE', overflow: TextOverflow.visible
+                child: const HudLabel(
+                  'DATA TREE',
+                  overflow: TextOverflow.visible,
                 ),
               ),
               Expanded(
                 child: SingleChildScrollView(
                   child: rootNodeAsync.when(
-                    loading: () => const Center (
+                    loading: () => const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 20),
-                        child: CircularProgressIndicator(color: HudTheme.primaryBorder),
-                      )
+                        child: CircularProgressIndicator(
+                          color: HudTheme.primaryBorder,
+                        ),
+                      ),
                     ),
                     error: (err, stack) => const Center(
                       child: Text(
                         'FAILED TO LOAD TREE',
-                        style: TextStyle(color: HudTheme.accentRed, fontFamily: HudTheme.fontCore, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: HudTheme.accentRed,
+                          fontFamily: HudTheme.fontCore,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     data: (nodes) {
                       final visibleNodes = nodes.where((n) {
-                      if (!n.isDirectory) return true;
-                      final nodePath = n.path.replaceAll('\\', '/').toLowerCase();
-                      return !excludedPaths.any((ex) =>
-                        nodePath == ex.replaceAll('\\', '/').toLowerCase(),
-                      );
-                    }).toList();
+                        if (!n.isDirectory) return true;
+                        final nodePath = n.path
+                            .replaceAll('\\', '/')
+                            .toLowerCase();
+                        return !excludedPaths.any(
+                          (ex) =>
+                              nodePath ==
+                              ex.replaceAll('\\', '/').toLowerCase(),
+                        );
+                      }).toList();
                       return Column(
-                      children: visibleNodes
-                          .map((node) => DirectoryNodeWidget(
+                        children: visibleNodes
+                            .map(
+                              (node) => DirectoryNodeWidget(
                                 node: node,
                                 apiService: ApiService(),
                                 onNuke: onNuke,
                                 onNavigate: dirNotifier.scanDirectory,
                                 depth: 0,
                                 isTreeView: true,
-                              ))
-                          .toList(),
+                              ),
+                            )
+                            .toList(),
                       );
-                    }
+                    },
                   ),
                 ),
               ),

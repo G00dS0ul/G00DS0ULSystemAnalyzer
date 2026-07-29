@@ -22,9 +22,19 @@ class GoUpRowWidget extends ConsumerWidget {
               child: Row(
                 children: [
                   const SizedBox(width: 32),
-                  const Icon(Icons.keyboard_return_outlined, color: HudTheme.accentCyan, size: 20),
+                  const Icon(
+                    Icons.keyboard_return_outlined,
+                    color: HudTheme.accentCyan,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
-                  Text('[..] GO UP A DIRECTORY', style: HudTheme.bodyText.copyWith(color: HudTheme.textMain, fontWeight: FontWeight.bold)),
+                  Text(
+                    '[..] GO UP A DIRECTORY',
+                    style: HudTheme.bodyText.copyWith(
+                      color: HudTheme.textMain,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),

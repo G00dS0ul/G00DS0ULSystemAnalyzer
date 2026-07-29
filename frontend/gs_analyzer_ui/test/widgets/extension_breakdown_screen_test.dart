@@ -43,26 +43,33 @@ Widget _wrap(dynamic overrides) {
 
 void main() {
   testWidgets('shows a spinner while the breakdown is loading', (tester) async {
-    await tester.pumpWidget(_wrap([
-      // A future that never completes keeps the provider in the loading state.
-      extensionBreakdownProvider(_root)
-          .overrideWith((ref) => Completer<ExtensionBreakdownResult>().future),
-    ]));
+    await tester.pumpWidget(
+      _wrap([
+        // A future that never completes keeps the provider in the loading state.
+        extensionBreakdownProvider(
+          _root,
+        ).overrideWith((ref) => Completer<ExtensionBreakdownResult>().future),
+      ]),
+    );
 
-    await tester.pump(); // single frame — do NOT pumpAndSettle (spinner animates forever)
+    await tester
+        .pump(); // single frame — do NOT pumpAndSettle (spinner animates forever)
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('RUN A SCAN FIRST'), findsNothing);
   });
 
-  testWidgets('shows the no-scan view when the API reports no cached scan',
-      (tester) async {
-    await tester.pumpWidget(_wrap([
-      extensionBreakdownProvider(_root).overrideWith(
-        (ref) =>
-            Future<ExtensionBreakdownResult>.error(FileTypeNoScanException()),
-      ),
-    ]));
+  testWidgets('shows the no-scan view when the API reports no cached scan', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap([
+        extensionBreakdownProvider(_root).overrideWith(
+          (ref) =>
+              Future<ExtensionBreakdownResult>.error(FileTypeNoScanException()),
+        ),
+      ]),
+    );
 
     await tester.pumpAndSettle();
 
@@ -79,9 +86,9 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(_wrap([
-      extensionBreakdownProvider(_root).overrideWith((ref) => result),
-    ]));
+    await tester.pumpWidget(
+      _wrap([extensionBreakdownProvider(_root).overrideWith((ref) => result)]),
+    );
 
     await tester.pumpAndSettle();
 
@@ -91,12 +98,14 @@ void main() {
     expect(find.text('RUN A SCAN FIRST'), findsNothing);
   });
 
-  testWidgets('builds without rows when the breakdown is empty', (tester) async {
+  testWidgets('builds without rows when the breakdown is empty', (
+    tester,
+  ) async {
     final empty = ExtensionBreakdownResult(root: _root, extensions: const []);
 
-    await tester.pumpWidget(_wrap([
-      extensionBreakdownProvider(_root).overrideWith((ref) => empty),
-    ]));
+    await tester.pumpWidget(
+      _wrap([extensionBreakdownProvider(_root).overrideWith((ref) => empty)]),
+    );
 
     await tester.pumpAndSettle();
 

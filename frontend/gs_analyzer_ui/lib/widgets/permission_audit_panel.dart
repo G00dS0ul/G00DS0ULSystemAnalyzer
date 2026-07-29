@@ -23,11 +23,17 @@ class PermissionAuditPanel extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.security_outlined, size: 48, color: HudTheme.textDim),
+                  const Icon(
+                    Icons.security_outlined,
+                    size: 48,
+                    color: HudTheme.textDim,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'SECURITY AUDIT OFFLINE',
-                    style: HudTheme.headerCyan.copyWith(color: HudTheme.textDim),
+                    style: HudTheme.headerCyan.copyWith(
+                      color: HudTheme.textDim,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -39,14 +45,22 @@ class PermissionAuditPanel extends ConsumerWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       side: const BorderSide(color: HudTheme.accentCyan),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
                     onPressed: () {
                       if (currentDrive != null) {
-                        ref.read(permissionAuditProvider.notifier).runAudit(currentDrive.name);
+                        ref
+                            .read(permissionAuditProvider.notifier)
+                            .runAudit(currentDrive.name);
                       }
                     },
-                    icon: const Icon(Icons.play_arrow, color: HudTheme.accentCyan),
+                    icon: const Icon(
+                      Icons.play_arrow,
+                      color: HudTheme.accentCyan,
+                    ),
                     label: Text(
                       'START SCAN',
                       style: HudTheme.bodyText.copyWith(
@@ -88,7 +102,14 @@ class PermissionAuditPanel extends ConsumerWidget {
                     Text('$scanned', style: HudTheme.statCyan),
                     const SizedBox(width: 16),
                     Text('ISSUES: ', style: HudTheme.labelMuted),
-                    Text('$issues', style: HudTheme.statCyan.copyWith(color: issues > 0 ? HudTheme.accentAmber : HudTheme.statCyan.color)),
+                    Text(
+                      '$issues',
+                      style: HudTheme.statCyan.copyWith(
+                        color: issues > 0
+                            ? HudTheme.accentAmber
+                            : HudTheme.statCyan.color,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -110,12 +131,13 @@ class PermissionAuditPanel extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: HudTheme.accentRed),
-              const SizedBox(height: 16),
-              Text(
-                'AUDIT FAILED',
-                style: HudTheme.actionRed,
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: HudTheme.accentRed,
               ),
+              const SizedBox(height: 16),
+              Text('AUDIT FAILED', style: HudTheme.actionRed),
               const SizedBox(height: 8),
               Text(
                 err.toString(),
@@ -149,7 +171,11 @@ class PermissionAuditPanel extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_outline, size: 48, color: HudTheme.accentGreen),
+            const Icon(
+              Icons.check_circle_outline,
+              size: 48,
+              color: HudTheme.accentGreen,
+            ),
             const SizedBox(height: 16),
             Text(
               'NO ISSUES FOUND — PERMISSIONS LOOK CLEAN',
@@ -176,9 +202,27 @@ class PermissionAuditPanel extends ConsumerWidget {
                 '${result.issues.length} ISSUES FOUND — ',
                 style: HudTheme.bodyText.copyWith(fontWeight: FontWeight.bold),
               ),
-              Text('$high HIGH, ', style: HudTheme.bodyText.copyWith(color: HudTheme.accentRed, fontWeight: FontWeight.bold)),
-              Text('$medium MEDIUM, ', style: HudTheme.bodyText.copyWith(color: HudTheme.accentAmber, fontWeight: FontWeight.bold)),
-              Text('$low LOW', style: HudTheme.bodyText.copyWith(color: HudTheme.accentGreen, fontWeight: FontWeight.bold)),
+              Text(
+                '$high HIGH, ',
+                style: HudTheme.bodyText.copyWith(
+                  color: HudTheme.accentRed,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '$medium MEDIUM, ',
+                style: HudTheme.bodyText.copyWith(
+                  color: HudTheme.accentAmber,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '$low LOW',
+                style: HudTheme.bodyText.copyWith(
+                  color: HudTheme.accentGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
@@ -186,14 +230,18 @@ class PermissionAuditPanel extends ConsumerWidget {
         Expanded(
           child: ListView.separated(
             itemCount: result.issues.length,
-            separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 1),
+            separatorBuilder: (context, index) =>
+                const Divider(color: Colors.white10, height: 1),
             itemBuilder: (context, index) {
               final issue = result.issues[index];
               final Color badgeColor = _getSeverityColor(issue.severity);
 
               return ListTile(
                 onTap: () => _showIssueDetailSheet(context, issue),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 leading: Container(
                   width: 12,
                   height: 12,
@@ -204,7 +252,10 @@ class PermissionAuditPanel extends ConsumerWidget {
                 ),
                 title: Text(
                   issue.type.toUpperCase(),
-                  style: HudTheme.bodyText.copyWith(fontWeight: FontWeight.bold, color: badgeColor),
+                  style: HudTheme.bodyText.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: badgeColor,
+                  ),
                 ),
                 subtitle: Text(
                   issue.path,
@@ -212,7 +263,10 @@ class PermissionAuditPanel extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: const Icon(Icons.chevron_right, color: HudTheme.textDim),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: HudTheme.textDim,
+                ),
               );
             },
           ),
@@ -235,7 +289,7 @@ class PermissionAuditPanel extends ConsumerWidget {
 
   void _showIssueDetailSheet(BuildContext context, PermissionIssue issue) {
     final badgeColor = _getSeverityColor(issue.severity);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: HudTheme.bgPanel,
@@ -270,17 +324,17 @@ class PermissionAuditPanel extends ConsumerWidget {
               Text('TYPE', style: HudTheme.labelMuted),
               const SizedBox(height: 4),
               Text(issue.type.toUpperCase(), style: HudTheme.bodyText),
-              
+
               const SizedBox(height: 16),
               Text('DESCRIPTION', style: HudTheme.labelMuted),
               const SizedBox(height: 4),
               Text(issue.description, style: HudTheme.bodyText),
-              
+
               const SizedBox(height: 16),
               Text('PATH', style: HudTheme.labelMuted),
               const SizedBox(height: 4),
               Text(issue.path, style: HudTheme.bodyText),
-              
+
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -295,7 +349,12 @@ class PermissionAuditPanel extends ConsumerWidget {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Path copied to clipboard', style: HudTheme.bodyText.copyWith(color: HudTheme.bgBase)),
+                        content: Text(
+                          'Path copied to clipboard',
+                          style: HudTheme.bodyText.copyWith(
+                            color: HudTheme.bgBase,
+                          ),
+                        ),
                         backgroundColor: HudTheme.accentCyan,
                       ),
                     );
@@ -303,7 +362,10 @@ class PermissionAuditPanel extends ConsumerWidget {
                   icon: const Icon(Icons.copy, color: HudTheme.accentCyan),
                   label: Text(
                     'COPY PATH',
-                    style: HudTheme.bodyText.copyWith(color: HudTheme.accentCyan, fontWeight: FontWeight.bold),
+                    style: HudTheme.bodyText.copyWith(
+                      color: HudTheme.accentCyan,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

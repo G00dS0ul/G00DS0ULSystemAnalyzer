@@ -55,7 +55,8 @@ class TelemetryHistoryResponse {
       metric: json['metric'] ?? '',
       minutes: json['minutes'] ?? 5,
       unit: json['unit'] ?? '',
-      points: (json['points'] as List<dynamic>?)
+      points:
+          (json['points'] as List<dynamic>?)
               ?.map((p) => TelemetryPoint.fromJson(p))
               .toList() ??
           [],

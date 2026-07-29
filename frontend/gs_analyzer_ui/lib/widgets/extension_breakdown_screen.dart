@@ -20,10 +20,12 @@ class ExtensionBreakdownScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ExtensionBreakdownScreen> createState() => _ExtensionBreakdownScreenState();
+  ConsumerState<ExtensionBreakdownScreen> createState() =>
+      _ExtensionBreakdownScreenState();
 }
 
-class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScreen> {
+class _ExtensionBreakdownScreenState
+    extends ConsumerState<ExtensionBreakdownScreen> {
   Timer? _debounce;
 
   @override
@@ -47,10 +49,19 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
         ),
         actions: [
           TextButton.icon(
-            icon: const Icon(Icons.download, color: HudTheme.accentCyan, size: 18),
-            label: const Text('CSV', style: TextStyle(color: HudTheme.accentCyan)),
+            icon: const Icon(
+              Icons.download,
+              color: HudTheme.accentCyan,
+              size: 18,
+            ),
+            label: const Text(
+              'CSV',
+              style: TextStyle(color: HudTheme.accentCyan),
+            ),
             onPressed: () {
-              final items = ref.read(filteredExtensionBreakdownProvider(widget.scanRoot));
+              final items = ref.read(
+                filteredExtensionBreakdownProvider(widget.scanRoot),
+              );
               if (items.isNotEmpty) {
                 CsvExporter.exportExtensionBreakdown(context, items);
               }
@@ -60,14 +71,14 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
         ],
       ),
       body: asyncResult.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: HudTheme.accentCyan)),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: HudTheme.accentCyan),
+        ),
         error: (e, _) {
           if (e is FileTypeNoScanException) {
             return _buildNoScanView();
           }
-          return Center(
-            child: Text('ERROR: $e', style: HudTheme.actionRed),
-          );
+          return Center(child: Text('ERROR: $e', style: HudTheme.actionRed));
         },
         data: (result) => _buildDataView(context, ref, result),
       ),
@@ -79,7 +90,11 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.warning_amber_rounded, color: HudTheme.accentAmber, size: 64),
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: HudTheme.accentAmber,
+            size: 64,
+          ),
           const SizedBox(height: 16),
           Text(
             'RUN A SCAN FIRST',
@@ -96,8 +111,14 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
     );
   }
 
-  Widget _buildDataView(BuildContext context, WidgetRef ref, ExtensionBreakdownResult result) {
-    final filteredItems = ref.watch(filteredExtensionBreakdownProvider(widget.scanRoot));
+  Widget _buildDataView(
+    BuildContext context,
+    WidgetRef ref,
+    ExtensionBreakdownResult result,
+  ) {
+    final filteredItems = ref.watch(
+      filteredExtensionBreakdownProvider(widget.scanRoot),
+    );
 
     return Column(
       children: [
@@ -125,16 +146,46 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
         children: [
           _buildSortableHeader(ref, 'Ext', 'ext', flex: 2),
           _buildSortableHeader(ref, 'Category', 'category', flex: 2),
-          _buildSortableHeader(ref, 'Files', 'fileCount', flex: 1, numeric: true),
-          _buildSortableHeader(ref, 'Total Size', 'totalBytes', flex: 2, numeric: true),
-          _buildSortableHeader(ref, 'Avg Size', 'averageFileSizeBytes', flex: 2, numeric: true),
-          _buildSortableHeader(ref, '% Disk', 'percentOfDisk', flex: 1, numeric: true),
+          _buildSortableHeader(
+            ref,
+            'Files',
+            'fileCount',
+            flex: 1,
+            numeric: true,
+          ),
+          _buildSortableHeader(
+            ref,
+            'Total Size',
+            'totalBytes',
+            flex: 2,
+            numeric: true,
+          ),
+          _buildSortableHeader(
+            ref,
+            'Avg Size',
+            'averageFileSizeBytes',
+            flex: 2,
+            numeric: true,
+          ),
+          _buildSortableHeader(
+            ref,
+            '% Disk',
+            'percentOfDisk',
+            flex: 1,
+            numeric: true,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSortableHeader(WidgetRef ref, String label, String key, {required int flex, bool numeric = false}) {
+  Widget _buildSortableHeader(
+    WidgetRef ref,
+    String label,
+    String key, {
+    required int flex,
+    bool numeric = false,
+  }) {
     final currentSort = ref.watch(ebSortColumnProvider);
     final isAscending = ref.watch(ebSortAscendingProvider);
     final isSorted = currentSort == key;
@@ -147,7 +198,8 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
           if (isSorted) {
             ref.read(ebSortAscendingProvider.notifier).state = !isAscending;
           } else {
-            ref.read(ebSortAscendingProvider.notifier).state = false; // default desc on new col
+            ref.read(ebSortAscendingProvider.notifier).state =
+                false; // default desc on new col
           }
         },
         child: Container(
@@ -179,9 +231,13 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
     );
   }
 
-  Widget _buildListRow(BuildContext context, WidgetRef ref, ExtensionBreakdownItem item) {
+  Widget _buildListRow(
+    BuildContext context,
+    WidgetRef ref,
+    ExtensionBreakdownItem item,
+  ) {
     final catColor = HudTheme.fileTypeColor(item.category);
-    
+
     return InkWell(
       onTap: () => _showDetailSheet(context, ref, item, catColor),
       child: Container(
@@ -207,8 +263,11 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      item.ext, 
-                      style: const TextStyle(color: Colors.white, fontFamily: 'monospace'),
+                      item.ext,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'monospace',
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -217,23 +276,52 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
             ),
             Expanded(
               flex: 2,
-              child: Text(item.category.toUpperCase(), style: TextStyle(color: catColor, fontSize: 12), overflow: TextOverflow.ellipsis, maxLines: 1),
+              child: Text(
+                item.category.toUpperCase(),
+                style: TextStyle(color: catColor, fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
             Expanded(
               flex: 1,
-              child: Text('${item.fileCount}', style: HudTheme.statCyan, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis, maxLines: 1),
+              child: Text(
+                '${item.fileCount}',
+                style: HudTheme.statCyan,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
             Expanded(
               flex: 2,
-              child: Text(item.sizeFormatted, style: HudTheme.statCyan, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis, maxLines: 1),
+              child: Text(
+                item.sizeFormatted,
+                style: HudTheme.statCyan,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
             Expanded(
               flex: 2,
-              child: Text(item.averageSizeFormatted, style: HudTheme.statCyan, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis, maxLines: 1),
+              child: Text(
+                item.averageSizeFormatted,
+                style: HudTheme.statCyan,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
             Expanded(
               flex: 1,
-              child: Text('${item.percentOfDisk}%', style: HudTheme.statCyan, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis, maxLines: 1),
+              child: Text(
+                '${item.percentOfDisk}%',
+                style: HudTheme.statCyan,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
           ],
         ),
@@ -241,9 +329,14 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
     );
   }
 
-  Widget _buildFilters(BuildContext context, WidgetRef ref, List<ExtensionBreakdownItem> allItems) {
+  Widget _buildFilters(
+    BuildContext context,
+    WidgetRef ref,
+    List<ExtensionBreakdownItem> allItems,
+  ) {
     final selectedCategories = ref.watch(ebSelectedCategoriesProvider);
-    final allCategories = allItems.map((e) => e.category).toSet().toList()..sort();
+    final allCategories = allItems.map((e) => e.category).toSet().toList()
+      ..sort();
 
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -283,20 +376,35 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: FilterChip(
-                    label: Text(cat.toUpperCase(), style: TextStyle(color: isSelected ? Colors.black : Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+                    label: Text(
+                      cat.toUpperCase(),
+                      style: TextStyle(
+                        color: isSelected ? Colors.black : Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     selected: isSelected,
                     selectedColor: HudTheme.accentCyan,
                     backgroundColor: catColor.withValues(alpha: 0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
-                      side: BorderSide(color: isSelected ? HudTheme.accentCyan : catColor.withValues(alpha: 0.3)),
+                      side: BorderSide(
+                        color: isSelected
+                            ? HudTheme.accentCyan
+                            : catColor.withValues(alpha: 0.3),
+                      ),
                     ),
                     onSelected: (selected) {
-                      final notif = ref.read(ebSelectedCategoriesProvider.notifier);
+                      final notif = ref.read(
+                        ebSelectedCategoriesProvider.notifier,
+                      );
                       if (selected) {
                         notif.state = {...notif.state, cat};
                       } else {
-                        notif.state = notif.state.where((c) => c != cat).toSet();
+                        notif.state = notif.state
+                            .where((c) => c != cat)
+                            .toSet();
                       }
                     },
                   ),
@@ -309,9 +417,12 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
     );
   }
 
-
-
-  void _showDetailSheet(BuildContext context, WidgetRef ref, ExtensionBreakdownItem item, Color catColor) {
+  void _showDetailSheet(
+    BuildContext context,
+    WidgetRef ref,
+    ExtensionBreakdownItem item,
+    Color catColor,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: HudTheme.bgPanel,
@@ -328,16 +439,36 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: catColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: catColor.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: catColor.withValues(alpha: 0.5),
+                      ),
                     ),
-                    child: Text(item.ext, style: TextStyle(color: catColor, fontSize: 20, fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                    child: Text(
+                      item.ext,
+                      style: TextStyle(
+                        color: catColor,
+                        fontSize: 20,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
-                  Text(item.category.toUpperCase(), style: TextStyle(color: catColor, fontSize: 14, letterSpacing: 1.5)),
+                  Text(
+                    item.category.toUpperCase(),
+                    style: TextStyle(
+                      color: catColor,
+                      fontSize: 14,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -346,24 +477,46 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
                 children: [
                   _DetailStat(label: 'TOTAL FILES', value: '${item.fileCount}'),
                   _DetailStat(label: 'TOTAL SIZE', value: item.sizeFormatted),
-                  _DetailStat(label: 'AVG SIZE', value: item.averageSizeFormatted),
+                  _DetailStat(
+                    label: 'AVG SIZE',
+                    value: item.averageSizeFormatted,
+                  ),
                   _DetailStat(label: '% DISK', value: '${item.percentOfDisk}%'),
                 ],
               ),
               const SizedBox(height: 24),
               const Divider(color: Colors.white10),
               const SizedBox(height: 16),
-              Text('LARGEST FILE RECORDED', style: HudTheme.labelMuted.copyWith(color: HudTheme.accentCyan)),
+              Text(
+                'LARGEST FILE RECORDED',
+                style: HudTheme.labelMuted.copyWith(color: HudTheme.accentCyan),
+              ),
               const SizedBox(height: 8),
               if (item.largestFilePath.isEmpty)
-                const Text('No file path recorded.', style: TextStyle(color: Colors.white54))
+                const Text(
+                  'No file path recorded.',
+                  style: TextStyle(color: Colors.white54),
+                )
               else
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.largestFilePath, style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace')),
+                    Text(
+                      item.largestFilePath,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(item.largestSizeFormatted, style: const TextStyle(color: HudTheme.accentAmber, fontWeight: FontWeight.bold)),
+                    Text(
+                      item.largestSizeFormatted,
+                      style: const TextStyle(
+                        color: HudTheme.accentAmber,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -375,9 +528,17 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
                             foregroundColor: Colors.white,
                           ),
                           onPressed: () {
-                            Clipboard.setData(ClipboardData(text: item.largestFilePath));
+                            Clipboard.setData(
+                              ClipboardData(text: item.largestFilePath),
+                            );
                             Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Path copied to clipboard'), backgroundColor: HudTheme.bgPanel, duration: Duration(seconds: 2)));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Path copied to clipboard'),
+                                backgroundColor: HudTheme.bgPanel,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
                           },
                         ),
                         const SizedBox(width: 12),
@@ -385,7 +546,9 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
                           icon: const Icon(Icons.folder_open, size: 16),
                           label: const Text('FIND IN EXPLORER'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: HudTheme.accentCyan.withValues(alpha: 0.1),
+                            backgroundColor: HudTheme.accentCyan.withValues(
+                              alpha: 0.1,
+                            ),
                             foregroundColor: HudTheme.accentCyan,
                             side: const BorderSide(color: HudTheme.accentCyan),
                           ),
@@ -396,8 +559,13 @@ class _ExtensionBreakdownScreenState extends ConsumerState<ExtensionBreakdownScr
                             Navigator.pop(context);
                             // Set directory provider to parent directory
                             final path = item.largestFilePath;
-                            final parentDir = path.substring(0, path.lastIndexOf(RegExp(r'[\\/]')));
-                            ref.read(directoryProvider.notifier).scanDirectory(parentDir);
+                            final parentDir = path.substring(
+                              0,
+                              path.lastIndexOf(RegExp(r'[\\/]')),
+                            );
+                            ref
+                                .read(directoryProvider.notifier)
+                                .scanDirectory(parentDir);
                           },
                         ),
                       ],
@@ -422,7 +590,15 @@ class _DetailStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white38,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(value, style: HudTheme.statCyan.copyWith(fontSize: 16)),
       ],

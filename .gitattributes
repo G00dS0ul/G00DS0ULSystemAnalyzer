@@ -1,0 +1,21 @@
+# Store LF in the repo AND check out LF everywhere
+* text=auto eol=lf
+
+# The only real CRLF holdouts — Windows batch scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary: never touch
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.zip  binary
+*.gz   binary
+*.dll  binary
+*.exe  binary
+*.pdf  binary
+*.ttf  binary
+*.woff binary
+*.woff2 binary

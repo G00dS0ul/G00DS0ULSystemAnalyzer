@@ -10,9 +10,7 @@ import 'package:gs_analyzer_ui/widgets/permission_audit_panel.dart';
 Widget _wrap(dynamic overrides) {
   return ProviderScope(
     overrides: overrides,
-    child: const MaterialApp(
-      home: Scaffold(body: PermissionAuditPanel()),
-    ),
+    child: const MaterialApp(home: Scaffold(body: PermissionAuditPanel())),
   );
 }
 
@@ -26,25 +24,33 @@ class FakePermissionAuditNotifier extends PermissionAuditNotifier {
 
 void main() {
   testWidgets('shows offline view initially when data is null', (tester) async {
-    await tester.pumpWidget(_wrap([
-      permissionAuditProvider.overrideWith(() => PermissionAuditNotifier()),
-    ]));
+    await tester.pumpWidget(
+      _wrap([
+        permissionAuditProvider.overrideWith(() => PermissionAuditNotifier()),
+      ]),
+    );
 
     expect(find.text('SECURITY AUDIT OFFLINE'), findsOneWidget);
     expect(find.text('START SCAN'), findsOneWidget);
   });
 
-  testWidgets('shows live progress with cancel button when loading', (tester) async {
+  testWidgets('shows live progress with cancel button when loading', (
+    tester,
+  ) async {
     final Map<String, dynamic> progressData = {'scanned': 15000, 'issues': 2};
 
-    await tester.pumpWidget(_wrap([
-      auditProgressProvider.overrideWith((ref) => progressData),
-      permissionAuditProvider.overrideWith(() => FakePermissionAuditNotifier(const AsyncValue.loading())),
-    ]));
+    await tester.pumpWidget(
+      _wrap([
+        auditProgressProvider.overrideWith((ref) => progressData),
+        permissionAuditProvider.overrideWith(
+          () => FakePermissionAuditNotifier(const AsyncValue.loading()),
+        ),
+      ]),
+    );
 
     expect(find.text('AUDITING PERMISSIONS...'), findsOneWidget);
     expect(find.text('15000'), findsOneWidget); // scanned count
-    expect(find.text('2'), findsOneWidget);     // issues count
+    expect(find.text('2'), findsOneWidget); // issues count
     expect(find.text('CANCEL SCAN'), findsOneWidget);
   });
 
@@ -59,13 +65,17 @@ void main() {
           severity: 'high',
           type: 'executable_in_data_dir',
           description: 'A bad file',
-        )
+        ),
       ],
     );
 
-    await tester.pumpWidget(_wrap([
-      permissionAuditProvider.overrideWith(() => FakePermissionAuditNotifier(AsyncValue.data(result))),
-    ]));
+    await tester.pumpWidget(
+      _wrap([
+        permissionAuditProvider.overrideWith(
+          () => FakePermissionAuditNotifier(AsyncValue.data(result)),
+        ),
+      ]),
+    );
 
     await tester.pumpAndSettle();
 
@@ -82,12 +92,19 @@ void main() {
       issues: const [],
     );
 
-    await tester.pumpWidget(_wrap([
-      permissionAuditProvider.overrideWith(() => FakePermissionAuditNotifier(AsyncValue.data(result))),
-    ]));
+    await tester.pumpWidget(
+      _wrap([
+        permissionAuditProvider.overrideWith(
+          () => FakePermissionAuditNotifier(AsyncValue.data(result)),
+        ),
+      ]),
+    );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('NO ISSUES FOUND — PERMISSIONS LOOK CLEAN'), findsOneWidget);
+    expect(
+      find.text('NO ISSUES FOUND — PERMISSIONS LOOK CLEAN'),
+      findsOneWidget,
+    );
   });
 }

@@ -32,7 +32,7 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('CPU TELEMETRY MODULE', style: HudTheme.headerCyan),
-              
+
               // Custom Toggle Strip
               Row(
                 children: [
@@ -40,10 +40,13 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
                   _buildToggleBtn('HISTORY', _showHistory),
                 ],
               ),
-              
+
               if (cpuState.isCritical && !_showHistory)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: HudTheme.accentRed.withValues(alpha: 0.2),
                     border: Border.all(color: HudTheme.accentRed),
@@ -56,7 +59,7 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
           SizedBox(height: d.gap * 2),
           if (_showHistory)
             const Expanded(child: TelemetryHistoryChart(metricKey: 'cpu'))
-          else if(snapshot == null)
+          else if (snapshot == null)
             const Expanded(
               child: Center(
                 child: CircularProgressIndicator(color: HudTheme.primaryBorder),
@@ -69,7 +72,7 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
                     child: SingleChildScrollView(
                       child: _buildDashBoard(context, snapshot, d),
                     ),
-                  )
+                  ),
         ],
       ),
     );
@@ -85,8 +88,12 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? HudTheme.accentCyan.withValues(alpha: 0.1) : Colors.transparent,
-          border: Border.all(color: isSelected ? HudTheme.accentCyan : Colors.white10),
+          color: isSelected
+              ? HudTheme.accentCyan.withValues(alpha: 0.1)
+              : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? HudTheme.accentCyan : Colors.white10,
+          ),
         ),
         child: Text(
           label,
@@ -101,7 +108,11 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
     );
   }
 
-  Widget _buildDashBoard(BuildContext context, CpuSnapshot snapshot, HudDensity d) {
+  Widget _buildDashBoard(
+    BuildContext context,
+    CpuSnapshot snapshot,
+    HudDensity d,
+  ) {
     return Container(
       padding: EdgeInsets.all(d.panelPad),
       decoration: HudTheme.hudPanelDecoration,
@@ -111,8 +122,8 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text('CPU UTILIZATION [AVG]', style: HudTheme.labelMuted,),
-              Icon(Icons.memory_outlined, color: HudTheme.accentCyan, size: 24,),
+              Text('CPU UTILIZATION [AVG]', style: HudTheme.labelMuted),
+              Icon(Icons.memory_outlined, color: HudTheme.accentCyan, size: 24),
             ],
           ),
           const SizedBox(height: 8),
@@ -120,7 +131,15 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('${snapshot.averageLoad.toStringAsFixed(1)}%', style: TextStyle(color: HudTheme.accentCyan, fontSize: d.valueSize, fontWeight: FontWeight.bold, fontFamily: HudTheme.fontCore)),
+              Text(
+                '${snapshot.averageLoad.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  color: HudTheme.accentCyan,
+                  fontSize: d.valueSize,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: HudTheme.fontCore,
+                ),
+              ),
             ],
           ),
           SizedBox(height: d.gap),
@@ -142,7 +161,12 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
             ],
           ),
           SizedBox(height: d.gap * 2),
-          d.isMax ? Expanded(child: _buildCoreCharts(snapshot.coreGroups)) : SizedBox(height: 300, child: _buildCoreCharts(snapshot.coreGroups)),
+          d.isMax
+              ? Expanded(child: _buildCoreCharts(snapshot.coreGroups))
+              : SizedBox(
+                  height: 300,
+                  child: _buildCoreCharts(snapshot.coreGroups),
+                ),
         ],
       ),
     );
@@ -158,7 +182,10 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
       ),
       child: Text(
         '$label: $value',
-        style: HudTheme.statGreen.copyWith(color: HudTheme.accentCyan, fontSize: 12),
+        style: HudTheme.statGreen.copyWith(
+          color: HudTheme.accentCyan,
+          fontSize: 12,
+        ),
       ),
     );
   }
@@ -197,7 +224,7 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
             return FlLine(
               color: Colors.white12,
               strokeWidth: 1,
-              dashArray: [4, 4]
+              dashArray: [4, 4],
             );
           },
         ),
@@ -211,12 +238,18 @@ class _CpuMetricsScreenState extends ConsumerState<CpuMetricsScreen> {
               showTitles: true,
               getTitlesWidget: (double value, TitleMeta meta) {
                 if (value.toInt() >= 0 && value.toInt() < groupLabels.length) {
-                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(groupLabels[value.toInt()], style: HudTheme.labelMuted));
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      groupLabels[value.toInt()],
+                      style: HudTheme.labelMuted,
+                    ),
+                  );
                 }
                 return const SizedBox.shrink();
               },
             ),
-          )
+          ),
         ),
         borderData: FlBorderData(show: false),
       ),

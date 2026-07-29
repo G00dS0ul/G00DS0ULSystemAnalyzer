@@ -18,7 +18,9 @@ class NukeOperation {
   factory NukeOperation.fromJson(Map<String, dynamic> json) {
     return NukeOperation(
       operationId: json['operationId'] ?? '',
-      executedAt: json['executedAt'] != null ? DateTime.parse(json['executedAt']) : DateTime.now(),
+      executedAt: json['executedAt'] != null
+          ? DateTime.parse(json['executedAt'])
+          : DateTime.now(),
       originalPaths: List<String>.from(json['originalPaths'] ?? []),
       deletedPaths: List<String>.from(json['deletedPaths'] ?? []),
       usedRecycleBin: json['usedRecycleBin'] ?? false,

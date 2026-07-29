@@ -36,12 +36,13 @@ jobs:
       - name: Build C# Engine
         run: dotnet build --configuration Release
 
-      # Step E: Run the Unit Tests
+      # Step E: Run the Unit Tests (excluding Soak tests which run in the leak guard workflow)
       - name: Run Unit Tests
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: dotnet test --configuration Release --no-build --verbosity normal --filter "Category!=Soak"
 
       # Step F: Tell Discord whether the build passed or failed
       - name: Notify Discord
+        continue-on-error: true   # fork PRs have no CI_BUILD secret; never fail the run on this
         uses: sarisia/actions-status-discord@v1
         if: always()        # runs even if the build or tests failed
         with:

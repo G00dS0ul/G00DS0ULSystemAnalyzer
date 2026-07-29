@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gs_analyzer_ui/models/age_heatmap_model.dart';
 
 void main() {
-
   AgeHeatmapNode makeNode(String path, String bucket) => AgeHeatmapNode(
     path: path,
     sizeBytes: 1024,
@@ -10,14 +9,10 @@ void main() {
     lastModified: DateTime.now(),
   );
 
-  AgeHeatmapResult makeResult(List<AgeHeatmapNode> nodes) => AgeHeatmapResult(
-    root: 'C:/root',
-    nodes: nodes,
-    summary: {},
-  );
+  AgeHeatmapResult makeResult(List<AgeHeatmapNode> nodes) =>
+      AgeHeatmapResult(root: 'C:/root', nodes: nodes, summary: {});
 
   group('AgeHeatmapResult.lookupByPath', () {
-
     test('finds node with forward-slash path', () {
       final result = makeResult([makeNode('C:/root/docs', 'FRESH')]);
       expect(result.lookupByPath['C:/root/docs'], isNotNull);
@@ -43,7 +38,6 @@ void main() {
   });
 
   group('AgeHeatmapResult.fromJson', () {
-
     test('parses full response correctly', () {
       final json = {
         'root': 'C:/root',
@@ -53,10 +47,10 @@ void main() {
             'sizeBytes': 2048,
             'ageBucket': 'AGING',
             'lastModified': '2024-01-01T00:00:00Z',
-          }
+          },
         ],
         'summary': {
-          'AGING': { 'count': 1, 'totalBytes': 2048 },
+          'AGING': {'count': 1, 'totalBytes': 2048},
         },
       };
 

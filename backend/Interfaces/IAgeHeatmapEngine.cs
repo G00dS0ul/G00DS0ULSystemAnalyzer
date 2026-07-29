@@ -4,5 +4,5 @@ namespace GSSystemAnalyzer.Interfaces;
 
 public interface IAgeHeatmapEngine
 {
-    AgeHeatmapResult? Analyze(string root);
+	AgeHeatmapResult? Analyze(string root);
 }
