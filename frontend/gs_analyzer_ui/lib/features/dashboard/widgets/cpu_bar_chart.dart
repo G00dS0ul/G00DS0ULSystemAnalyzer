@@ -1,62 +1,77 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 
 class CpuBarChart extends StatelessWidget {
-  final List<double> values;
+  final Map<String, List<double>> coreGroups;
 
-  const CpuBarChart({
-    super.key,
-    required this.values
-  });
+  const CpuBarChart({super.key, required this.coreGroups});
 
   @override
   Widget build(BuildContext context) {
-    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    final labels = coreGroups.keys.toList();
+    final barGroups = <BarChartGroupData>[];
 
-    return SizedBox(
-      height: 110,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(values.length, (index) {
-          final value = values[index];
-          final isHighest = value == maxValue;
+    int x = 0;
+    for (final entry in coreGroups.entries) {
+      barGroups.add(
+        BarChartGroupData(
+          x: x++,
+          barsSpace: 6,
+          barRods: entry.value.map((load) {
+            return BarChartRodData(
+              toY: load,
+              color: load > 80 ? HudTheme.accentAmber : HudTheme.accentCyan,
+              width: 14,
+              borderRadius: BorderRadius.circular(3),
+            );
+          }).toList(),
+        ),
+      );
+    }
 
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 600),
-                tween: Tween(
-                  begin: 0,
-                  end: (value / maxValue) * 95,
-                ),
-                curve: Curves.easeOut,
-                builder: (_, height, __) {
-                  return Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      height: height,
-                      decoration: BoxDecoration(
-                        color: isHighest
-                            ? const Color(0xffAFC2FF)
-                            : const Color(0xff6C7389),
-                        borderRadius: BorderRadius.circular(3),
-                        boxShadow: isHighest
-                            ? [
-                                BoxShadow(
-                                  color: const Color.fromARGB(115, 175, 194, 255),
-                                  blurRadius: 18,
-                                  spreadRadius: 1,
-                                )
-                              ]
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-              ),
+    return BarChart(
+      BarChartData(
+        maxY: 100,
+        minY: 0,
+        barGroups: barGroups,
+        borderData: FlBorderData(show: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) {
+            return const FlLine(
+              color: Colors.white12,
+              strokeWidth: 1,
+              dashArray: [4, 4],
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 22,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= labels.length) {
+                  return const SizedBox.shrink();
+                }
+                return SideTitleWidget(
+                  meta: meta,
+                  child: Text(labels[index], style: HudTheme.labelMuted),
+                );
+              },
             ),
-          );
-        }),
+          ),
+        ),
       ),
     );
   }

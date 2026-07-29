@@ -1,30 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/cpu_bar_chart.dart';
+import 'package:gs_analyzer_ui/providers/cpu_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
 
-class CpuLoadReport extends StatelessWidget {
+class CpuLoadReport extends ConsumerStatefulWidget {
   const CpuLoadReport({super.key});
 
   @override
+  ConsumerState<CpuLoadReport> createState() => _CpuLoadReportState();
+}
+
+class _CpuLoadReportState extends ConsumerState<CpuLoadReport> {
+
+  @override
   Widget build(BuildContext context) {
+    final cpuState = ref.watch(cpuProvider);
+    final snapShot = cpuState.snapshot;
+
+    if (snapShot == null) {
+      return CustomContainer(
+        color: const Color(0xFF2A2A2A),
+        padding: const EdgeInsets.all(20),
+        child: const SizedBox(
+          height: 240,
+          child: Center(
+            child: Text('AWAITING CPU TELEMETRY...', style: HudTheme.labelMuted),
+          ),
+        ),
+      );
+    }
+
     return CustomContainer(
       color: Color(0xFF2A2A2A),
       padding: EdgeInsets.all(20),
       child: Column(
         children: [
           ListTile(
+            isThreeLine: true,
             contentPadding: EdgeInsets.zero,
             title: Text(
-              'CPU_LOAD [AVG]'
+              'CPU LOAD [AVG]',
+              style: HudTheme.labelMuted,
             ),
             subtitle: Row(
               children: [
                 RichText(
                   text: TextSpan(
-                    text: '72',
+                    text: '${snapShot.averageLoad.toStringAsFixed(1)}',
                     style: TextStyle(
-                      color: Color(0xFFACC3FC),
+                      color: HudTheme.accentCyan,
                       fontSize: 28
                     ),
                     children: [
@@ -38,42 +64,27 @@ class CpuLoadReport extends StatelessWidget {
                     ]
                   )
                 ),
-                const SizedBox(width: 5,),
-                Icon(Icons.arrow_upward, size: 14, color: Colors.greenAccent,),
-                Text(
-                  '2.4%',
-                  style: HudTheme.statGreen,
-                )
+                // const SizedBox(width: 5,),
+                // Icon(Icons.arrow_upward, size: 14, color: Colors.greenAccent,),
+                // Text(
+                //   '2.4%',
+                //   style: HudTheme.statGreen,
+                // )
               ],
             ),
             trailing: Icon(
               Icons.memory,
               size: 40,
-              color: Color(0xFF383A3F),
+              color: HudTheme.accentCyan.withValues(alpha: 0.1),
             ),
           ),
           const SizedBox(height: 10,),
-          CpuBarChart(
-            values: [18, 32, 48, 20, 55, 37, 23, 45]
+          SizedBox(
+            height: 140,
+            child: CpuBarChart(
+              coreGroups: snapShot.coreGroups,
+            ),
           ),
-          const SizedBox(height: 10,),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'CORE 0-3',
-                style: HudTheme.labelMuted,
-              ),
-              Text(
-                'CORE 4-7',
-                style: HudTheme.labelMuted,
-              ),
-              Text(
-                'CORE 8-15',
-                style: HudTheme.labelMuted,
-              )
-            ],
-          )
         ],
       )
     );

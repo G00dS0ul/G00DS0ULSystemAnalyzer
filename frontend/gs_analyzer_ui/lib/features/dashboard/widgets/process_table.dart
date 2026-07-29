@@ -18,7 +18,6 @@ class _ProcessTableState extends ConsumerState<ProcessTable> {
     return SizedBox(
       height: d.rowHeight + 16,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(child: HudLabel('PID')),
           Expanded(child: HudLabel('COMMAND')),

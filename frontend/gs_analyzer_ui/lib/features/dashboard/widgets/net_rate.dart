@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
 
 class NetRate extends StatelessWidget {
@@ -13,7 +14,8 @@ class NetRate extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'NET_IO [ETH0]'
+            'NET IO [ETH0]',
+            style: HudTheme.labelMuted,
           ),
           const SizedBox(height: 15,),
           ListTile(

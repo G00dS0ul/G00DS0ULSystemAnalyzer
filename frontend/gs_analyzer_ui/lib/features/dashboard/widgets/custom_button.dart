@@ -1,37 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gs_analyzer_ui/providers/cpu_provider.dart';
+import 'package:gs_analyzer_ui/providers/ram_provider.dart';
+import 'package:gs_analyzer_ui/providers/thermal_provider.dart';
+import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 
-class CustomButton extends StatelessWidget {
+class CustomButton extends ConsumerWidget {
   final EdgeInsets? padding;
   final IconData? icon;
-  final String label;
   
   const CustomButton({
     this.padding,
     this.icon,
-    required this.label,
     super.key
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ramState = ref.watch(ramProvider);
+    final CpuState = ref.watch(cpuProvider);
+    final thermalState = ref.watch(thermalProvider);
+    final stable = !ramState.isCritical && !CpuState.isCritical && !thermalState.isCritical;
+
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Color(0xFF14402B)
+        color: stable ? HudTheme.accentCyan.withValues(alpha: 0.1) : HudTheme.accentRed.withValues(alpha: 0.1)
       ),
       child: Row(
         children: [
           Icon(
             icon,
             size: 9,
-            color: Color(0xFF6DE390),
+            color: stable ? HudTheme.accentCyan : HudTheme.accentRed,
           ),
           const SizedBox(width: 5,),
           Text(
-            label,
+            stable ? 'SYSTEM STABLE' : 'SYSTEM UNSTABLE',
             style: TextStyle(
-              color: Color(0xFF6DE390),
+              color: stable ? HudTheme.accentCyan : HudTheme.accentRed,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.4
             ),

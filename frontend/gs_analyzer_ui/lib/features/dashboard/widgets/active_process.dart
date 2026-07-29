@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gs_analyzer_ui/features/dashboard/widgets/custom_button.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/process_table.dart';
+import 'package:gs_analyzer_ui/features/dashboard/widgets/status.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
+import 'package:gs_analyzer_ui/providers/process_explorer_provider.dart';
 import 'package:gs_analyzer_ui/providers/ram_provider.dart';
+import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
 
 class ActiveProcess extends ConsumerStatefulWidget {
@@ -20,6 +22,8 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
     final ramState = ref.watch(ramProvider);
     final d = ref.watch(hudDensityProvider);
     final processes = ramState.groupedProcesses.take(4).toList();
+    final selectedPid = ref.watch(selectedProcessPidProvider);
+
     return CustomContainer(
       color: Color(0xFF2A2A2A),
       padding: EdgeInsets.all(20),
@@ -29,7 +33,8 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'ACTIVE_PROCESS_TREE'
+                'ACTIVE PROCESS TREE',
+                style: HudTheme.labelMuted,
               ),
               Row(
                 children: [
@@ -55,7 +60,13 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
           const SizedBox(height: 10,),
           ProcessTable(),
           ...processes.map((group) {
+            final isSelected = group.primaryPid == selectedPid;
             final displayName = group.count > 1 ? '${group.name} (x${group.count})' : group.name;
+            final isCpuHot = group.totalCpuPercent > 10.0;
+            final isMemHot = group.totalPercentMem > 10.0;
+            final isHot = isCpuHot || isMemHot;            
+            final textColor = isHot ? HudTheme.accentAmber : HudTheme.textMain;
+
             return SizedBox(
               height: d.rowHeight + 16,
               child: Row(
@@ -63,33 +74,40 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
                 children: [
                   Expanded(
                     child: Text(
-                      group.primaryPid.toString()
+                      group.primaryPid.toString(),
+                      style: HudTheme.bodyText,
                     ),
                   ),
                   Expanded(
                     child: Text(
                       displayName,
+                      overflow: TextOverflow.ellipsis,
+                      style: HudTheme.bodyText.copyWith(color: isSelected ? HudTheme.accentCyan : textColor),
                     ),
                   ),
                   Expanded(
                     child: Text(
-                      group.primaryUser
+                      group.primaryUser,
+                      style: HudTheme.bodyText,
                     ),
                   ),
                   Expanded(
                     child: Text(
-                      '${group.totalCpuPercent.toStringAsFixed(1)}%'
+                      '${group.totalCpuPercent.toStringAsFixed(1)}%',
+                      style: HudTheme.statGreen.copyWith(color: isCpuHot ? HudTheme.accentAmber : HudTheme.accentCyan),
                     ),
                   ),
                   Expanded(
                     child: Text(
-                      '${group.totalPercentMem.toStringAsFixed(1)}%'
+                      '${group.totalPercentMem.toStringAsFixed(1)}%',
+                      style: HudTheme.statGreen.copyWith(color: textColor),
                     ),
                   ),
-                  CustomButton(
-                    padding: EdgeInsets.symmetric(vertical: 2, horizontal: 5),
-                    label: group.dominantStatus
-                  )
+                  Expanded(
+                    child: Status(
+                      status: group.dominantStatus
+                    ),
+                  ),
                 ],
               ),
             );

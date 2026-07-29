@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/custom_progress_indicator.dart';
+import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
 
 class ThermalSensor extends StatelessWidget {
@@ -14,7 +15,8 @@ class ThermalSensor extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'THERMAL_SENSORS'
+            'THERMAL SENSORS',
+            style: HudTheme.labelMuted,
           ),
           const SizedBox(height: 17,),
           CustomContainer(

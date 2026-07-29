@@ -24,7 +24,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return Container(
       child: ListView(
-        padding: EdgeInsets.all(d.panelPad),
         children: [
           Padding(
             padding: EdgeInsets.all(d.panelPad),
@@ -38,22 +37,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       children: [
                         Text(
                           'System_Overview'.toUpperCase(),
-                          style:TextStyle(
-                            fontSize: 28,
-                            letterSpacing: 0.5,
-                            fontWeight: FontWeight.w600
-                          ),
+                          style:HudTheme.headerCyan
                         ),
                         Text(
                           'Real-Time Telemetry Stream'.toUpperCase(),
-                          style: HudTheme.bodyText,
+                          style: HudTheme.labelMuted,
                         )
                       ],
                     ),
                     CustomButton(
                       padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                       icon: Icons.circle,
-                      label: 'SYSTEM STABLE',
                     )
                   ],
                 ),
