@@ -23,7 +23,7 @@ class _CpuMemoryState extends ConsumerState<CpuMemory>{
     // final drive = ref.watsch(currentDriveProvider)!;
 
     return CustomContainer(
-      color: Color(0xFF2A2A2A),
+      color: HudTheme.bgPanel,
       padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

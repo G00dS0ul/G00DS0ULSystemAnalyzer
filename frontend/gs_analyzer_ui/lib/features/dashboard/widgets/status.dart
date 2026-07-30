@@ -19,7 +19,10 @@ class Status extends StatelessWidget {
     };
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+        color: bg, 
+        borderRadius: BorderRadius.circular(4)
+      ),
       child: Text(
         status,
         style: TextStyle(

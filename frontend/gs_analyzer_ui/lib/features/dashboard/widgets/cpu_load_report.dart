@@ -21,7 +21,7 @@ class _CpuLoadReportState extends ConsumerState<CpuLoadReport> {
 
     if (snapShot == null) {
       return CustomContainer(
-        color: const Color(0xFF2A2A2A),
+        color: HudTheme.bgPanel,
         padding: const EdgeInsets.all(20),
         child: const SizedBox(
           height: 240,
@@ -33,7 +33,7 @@ class _CpuLoadReportState extends ConsumerState<CpuLoadReport> {
     }
 
     return CustomContainer(
-      color: Color(0xFF2A2A2A),
+      color: HudTheme.bgPanel,
       padding: EdgeInsets.all(20),
       child: Column(
         children: [

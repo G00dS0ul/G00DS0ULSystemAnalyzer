@@ -25,7 +25,7 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
     final selectedPid = ref.watch(selectedProcessPidProvider);
 
     return CustomContainer(
-      color: Color(0xFF2A2A2A),
+      color: HudTheme.bgPanel,
       padding: EdgeInsets.all(20),
       child: Column(
         children: [
