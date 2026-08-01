@@ -10,6 +10,8 @@ import 'package:gs_analyzer_ui/providers/storage_mode_provider.dart';
 import 'package:gs_analyzer_ui/widgets/file_type_analyzer_panel.dart';
 import 'package:gs_analyzer_ui/widgets/undo_history_panel.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
+import 'package:gs_analyzer_ui/providers/scan_diff_provider.dart';
+import 'package:gs_analyzer_ui/screen/scan_diff_screen.dart';
 
 class StorageScreen extends ConsumerWidget {
   const StorageScreen({Key? key}) : super(key: key);
@@ -321,18 +323,27 @@ class _DriveDetailCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'DRIVE: ${drive.label} (${drive.name})',
-                style: HudTheme.headerCyan.copyWith(color: HudTheme.accentCyan),
+              Expanded(
+                child: Text(
+                  'DRIVE: ${drive.label} (${drive.name})',
+                  style: HudTheme.headerCyan.copyWith(
+                    color: HudTheme.accentCyan,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               if (drive.percentageUsed >= redThreshold)
-                Text(
-                  '● CRITICAL SPACE',
-                  style: HudTheme.bodyText.copyWith(
-                    color: Colors.redAccent,
-                    fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    '● CRITICAL SPACE',
+                    style: HudTheme.bodyText.copyWith(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+              _WhatChangedButton(drive: drive),
             ],
           ),
           Divider(color: Colors.white10, height: d.gap * 3, thickness: 1),
@@ -421,6 +432,71 @@ class _DriveDetailCard extends ConsumerWidget {
           style: HudTheme.bodyText.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
+    );
+  }
+}
+
+/// WHAT_CHANGED access icon for the drive detail card. Shows an amber count badge
+/// when the last scan of this drive produced changes; tapping opens the SCAN_DIFF screen.
+/// The badge is hidden when there is no baseline, no cached scan, or zero changes.
+class _WhatChangedButton extends ConsumerWidget {
+  final DriveInfo drive;
+
+  const _WhatChangedButton({required this.drive});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final changeCount = ref.watch(diffChangeCountProvider(drive.name));
+
+    return Tooltip(
+      message: 'WHAT CHANGED',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(4),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ScanDiffScreen()),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(
+                Icons.difference_outlined,
+                color: HudTheme.accentCyan,
+                size: 20,
+              ),
+              if (changeCount > 0)
+                Positioned(
+                  right: -6,
+                  top: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16),
+                    decoration: BoxDecoration(
+                      color: HudTheme.accentAmber,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      changeCount > 99 ? '99+' : '$changeCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: HudTheme.fontCore,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

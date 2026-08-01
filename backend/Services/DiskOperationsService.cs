@@ -13,12 +13,14 @@ namespace GSSystemAnalyzer.Services
 		private readonly DiskScannerEngine _scanner;
 		private readonly IHubContext<SystemHub> _hubContext;
 		private readonly ILogger<DiskOperationsService> _logger;
+		private readonly IScanDiffService _scanDiff;
 
-		public DiskOperationsService(DiskScannerEngine scanner, IHubContext<SystemHub> hubContext, ILogger<DiskOperationsService> logger)
+		public DiskOperationsService(DiskScannerEngine scanner, IHubContext<SystemHub> hubContext, ILogger<DiskOperationsService> logger, IScanDiffService scanDiff)
 		{
 			_scanner = scanner;
 			_hubContext = hubContext;
 			_logger = logger;
+			_scanDiff = scanDiff;
 		}
 
 		public DriveTelemetryDto GetDriveTelemetry(string driveLetter)
@@ -90,6 +92,20 @@ namespace GSSystemAnalyzer.Services
 
 				Task.Run(() => _scanner.SaveMemoryToDisk());
 
+				// Compute the scan diff + promote the baseline, but only for whole-drive scans —
+				// browsing individual subfolders should not accumulate baselines or reset a drive's.
+				if (IsDriveRoot(path))
+				{
+					try
+					{
+						_scanDiff.ComputeAndPromote(path);
+					}
+					catch (Exception ex)
+					{
+						_logger.LogWarning(ex, "Scan diff computation failed for {Path}", path);
+					}
+				}
+
 				return nodes;
 			}
 			finally
@@ -128,6 +144,17 @@ namespace GSSystemAnalyzer.Services
 			{
 				Task.Run(() => _scanner.SaveMemoryToDisk());
 			}
+		}
+
+		private static bool IsDriveRoot(string path)
+		{
+			var full = Path.GetFullPath(path);
+			var root = Path.GetPathRoot(full);
+			return !string.IsNullOrEmpty(root)
+				&& string.Equals(
+					full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+					root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+					StringComparison.OrdinalIgnoreCase);
 		}
 
 		public Guid BeginScan(Guid? scanId = null) => _scanner.BeginScanSession(scanId);

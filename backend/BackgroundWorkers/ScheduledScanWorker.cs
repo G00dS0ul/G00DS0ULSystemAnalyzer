@@ -145,15 +145,15 @@ public class ScheduledScanWorker : BackgroundService
 			var completedAt = DateTimeOffset.UtcNow;
 			_scheduleService.MarkCompleted(schedule.Id, completedAt);
 
-			// Broadcast AutoScanComplete — diff field is null until the Scan Result Diff
-			// feature is implemented, which will call IScanDiffService.ComputeDiff() here.
+			var scanDiff = scope.ServiceProvider.GetRequiredService<IScanDiffService>()
+				.GetCachedDiff(schedule.Path);
+
 			await _hubContext.Clients.All.SendAsync("AutoScanComplete", new
 			{
 				scheduleId = schedule.Id,
 				root = schedule.Path,
 				scannedAt = completedAt,
-				// TODO: Hook into IScanDiffService to attach flat-map JSON diff here once merged.
-				diff = (object?)null
+				diff = scanDiff
 			}, stoppingToken);
 
 			_logger.LogInformation(

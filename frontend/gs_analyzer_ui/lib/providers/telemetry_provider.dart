@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/providers/directory_provider.dart';
 import 'package:gs_analyzer_ui/providers/drive_stats_provider.dart';
+import 'package:gs_analyzer_ui/providers/scan_diff_provider.dart';
 
 import 'cpu_provider.dart';
 import 'nuke_provider.dart';
@@ -111,6 +112,14 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
 
     _telemetryService?.onDirectoryStreamComplete = (scanId, path) {
       ref.read(directoryProvider.notifier).finalizeStream(scanId, path);
+      final drive = ref.read(currentDriveProvider);
+      if (drive != null) {
+        final completed = path.replaceAll('\\', '/').replaceAll('/', '').toLowerCase();
+        final driveRoot = drive.name.replaceAll('\\', '/').replaceAll('/', '').toLowerCase();
+        if (completed == driveRoot) {
+          ref.invalidate(scanDiffProvider(drive.name));
+        }
+      }
     };
 
     _telemetryService?.onNukeProgress = (percentage, target, completed) {
@@ -150,11 +159,12 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
 
     _telemetryService?.onAutoScanComplete = (data) {
       final root = data['root'] as String;
-      
-      // The spec mentions invalidating scanResultFamily(root) and scanDiffProvider(root)
-      // which will be added in the next PR. For now, we refresh the directory tree unconditionally:
-      // TODO: ref.invalidate(scanResultFamily(root));
-      // TODO: ref.invalidate(scanDiffProvider(root));
+
+      // Refresh the WHAT_CHANGED badge + SCAN_DIFF screen for this root. The backend
+      // has already computed and cached the diff for this scan (it also rides along in
+      // data['diff']), so invalidating re-fetches the freshly cached result.
+      ref.invalidate(scanDiffProvider(root));
+
       ref.read(directoryProvider.notifier).scanDirectory(root);
 
       snackbarKey.currentState?.showSnackBar(
