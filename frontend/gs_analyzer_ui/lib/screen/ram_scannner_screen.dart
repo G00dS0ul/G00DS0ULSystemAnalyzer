@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gs_analyzer_ui/features/dashboard/widgets/status.dart';
 import 'package:gs_analyzer_ui/providers/ram_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/utils/hud_label.dart';
@@ -208,7 +209,7 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
                             Expanded(
                               flex: 3,
                               child: Center(
-                                child: _StatusBadge(group.dominantStatus),
+                                child: Status(status: group.dominantStatus),
                               ),
                             ),
                             Expanded(
@@ -345,46 +346,6 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
             minHeight: 4,
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Status badge ──────────────────────────────────────────────────────────────
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge(this.status);
-
-  @override
-  Widget build(BuildContext context) {
-    final (Color bg, Color fg) = switch (status) {
-      'RUNNING' => (
-        HudTheme.accentGreen.withValues(alpha: 0.15),
-        HudTheme.accentGreen,
-      ),
-      'SLEEPING' => (Colors.white.withValues(alpha: 0.06), HudTheme.textDim),
-      'ZOMBIE' => (
-        HudTheme.accentRed.withValues(alpha: 0.15),
-        HudTheme.accentRed,
-      ),
-      _ => (HudTheme.accentRed.withValues(alpha: 0.15), HudTheme.accentRed),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: fg,
-          fontSize: 10,
-          fontFamily: HudTheme.fontCore,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.8,
-        ),
       ),
     );
   }
