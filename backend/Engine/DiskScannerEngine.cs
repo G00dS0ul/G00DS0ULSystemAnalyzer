@@ -76,9 +76,16 @@ public class DiskScannerEngine : IDiskScannerEngine
 
 	public List<FileSystemInfo> LoadDirectoryItems(string path)
 	{
+		var items = new List<FileSystemInfo>();
+
+		if (string.IsNullOrWhiteSpace(path))
+		{
+			_logger.LogDebug("LoadDirectoryItems called with empty path");
+			return items;
+		}
+
 		MoveRadarToSector(path);
 
-		var items = new List<FileSystemInfo>();
 		try
 		{
 			// FIX: hidden/System filter is logically wrong(Should be two separate Check)
