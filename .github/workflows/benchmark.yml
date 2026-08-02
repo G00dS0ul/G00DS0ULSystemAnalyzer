@@ -45,6 +45,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: GS-SystemAnalyzer/gs-benchmark
+          # PINNED. Without a ref this took gs-benchmark's default-branch HEAD on every
+          # run, so a push there changed the gate on every open core PR with no commit
+          # here — core PRs inherited an unrelated repo's moving HEAD. Bump this
+          # deliberately when adopting new benchmarks.
+          ref: 35b3e070b2eff7ff4b923b44af1be34092e6beb7
           path: gs-benchmarks
 
       - name: Setup .NET

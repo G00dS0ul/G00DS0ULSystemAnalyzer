@@ -51,28 +51,85 @@ jobs:
   # ---- Gate 2: CPU / allocation regression (runs on ALL PRs, incl. forks) ----
   # Fork PRs run with a READ-ONLY token: they can READ the baseline cache to compare
   # and still FAIL the check on a regression, but cannot WRITE the cache or post a PR
-  # comment. The baseline is only updated by push-to-main. Commenting is off so the
-  # job never errors on forks; the failing check + job summary carry the signal.
+  # comment. Only push-to-main writes the baseline. Commenting is off so the job never
+  # errors on forks; the failing check + job summary carry the signal.
+  #
+  # This job ALWAYS runs and always reports, even when it has no backend work to do.
+  # It is a required status check, and a required check that never reports leaves the
+  # PR blocked on a pending state forever — so the path gating is per-STEP (below),
+  # never a job-level `if:` or a workflow-level `paths:` filter.
   backend-benchmark:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Frontend-only PRs don't touch anything these benchmarks measure. Detect that
+      # and skip the expensive steps while still reporting success for the check.
+      #
+      # PR-event only, deliberately: on pull_request this uses the GitHub API (needs no
+      # git history, so the default shallow checkout is fine). On push it would fall
+      # back to git-based diffing, which can fail against a fetch-depth:1 clone — and a
+      # failure there would break the push-to-main baseline write, which is the whole
+      # point of this job. Pushes always benchmark anyway (see the gate below), so the
+      # filter has nothing to decide.
+      - name: Detect backend changes
+        id: filter
+        if: github.event_name == 'pull_request'
+        continue-on-error: true   # detection breaking must not skip the gate — see below
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/leak-perf-guard.yml'
+
+      # Fail-safe: only skip when the filter POSITIVELY reported no backend changes.
+      # Pushes to main always benchmark (that is what refreshes the baseline), and a
+      # filter that errored leaves the output empty, which falls through to run=true.
+      # Skipping a regression gate because detection broke is the one outcome to avoid.
+      - name: Decide whether to benchmark
+        id: gate
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.filter.outputs.backend }}" = "false" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No backend changes — skipping CPU/allocation benchmark." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-dotnet@v4
+        if: steps.gate.outputs.run == 'true'
         with:
           dotnet-version: '10.0.x'
+
       - name: Run BenchmarkDotNet (JSON exporter)
+        if: steps.gate.outputs.run == 'true'
         run: >
           dotnet run -c Release --framework net10.0-windows
           --project backend/GSSystemAnalyzer.Benchmarks/GSSystemAnalyzer.Benchmarks.csproj
           -- --exporters json --filter '*'
-      # Persist the baseline across runs. Caches created on the default branch
-      # are readable by PR runs, which is what enables comparison.
-      - name: Restore / persist benchmark baseline
-        uses: actions/cache@v4
+
+      # RESTORE ONLY. A plain `actions/cache` step here caused the bug this replaces:
+      # its key is immutable, so the first run on a ref saved a baseline and every later
+      # run on that same ref restored it and compared the PR against ITSELF (a PR is
+      # scoped to its own refs/pull/N/merge cache before falling back to main). Two runs
+      # of one branch on different runners then read as a 2x "regression". Restoring with
+      # a per-SHA key + prefix fallback, and saving only on main, makes a PR always
+      # measure against main and never against its own earlier run.
+      - name: Restore benchmark baseline
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache/restore@v4
         with:
           path: ./cache
-          key: benchmark-baseline-${{ runner.os }}
+          key: benchmark-baseline-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            benchmark-baseline-${{ runner.os }}-
+
       - name: Compare against baseline & fail on regression
+        if: steps.gate.outputs.run == 'true'
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: 'benchmarkdotnet'
@@ -82,9 +139,25 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
           fail-on-alert: true
-          alert-threshold: '150%'      # >50% slower OR more allocation -> fail
+          # 300%, not 150%. ScannerBenchmarks are I/O-bound — ResolveCleanTargets() is
+          # ~15 Directory.Exists calls plus Directory.GetDirectories against whatever
+          # happens to be installed on the runner image, with no caching. Observed
+          # run-to-run spread on identical code is ~2x, so 150% fails on runner luck
+          # alone. Proper fix is a seeded, deterministic temp tree via [GlobalSetup] in
+          # ScannerBenchmarks.cs; until then this threshold catches order-of-magnitude
+          # regressions without crying wolf.
+          alert-threshold: '300%'
           comment-on-alert: false      # forks can't comment; failing check + summary cover it
           summary-always: true
+
+      # Only pushes to main roll the baseline forward, so PR runs can never poison it.
+      # Must come AFTER the compare step, which is what appends the new data point.
+      - name: Save benchmark baseline
+        if: steps.gate.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v4
+        with:
+          path: ./cache
+          key: benchmark-baseline-${{ runner.os }}-${{ github.sha }}
 
   # ---- Optional: Discord ping on any gate failure (matches your other workflows) ----
   notify:
