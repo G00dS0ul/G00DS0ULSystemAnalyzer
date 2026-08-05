@@ -158,37 +158,37 @@ public class NukeProtocolServiceTests : IDisposable
 	}
 
 	[Fact]
-public async Task Permanent_LockedFile_IsSkipped_WithoutErrorLog()
-{
-	var logger = new Mock<ILogger<NukeProtocolService>>();
-	var svc = CreateService(logger.Object);
+	public async Task Permanent_LockedFile_IsSkipped_WithoutErrorLog()
+	{
+		var logger = new Mock<ILogger<NukeProtocolService>>();
+		var svc = CreateService(logger.Object);
 
-	var file = NewFile();
-	var token = await TokenFor(svc, file);
+		var file = NewFile();
+		var token = await TokenFor(svc, file);
 
-	using var lockStream = new FileStream(
-		file,
-		FileMode.Open,
-		FileAccess.ReadWrite,
-		FileShare.None);
+		using var lockStream = new FileStream(
+			file,
+			FileMode.Open,
+			FileAccess.ReadWrite,
+			FileShare.None);
 
-	var result = await svc.ObliterateNodeAsync(
-		new() { file },
-		token,
-		useRecycleBin: false);
+		var result = await svc.ObliterateNodeAsync(
+			new() { file },
+			token,
+			useRecycleBin: false);
 
-	Assert.Equal(1, result.SkippedFiles);
-	Assert.True(File.Exists(file));
+		Assert.Equal(1, result.SkippedFiles);
+		Assert.True(File.Exists(file));
 
-	logger.Verify(
-		x => x.Log(
-			LogLevel.Error,
-			It.IsAny<EventId>(),
-			It.Is<It.IsAnyType>((_, _) => true),
-			It.IsAny<Exception>(),
-			It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-		Times.Never);
-}
+		logger.Verify(
+			x => x.Log(
+				LogLevel.Error,
+				It.IsAny<EventId>(),
+				It.Is<It.IsAnyType>((_, _) => true),
+				It.IsAny<Exception>(),
+				It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+			Times.Never);
+	}
 
 	[Fact]
 	public async Task Undo_RestoresFile_ToOriginalPath()
