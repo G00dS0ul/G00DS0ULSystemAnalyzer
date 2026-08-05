@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace GSSystemAnalyzer.Tests.Services;
 
@@ -36,7 +37,7 @@ public class NukeProtocolServiceTests : IDisposable
 			try { if (Directory.Exists(d)) Directory.Delete(d, true); } catch { /* ignore */ }
 	}
 
-	private NukeProtocolService CreateService()
+	private NukeProtocolService CreateService(ILogger<NukeProtocolService>? logger = null)
 	{
 		var hub = new Mock<IHubContext<SystemHub>>();
 		var clients = new Mock<IHubClients>();
@@ -46,7 +47,7 @@ public class NukeProtocolServiceTests : IDisposable
 		proxy.Setup(p => p.SendCoreAsync(It.IsAny<string>(), It.IsAny<object?[]>(), It.IsAny<CancellationToken>()))
 			 .Returns(Task.CompletedTask);
 
-		return new NukeProtocolService(_scanner.Object, hub.Object, NullLogger<NukeProtocolService>.Instance, runStartupCleanup: false)
+		return new NukeProtocolService(_scanner.Object, hub.Object, logger ?? NullLogger<NukeProtocolService>.Instance, runStartupCleanup: false)
 		{
 			StagingBaseResolver = _ => _stagingBase
 		};
@@ -155,6 +156,39 @@ public class NukeProtocolServiceTests : IDisposable
 		Assert.Equal(1, result.SkippedFiles);
 		Assert.Equal(0, result.DeletedFiles);
 	}
+
+	[Fact]
+public async Task Permanent_LockedFile_IsSkipped_WithoutErrorLog()
+{
+	var logger = new Mock<ILogger<NukeProtocolService>>();
+	var svc = CreateService(logger.Object);
+
+	var file = NewFile();
+	var token = await TokenFor(svc, file);
+
+	using var lockStream = new FileStream(
+		file,
+		FileMode.Open,
+		FileAccess.ReadWrite,
+		FileShare.None);
+
+	var result = await svc.ObliterateNodeAsync(
+		new() { file },
+		token,
+		useRecycleBin: false);
+
+	Assert.Equal(1, result.SkippedFiles);
+	Assert.True(File.Exists(file));
+
+	logger.Verify(
+		x => x.Log(
+			LogLevel.Error,
+			It.IsAny<EventId>(),
+			It.Is<It.IsAnyType>((_, _) => true),
+			It.IsAny<Exception>(),
+			It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+		Times.Never);
+}
 
 	[Fact]
 	public async Task Undo_RestoresFile_ToOriginalPath()
