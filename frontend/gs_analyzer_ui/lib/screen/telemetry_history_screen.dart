@@ -49,6 +49,16 @@ class TelemetryHistoryScreen extends ConsumerWidget {
                       metricKey: 'thermal_cpu_package',
                     ),
                   ),
+                  SizedBox(height: d.gap * 2),
+                  SizedBox(
+                    height: 400,
+                    child: TelemetryHistoryChart(metricKey: 'network_rx'),
+                  ),
+                  SizedBox(height: d.gap * 2),
+                  SizedBox(
+                    height: 400,
+                    child: TelemetryHistoryChart(metricKey: 'network_tx'),
+                  ),
                   SizedBox(height: 48), // Padding at bottom
                 ],
               ),

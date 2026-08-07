@@ -25,6 +25,7 @@ class TelemetryService {
   Function(Map<String, dynamic>)? onAuditProgress;
   Function(List<dynamic>)? onScheduleUpdate;
   Function(Map<String, dynamic>)? onAutoScanComplete;
+  Function(Map<String, dynamic>)? onNetworkUpdate;
 
   TelemetryService({
     required this.onProgressUpdate,
@@ -63,6 +64,7 @@ class TelemetryService {
     _hubConnection.on('AuditProgress', _handleAuditProgress);
     _hubConnection.on('ScheduleUpdate', _handleScheduleUpdate);
     _hubConnection.on('AutoScanComplete', _handleAutoScanComplete);
+    _hubConnection.on('NetworkUpdate', _handleNetworkUpdate);
   }
 
   Future<void> startListening() async {
@@ -74,6 +76,7 @@ class TelemetryService {
         final api = ApiService();
         api.startRamRadar();
         api.startCpuRadar();
+        api.startNetworkRadar();
       } catch (e) {
         appLogger.i(
           'TELEMETRY RADIO ERROR: FAILED TO CONNECT TO BASE STATION! - $e',
@@ -235,6 +238,21 @@ class TelemetryService {
   void _handleAutoScanComplete(List<Object?>? arguments) {
     if (onAutoScanComplete != null && arguments != null && arguments.isNotEmpty) {
       onAutoScanComplete!(arguments[0] as Map<String, dynamic>);
+    }
+  }
+
+  void _handleNetworkUpdate(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+    try {
+      final rawData = arguments[0];
+      if (rawData is Map) {
+        final data = Map<String, dynamic>.from(rawData);
+        if (onNetworkUpdate != null) {
+          onNetworkUpdate!(data);
+        }
+      }
+    } catch (e) {
+      appLogger.i('NETWORK TELEMETRY CRASH: $e');
     }
   }
 }
