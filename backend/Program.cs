@@ -29,8 +29,12 @@ builder.Services.AddSingleton<DiskScannerEngine>();
 builder.Services.AddSingleton<IDiskScannerEngine>(sp =>
 	sp.GetRequiredService<DiskScannerEngine>());
 builder.Services.AddSingleton<RamMonitoringEngine>();
+builder.Services.AddSingleton<NetworkSamplerEngine>();
+builder.Services.AddSingleton<INetworkEngine>(sp =>
+	sp.GetRequiredService<NetworkSamplerEngine>());
 
 // Service singletons (interface → implementation)
+builder.Services.AddSingleton<INetworkInterfaceProvider, SystemNetworkInterfaceProvider>();
 builder.Services.AddSingleton<ILargeFileHunterService, LargeFileHunterService>();
 builder.Services.AddSingleton<ITempFolderCleanerService, TempFolderCleanerService>();
 builder.Services.AddSingleton<INukeProtocolService, NukeProtocolService>();
@@ -91,6 +95,7 @@ else
 builder.Services.AddHostedService<CpuSamplerEngine>();
 builder.Services.AddHostedService<ThermalMonitoringEngine>();
 builder.Services.AddHostedService<DriveMonitorService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<NetworkSamplerEngine>());
 
 // Schedule services
 builder.Services.AddSingleton<IScheduleStore, ScheduleStore>();

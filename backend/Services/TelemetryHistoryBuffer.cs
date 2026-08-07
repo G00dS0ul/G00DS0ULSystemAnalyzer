@@ -14,6 +14,8 @@ namespace GSSystemAnalyzer.Services
 			["ram"] = "GB",
 			["ram_percent"] = "%",
 			["thermal_cpu_package"] = "°C",
+			["network_rx"] = "B/s",
+			["network_tx"] = "B/s",
 		};
 
 		private readonly ConcurrentDictionary<string, ConcurrentQueue<TelemetryPoint>> _buffers = new();
