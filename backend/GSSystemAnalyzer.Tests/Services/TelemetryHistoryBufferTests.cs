@@ -126,7 +126,9 @@ namespace GSSystemAnalyzer.Tests.Services
 			Assert.Contains("ram", metrics);
 			Assert.Contains("ram_percent", metrics);
 			Assert.Contains("thermal_cpu_package", metrics);
-			Assert.Equal(4, metrics.Count); // Unwired metrics were removed
+			Assert.Contains("network_rx", metrics);
+			Assert.Contains("network_tx", metrics);
+			Assert.Equal(6, metrics.Count);
 		}
 
 		[Fact]
