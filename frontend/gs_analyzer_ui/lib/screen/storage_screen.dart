@@ -12,6 +12,8 @@ import 'package:gs_analyzer_ui/widgets/undo_history_panel.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
 import 'package:gs_analyzer_ui/providers/scan_diff_provider.dart';
 import 'package:gs_analyzer_ui/screen/scan_diff_screen.dart';
+import 'package:gs_analyzer_ui/widgets/disk_alert_banner.dart';
+import 'package:gs_analyzer_ui/providers/disk_alert_provider.dart';
 
 class StorageScreen extends ConsumerWidget {
   const StorageScreen({Key? key}) : super(key: key);
@@ -36,6 +38,7 @@ class StorageScreen extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const DiskAlertBannerList(),
           _DriveSelectorBar(drives: drives, selectedDrive: currentDrive),
           const Divider(color: Colors.white10, height: 1),
 
@@ -238,6 +241,11 @@ class _DriveTab extends ConsumerWidget {
     final alertSettings = ref.watch(settingsProvider).currentSettings?.alerts;
     final redThreshold = alertSettings?.diskThresholdPercent ?? 90;
 
+    final activeAlert = ref.watch(diskAlertsProvider)[drive.name];
+    final bool isAlerting = activeAlert != null;
+    final Color alertDotColor =
+        (activeAlert?.isCritical ?? false) ? Colors.redAccent : Colors.amber;
+
     Color getStatusColor() {
       if (drive.percentageUsed >= redThreshold) return Colors.redAccent;
       if (drive.percentageUsed >= redThreshold - 10) return Colors.amber;
@@ -271,7 +279,7 @@ class _DriveTab extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${drive.label} (${drive.name})',
+                  drive.displayName,
                   style: HudTheme.bodyText.copyWith(
                     color: isActive ? HudTheme.accentCyan : HudTheme.textDim,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
@@ -279,6 +287,25 @@ class _DriveTab extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (isAlerting) ...[
+                const SizedBox(width: 6),
+                Container(
+                  key: Key('alert_dot_${drive.name}'),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: alertDotColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: alertDotColor.withValues(alpha: 0.6),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),
@@ -325,7 +352,7 @@ class _DriveDetailCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'DRIVE: ${drive.label} (${drive.name})',
+                  'DRIVE: ${drive.displayName}',
                   style: HudTheme.headerCyan.copyWith(
                     color: HudTheme.accentCyan,
                   ),
