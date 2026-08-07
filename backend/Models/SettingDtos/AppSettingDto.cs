@@ -28,6 +28,7 @@ namespace GSSystemAnalyzer.Models.SettingDtos
 			if (Alerts.ThermalThresholdCelsius < 40 || Alerts.ThermalThresholdCelsius > 110) errors.Add("Thermal Threshold must be between 40°C and 110°C.");
 
 			if (Cache.ScanCacheTtlMinutes < 1 || Cache.ScanCacheTtlMinutes > 1440) errors.Add("Scan Cache TTL must be between 1 and 1440 minutes.");
+			if (Cache.MaxCachedNodes < 1000 || Cache.MaxCachedNodes > 500000) errors.Add("Max Cached Nodes must be between 1000 and 500000.");
 			if (Advanced.BackendPort < 1024 || Advanced.BackendPort > 65535) errors.Add("Backend Port must be between 1024 and 65535.");
 			if (Advanced.SignalrReconnectDelaysMs < 500 || Advanced.SignalrReconnectDelaysMs > 30000) errors.Add("SignalR Reconnect Delay must be between 500ms and 30000ms.");
 			if (Advanced.MaxSignalrRetries < 1 || Advanced.MaxSignalrRetries > 100) errors.Add("Max SignalR Retries must be between 1 and 100.");

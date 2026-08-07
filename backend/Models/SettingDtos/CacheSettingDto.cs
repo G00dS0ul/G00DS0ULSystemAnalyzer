@@ -4,5 +4,6 @@ namespace GSSystemAnalyzer.Models.SettingDtos
 	{
 		public int ScanCacheTtlMinutes { get; set; } = 15;
 		public int MaxCacheScans { get; set; } = 5;
+		public int MaxCachedNodes { get; set; } = 50000;
 	}
 }
