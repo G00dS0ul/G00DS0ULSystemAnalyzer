@@ -27,6 +27,7 @@ class TelemetryService {
   Function(Map<String, dynamic>)? onAutoScanComplete;
   Function(Map<String, dynamic>)? onDiskAlert;
   Function(Map<String, dynamic>)? onDiskAlertCleared;
+  Function(Map<String, dynamic>)? onNetworkUpdate;
 
   TelemetryService({
     required this.onProgressUpdate,
@@ -67,6 +68,7 @@ class TelemetryService {
     _hubConnection.on('AutoScanComplete', _handleAutoScanComplete);
     _hubConnection.on('DiskAlert', _handleDiskAlert);
     _hubConnection.on('DiskAlertCleared', _handleDiskAlertCleared);
+    _hubConnection.on('NetworkUpdate', _handleNetworkUpdate);
   }
 
   Future<void> startListening() async {
@@ -78,6 +80,7 @@ class TelemetryService {
         final api = ApiService();
         api.startRamRadar();
         api.startCpuRadar();
+        api.startNetworkRadar();
       } catch (e) {
         appLogger.i(
           'TELEMETRY RADIO ERROR: FAILED TO CONNECT TO BASE STATION! - $e',
@@ -265,6 +268,18 @@ class TelemetryService {
       } catch (e) {
         appLogger.w('DISK ALERT CLEARED PARSE ERROR: $e');
       }
+  void _handleNetworkUpdate(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+    try {
+      final rawData = arguments[0];
+      if (rawData is Map) {
+        final data = Map<String, dynamic>.from(rawData);
+        if (onNetworkUpdate != null) {
+          onNetworkUpdate!(data);
+        }
+      }
+    } catch (e) {
+      appLogger.i('NETWORK TELEMETRY CRASH: $e');
     }
   }
 }
