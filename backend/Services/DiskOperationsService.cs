@@ -14,13 +14,20 @@ namespace GSSystemAnalyzer.Services
 		private readonly IHubContext<SystemHub> _hubContext;
 		private readonly ILogger<DiskOperationsService> _logger;
 		private readonly IScanDiffService _scanDiff;
+		private readonly IScanCacheService? _cacheService;
 
-		public DiskOperationsService(DiskScannerEngine scanner, IHubContext<SystemHub> hubContext, ILogger<DiskOperationsService> logger, IScanDiffService scanDiff)
+		public DiskOperationsService(
+			DiskScannerEngine scanner,
+			IHubContext<SystemHub> hubContext,
+			ILogger<DiskOperationsService> logger,
+			IScanDiffService scanDiff,
+			IScanCacheService? cacheService = null)
 		{
 			_scanner = scanner;
 			_hubContext = hubContext;
 			_logger = logger;
 			_scanDiff = scanDiff;
+			_cacheService = cacheService;
 		}
 
 		public DriveTelemetryDto GetDriveTelemetry(string driveLetter)
@@ -62,10 +69,16 @@ namespace GSSystemAnalyzer.Services
 
 					long itemSize = 0;
 					if (item is FileInfo f) itemSize = f.Length;
-					else if (item is DirectoryInfo d &&
-							 _scanner.DirectorySizeCache.TryGetValue(d.FullName, out var cachedSize))
+					else if (item is DirectoryInfo d)
 					{
-						itemSize = cachedSize.Size;
+						if (_cacheService != null && _cacheService.TryGetNode(d.FullName, out var node) && node != null)
+						{
+							itemSize = node.RecursiveBytes;
+						}
+						else if (_scanner.DirectorySizeCache.TryGetValue(d.FullName, out var cachedSize))
+						{
+							itemSize = cachedSize.Size;
+						}
 					}
 
 
@@ -89,6 +102,20 @@ namespace GSSystemAnalyzer.Services
 					LastUpdated = DateTime.UtcNow,
 					Extensions = oldEntry?.Extensions
 				};
+
+				if (_cacheService != null)
+				{
+					var rootNodeKey = ScanCacheService.NormalizePath(path);
+					var rootMeta = new ScanRootMeta(
+						DriveRoot: path,
+						Depth: 5,
+						ScannedAt: DateTimeOffset.UtcNow,
+						TotalBytes: actualFolderSize,
+						TotalFiles: nodes.Count,
+						RootNodeKey: rootNodeKey
+					);
+					_cacheService.SetScanRoot(rootMeta);
+				}
 
 				Task.Run(() => _scanner.SaveMemoryToDisk());
 

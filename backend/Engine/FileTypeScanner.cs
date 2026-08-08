@@ -7,9 +7,6 @@ namespace GSSystemAnalyzer.Engine;
 
 public class FileTypeScanner : IFileTypeScanner
 {
-	private readonly DiskScannerEngine _engine;
-	private readonly IMemoryCache _cache;
-
 	private static readonly Dictionary<string, string> _categoryMap =
 		new(StringComparer.OrdinalIgnoreCase)
 		{
@@ -91,10 +88,26 @@ public class FileTypeScanner : IFileTypeScanner
 			[".lnk"] = "system",
 		};
 
-	public FileTypeScanner(DiskScannerEngine engine, IMemoryCache cache)
+	private readonly DiskScannerEngine _engine;
+	private readonly IMemoryCache _cache;
+	private readonly IScanCacheService? _cacheService;
+
+	public FileTypeScanner(DiskScannerEngine engine, IMemoryCache cache, IScanCacheService? cacheService = null)
 	{
 		_engine = engine;
 		_cache = cache;
+		_cacheService = cacheService;
+
+		if (_cacheService != null)
+		{
+			_cacheService.OnSubtreeInvalidated += (s, root) =>
+			{
+				if (!string.IsNullOrEmpty(root))
+				{
+					Invalidate(root);
+				}
+			};
+		}
 	}
 
 	/// <inheritdoc/>
@@ -107,7 +120,8 @@ public class FileTypeScanner : IFileTypeScanner
 			return hit;
 
 		var normalizedNoSlash = normalized.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-		var wasScanned = _engine.DirectorySizeCache.Keys
+		var wasScanned = (_cacheService != null && _cacheService.HasScanRoot(root)) ||
+			_engine.DirectorySizeCache.Keys
 			.Any(k => k.Equals(normalizedNoSlash, StringComparison.OrdinalIgnoreCase) ||
 					  k.StartsWith(normalized, StringComparison.OrdinalIgnoreCase));
 
@@ -133,7 +147,8 @@ public class FileTypeScanner : IFileTypeScanner
 			return hit;
 
 		var normalizedNoSlash = normalized.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-		var wasScanned = _engine.DirectorySizeCache.Keys
+		var wasScanned = (_cacheService != null && _cacheService.HasScanRoot(root)) ||
+			_engine.DirectorySizeCache.Keys
 			.Any(k => k.Equals(normalizedNoSlash, StringComparison.OrdinalIgnoreCase) ||
 					  k.StartsWith(normalized, StringComparison.OrdinalIgnoreCase));
 
@@ -241,6 +256,45 @@ public class FileTypeScanner : IFileTypeScanner
 	private ConcurrentDictionary<string, FileTypeEntry> BuildFromMemory(string root)
 	{
 		var extMap = new ConcurrentDictionary<string, FileTypeEntry>(StringComparer.OrdinalIgnoreCase);
+
+		if (_cacheService != null)
+		{
+			var nodes = _cacheService.GetNodesUnderRoot(root).ToList();
+			if (nodes.Count > 0)
+			{
+				foreach (var node in nodes)
+				{
+					foreach (var file in node.Files)
+					{
+						var ext = string.IsNullOrEmpty(file.Extension) ? "no extension" : file.Extension.ToLowerInvariant();
+						var filePath = Path.Combine(node.Path, file.Name);
+
+						extMap.AddOrUpdate(
+							ext,
+							_ => new FileTypeEntry
+							{
+								Count = 1,
+								Bytes = file.Length,
+								LargestFileBytes = file.Length,
+								LargestFilePath = filePath
+							},
+							(_, prev) =>
+							{
+								prev.Count += 1;
+								prev.Bytes += file.Length;
+								if (file.Length > prev.LargestFileBytes)
+								{
+									prev.LargestFileBytes = file.Length;
+									prev.LargestFilePath = filePath;
+								}
+								return prev;
+							});
+					}
+				}
+
+				return extMap;
+			}
+		}
 
 		var rootNoSlash = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 		var cachedDirs = _engine.DirectorySizeCache
