@@ -6,12 +6,27 @@ import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/utils/hud_label.dart';
 import 'package:gs_analyzer_ui/utils/globals.dart';
 import 'package:gs_analyzer_ui/widgets/scheduled_scans_panel.dart';
+import 'package:intl/intl.dart';
+import 'package:gs_analyzer_ui/providers/cache_stats_provider.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(cacheStatsProvider);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
 
@@ -87,7 +102,7 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildMonitoringSection(settings.monitoring, state, notifier),
               const SizedBox(height: 16),
-              _buildCacheSection(settings.cache, state, notifier, context),
+              _buildCacheSection(settings.cache, state, notifier, context, ref),
               const SizedBox(height: 16),
               _buildAppearanceSection(settings.appearance, state, notifier),
               const SizedBox(height: 16),
@@ -318,12 +333,16 @@ class SettingsScreen extends ConsumerWidget {
     SettingsState state,
     SettingsNotifier notifier,
     BuildContext context,
+    WidgetRef ref,
   ) {
+    final statsAsync = ref.watch(cacheStatsProvider);
+
     return _SettingsSection(
       title: 'MEMORY & CACHE',
       errorFilter: 'Cache',
       state: state,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSlider(
             'SCAN CACHE TTL',
@@ -347,6 +366,19 @@ class SettingsScreen extends ConsumerWidget {
               notifier.updateUI();
             },
           ),
+          _buildSlider(
+            'MAX CACHED NODES',
+            cache.maxCachedNodes.toDouble(),
+            1000,
+            500000,
+            '',
+            (val) {
+              cache.maxCachedNodes = val.toInt();
+              notifier.updateUI();
+            },
+            divisions: 499,
+            valueDisplay: NumberFormat('#,###').format(cache.maxCachedNodes),
+          ),
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
@@ -356,6 +388,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
               onPressed: () async {
                 final success = await notifier.clearCache();
+                ref.invalidate(cacheStatsProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -376,6 +409,55 @@ class SettingsScreen extends ConsumerWidget {
                 'CLEAR CACHE NOW',
                 style: TextStyle(letterSpacing: 1.5),
               ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: statsAsync.when(
+                    data: (stats) {
+                      final nodes = stats != null
+                          ? NumberFormat('#,###').format(stats.activeEntries)
+                          : '0';
+                      final memory = stats?.formattedMemory ?? '0 MB';
+                      final hitRate = stats?.formattedHitRate ?? '0%';
+                      return Text(
+                        'CACHED: $nodes NODES · $memory · HIT RATE $hitRate',
+                        style: HudTheme.bodyText.copyWith(
+                          color: Colors.white38,
+                          fontSize: 11,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
+                    loading: () => Text(
+                      'CACHED: FETCHING STATS...',
+                      style: HudTheme.bodyText.copyWith(
+                        color: Colors.white38,
+                        fontSize: 11,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    error: (_, __) => Text(
+                      'CACHED: STATS OFFLINE',
+                      style: HudTheme.bodyText.copyWith(
+                        color: Colors.white38,
+                        fontSize: 11,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                _CacheRefreshButton(
+                  onRefresh: () => ref.refresh(cacheStatsProvider),
+                ),
+              ],
             ),
           ),
         ],
@@ -431,14 +513,16 @@ class SettingsScreen extends ConsumerWidget {
 
     return Container(
       decoration: HudTheme.hudPanelDecoration,
-      child: Theme(
-        data: ThemeData(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          title: Text(
-            'ADVANCED ▾',
-            style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
-          ),
-          childrenPadding: const EdgeInsets.all(16),
+      child: Material(
+        color: Colors.transparent,
+        child: Theme(
+          data: ThemeData(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            title: Text(
+              'ADVANCED ▾',
+              style: HudTheme.bodyText.copyWith(color: HudTheme.textDim),
+            ),
+            childrenPadding: const EdgeInsets.all(16),
           children: [
             if (_hasError(state, 'Port') || _hasError(state, 'SignalR'))
               _buildErrorMessage(state, 'Port'),
@@ -514,6 +598,7 @@ class SettingsScreen extends ConsumerWidget {
             }),
           ],
         ),
+      ),
       ),
     );
   }
@@ -711,24 +796,31 @@ class SettingsScreen extends ConsumerWidget {
     double min,
     double max,
     String unit,
-    Function(double) onChanged,
-  ) {
+    Function(double) onChanged, {
+    int? divisions,
+    String? valueDisplay,
+  }) {
+    final clampedVal = value.clamp(min, max);
     return Row(
       children: [
         SizedBox(width: 140, child: HudLabel(label)),
         Expanded(
           child: Slider(
-            value: value,
+            value: clampedVal,
             min: min,
             max: max,
+            divisions: divisions,
             activeColor: HudTheme.accentCyan,
             inactiveColor: Colors.white12,
             onChanged: onChanged,
           ),
         ),
         SizedBox(
-          width: 70,
-          child: Text('${value.toInt()}$unit', style: TextStyle(fontSize: 14)),
+          width: 80,
+          child: Text(
+            valueDisplay ?? '${clampedVal.toInt()}$unit',
+            style: const TextStyle(fontSize: 14),
+          ),
         ),
       ],
     );
@@ -835,3 +927,64 @@ class _SettingsSection extends StatelessWidget {
     );
   }
 }
+
+class _CacheRefreshButton extends StatefulWidget {
+  final VoidCallback onRefresh;
+
+  const _CacheRefreshButton({required this.onRefresh});
+
+  @override
+  State<_CacheRefreshButton> createState() => _CacheRefreshButtonState();
+}
+
+class _CacheRefreshButtonState extends State<_CacheRefreshButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    _controller.forward(from: 0.0);
+    widget.onRefresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Refresh cache diagnostics',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _handleTap,
+          borderRadius: BorderRadius.circular(6),
+          hoverColor: Colors.white10,
+          child: Padding(
+            padding: const EdgeInsets.all(6.0),
+            child: RotationTransition(
+              turns: _controller,
+              child: const Icon(
+                Icons.refresh,
+                size: 15,
+                color: HudTheme.accentCyan,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

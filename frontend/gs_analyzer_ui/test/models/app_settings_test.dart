@@ -36,4 +36,30 @@ void main() {
       expect(outJson['showAnimations'], true);
     });
   });
+
+  group('CacheSettings serialization', () {
+    test('defaults match specifications', () {
+      final cache = CacheSettings.fromJson({});
+      expect(cache.scanCacheTtlMinutes, 15);
+      expect(cache.maxCacheScans, 5);
+      expect(cache.maxCachedNodes, 50000);
+    });
+
+    test('fromJson and toJson round-trips correctly', () {
+      final json = {
+        'scanCacheTtlMinutes': 60,
+        'maxCacheScans': 10,
+        'maxCachedNodes': 120000,
+      };
+      final cache = CacheSettings.fromJson(json);
+      expect(cache.scanCacheTtlMinutes, 60);
+      expect(cache.maxCacheScans, 10);
+      expect(cache.maxCachedNodes, 120000);
+
+      final out = cache.toJson();
+      expect(out['scanCacheTtlMinutes'], 60);
+      expect(out['maxCacheScans'], 10);
+      expect(out['maxCachedNodes'], 120000);
+    });
+  });
 }
