@@ -15,6 +15,7 @@ import 'package:gs_analyzer_ui/screen/process_explorer_screen.dart';
 import 'package:gs_analyzer_ui/screen/network_module_screen.dart';
 import 'package:gs_analyzer_ui/screen/startup_manager_screen.dart';
 import 'package:gs_analyzer_ui/screen/telemetry_history_screen.dart';
+import 'package:gs_analyzer_ui/providers/cache_stats_provider.dart';
 import 'cpu_metrics_screen.dart';
 
 class MasterLayout extends ConsumerWidget {
@@ -28,6 +29,9 @@ class MasterLayout extends ConsumerWidget {
     ref.listen<AppRoute>(navigationProvider, (prev, next) {
       if (next == AppRoute.storage && prev != AppRoute.storage) {
         ref.read(storageViewProvider.notifier).state = StorageView.drivePicker;
+      }
+      if (next == AppRoute.settings && prev != AppRoute.settings) {
+        ref.invalidate(cacheStatsProvider);
       }
     });
 
