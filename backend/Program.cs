@@ -24,6 +24,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 
+// Cache infrastructure
+builder.Services.AddSingleton<IScanCacheService, ScanCacheService>();
+
 // Engine singletons
 builder.Services.AddSingleton<DiskScannerEngine>();
 builder.Services.AddSingleton<IDiskScannerEngine>(sp =>

@@ -13,19 +13,22 @@ public class ScanDiffService : IScanDiffService
 	private readonly ISettingService _settings;
 	private readonly IMemoryCache _cache;
 	private readonly ILogger<ScanDiffService> _logger;
+	private readonly IScanCacheService? _cacheService;
 
 	public ScanDiffService(
 		DiskScannerEngine engine,
 		IScanSnapshotStore store,
 		ISettingService settings,
 		IMemoryCache cache,
-		ILogger<ScanDiffService> logger)
+		ILogger<ScanDiffService> logger,
+		IScanCacheService? cacheService = null)
 	{
 		_engine = engine;
 		_store = store;
 		_settings = settings;
 		_cache = cache;
 		_logger = logger;
+		_cacheService = cacheService;
 	}
 
 	private static string CacheKey(string root) => $"scandiff:{ScanSnapshotStore.NormalizeDriveKey(root)}";
@@ -86,6 +89,28 @@ public class ScanDiffService : IScanDiffService
 		var prefix = rootNoSlash + "/";
 
 		var entries = new Dictionary<string, ScanSnapshotEntry>(StringComparer.OrdinalIgnoreCase);
+
+		if (_cacheService != null)
+		{
+			var nodes = _cacheService.GetNodesUnderRoot(root).ToList();
+			if (nodes.Count > 0)
+			{
+				foreach (var node in nodes)
+				{
+					var keyFwd = ToForwardSlash(node.Path).TrimEnd('/');
+					var underRoot = keyFwd.Equals(rootNoSlash, StringComparison.OrdinalIgnoreCase)
+						|| keyFwd.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+					if (!underRoot) continue;
+
+					entries[keyFwd] = new ScanSnapshotEntry(
+						SizeBytes: node.RecursiveBytes,
+						IsDirectory: true,
+						LastModified: node.CachedAt);
+				}
+
+				return new ScanSnapshot(DateTimeOffset.UtcNow, entries);
+			}
+		}
 
 		foreach (var kvp in _engine.DirectorySizeCache)
 		{

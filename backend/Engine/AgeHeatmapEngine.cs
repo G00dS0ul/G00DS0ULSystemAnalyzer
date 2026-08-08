@@ -8,11 +8,24 @@ public class AgeHeatmapEngine : IAgeHeatmapEngine
 {
 	private readonly DiskScannerEngine _engine;
 	private readonly IMemoryCache _cache;
+	private readonly IScanCacheService? _cacheService;
 
-	public AgeHeatmapEngine(DiskScannerEngine engine, IMemoryCache cache)
+	public AgeHeatmapEngine(DiskScannerEngine engine, IMemoryCache cache, IScanCacheService? cacheService = null)
 	{
 		_engine = engine;
 		_cache = cache;
+		_cacheService = cacheService;
+
+		if (_cacheService != null)
+		{
+			_cacheService.OnSubtreeInvalidated += (s, root) =>
+			{
+				if (!string.IsNullOrEmpty(root))
+				{
+					_cache.Remove($"ageheatmap:{NormalizeRoot(root)}");
+				}
+			};
+		}
 	}
 
 	/// <inheritdoc/>
@@ -26,7 +39,8 @@ public class AgeHeatmapEngine : IAgeHeatmapEngine
 
 		// Check whether a scan has been run for this root (normalize cache keys before comparing)
 		var normalizedNoSlash = normalized.TrimEnd('/');
-		var wasScanned = _engine.DirectorySizeCache.Keys
+		var wasScanned = (_cacheService != null && _cacheService.HasScanRoot(root)) ||
+			_engine.DirectorySizeCache.Keys
 			.Any(k =>
 			{
 				var nk = NormalizeKey(k);
@@ -47,14 +61,6 @@ public class AgeHeatmapEngine : IAgeHeatmapEngine
 
 		var normalizedNoSlash = root.TrimEnd('/');
 
-		// Walk every cached directory under this root — normalize keys before comparing
-		var cachedDirs = _engine.DirectorySizeCache
-			.Where(kvp =>
-			{
-				var nk = NormalizeKey(kvp.Key);
-				return nk == normalizedNoSlash || nk.StartsWith(root);
-			});
-
 		// Build summary — initialize all four buckets so they always appear
 		var summary = new Dictionary<string, AgeBucketSummary>
 		{
@@ -63,6 +69,51 @@ public class AgeHeatmapEngine : IAgeHeatmapEngine
 			["aging"] = new AgeBucketSummary(),
 			["stale"] = new AgeBucketSummary()
 		};
+
+		if (_cacheService != null)
+		{
+			var cachedNodes = _cacheService.GetNodesUnderRoot(root).ToList();
+			if (cachedNodes.Count > 0)
+			{
+				foreach (var node in cachedNodes)
+				{
+					long directSize = node.OwnBytes;
+					int directCount = node.Files.Count;
+					DateTime lastModified = node.Files.Count > 0
+						? node.Files.Max(f => f.LastModifiedUtc)
+						: node.CachedAt.UtcDateTime;
+
+					var bucketName = ClassifyAge(lastModified, now);
+
+					nodes.Add(new AgeHeatmapNode
+					{
+						Path = node.Path.Replace("\\", "/"),
+						SizeBytes = directSize,
+						AgeBucket = bucketName,
+						LastModified = lastModified
+					});
+
+					var bucket = summary[bucketName];
+					bucket.Count += directCount;
+					bucket.TotalBytes += directSize;
+				}
+
+				return new AgeHeatmapResult
+				{
+					Root = root.TrimEnd('/'),
+					Nodes = nodes,
+					Summary = summary
+				};
+			}
+		}
+
+		// Fallback: Walk every cached directory under this root — normalize keys before comparing
+		var cachedDirs = _engine.DirectorySizeCache
+			.Where(kvp =>
+			{
+				var nk = NormalizeKey(kvp.Key);
+				return nk == normalizedNoSlash || nk.StartsWith(root);
+			});
 
 		foreach (var kvp in cachedDirs)
 		{
