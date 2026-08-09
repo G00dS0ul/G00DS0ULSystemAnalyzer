@@ -23,6 +23,16 @@ class DriveInfo {
     required this.percentageUsed,
   });
 
+  /// Returns a clean formatted display name avoiding duplicates like 'C:\ (C:\)'.
+  String get displayName {
+    final l = label.trim();
+    final d = name.trim();
+    if (l.isNotEmpty && l.toLowerCase() != d.toLowerCase() && l != 'Local Disk') {
+      return '$l ($d)';
+    }
+    return d.isNotEmpty ? d : (l.isNotEmpty ? l : 'Drive');
+  }
+
   factory DriveInfo.fromJson(Map<String, dynamic> json) {
     final int total = json['totalBytes'] ?? 0;
     final int free = json['freeBytes'] ?? 0;

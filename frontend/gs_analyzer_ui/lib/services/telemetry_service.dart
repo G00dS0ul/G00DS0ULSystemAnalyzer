@@ -25,6 +25,8 @@ class TelemetryService {
   Function(Map<String, dynamic>)? onAuditProgress;
   Function(List<dynamic>)? onScheduleUpdate;
   Function(Map<String, dynamic>)? onAutoScanComplete;
+  Function(Map<String, dynamic>)? onDiskAlert;
+  Function(Map<String, dynamic>)? onDiskAlertCleared;
   Function(Map<String, dynamic>)? onNetworkUpdate;
 
   TelemetryService({
@@ -64,6 +66,8 @@ class TelemetryService {
     _hubConnection.on('AuditProgress', _handleAuditProgress);
     _hubConnection.on('ScheduleUpdate', _handleScheduleUpdate);
     _hubConnection.on('AutoScanComplete', _handleAutoScanComplete);
+    _hubConnection.on('DiskAlert', _handleDiskAlert);
+    _hubConnection.on('DiskAlertCleared', _handleDiskAlertCleared);
     _hubConnection.on('NetworkUpdate', _handleNetworkUpdate);
   }
 
@@ -206,9 +210,9 @@ class TelemetryService {
   }
 
   void _handleDriveUpdate(List<Object?>? arguments) {
-    if (arguments != null && arguments.isNotEmpty) return;
+    if (arguments == null || arguments.isEmpty) return;
     try {
-      final rawData = arguments?[0];
+      final rawData = arguments[0];
 
       if (rawData is List) {
         if (onDriveUpdate != null) {
@@ -238,6 +242,32 @@ class TelemetryService {
   void _handleAutoScanComplete(List<Object?>? arguments) {
     if (onAutoScanComplete != null && arguments != null && arguments.isNotEmpty) {
       onAutoScanComplete!(arguments[0] as Map<String, dynamic>);
+    }
+  }
+
+  void _handleDiskAlert(List<Object?>? arguments) {
+    if (onDiskAlert != null && arguments != null && arguments.isNotEmpty) {
+      try {
+        final rawData = arguments[0];
+        if (rawData is Map) {
+          onDiskAlert!(Map<String, dynamic>.from(rawData));
+        }
+      } catch (e) {
+        appLogger.w('DISK ALERT PARSE ERROR: $e');
+      }
+    }
+  }
+
+  void _handleDiskAlertCleared(List<Object?>? arguments) {
+    if (onDiskAlertCleared != null && arguments != null && arguments.isNotEmpty) {
+      try {
+        final rawData = arguments[0];
+        if (rawData is Map) {
+          onDiskAlertCleared!(Map<String, dynamic>.from(rawData));
+        }
+      } catch (e) {
+        appLogger.w('DISK ALERT CLEARED PARSE ERROR: $e');
+      }
     }
   }
 
