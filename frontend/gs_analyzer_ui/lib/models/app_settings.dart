@@ -150,15 +150,21 @@ class MonitoringSettings {
 }
 
 class CacheSettings {
-  int scanCacheTtlMinutes, maxCacheScans;
-  CacheSettings({this.scanCacheTtlMinutes = 15, this.maxCacheScans = 5});
+  int scanCacheTtlMinutes, maxCacheScans, maxCachedNodes;
+  CacheSettings({
+    this.scanCacheTtlMinutes = 15,
+    this.maxCacheScans = 5,
+    this.maxCachedNodes = 50000,
+  });
   factory CacheSettings.fromJson(Map<String, dynamic> json) => CacheSettings(
     scanCacheTtlMinutes: json['scanCacheTtlMinutes'] ?? 15,
     maxCacheScans: json['maxCacheScans'] ?? 5,
+    maxCachedNodes: json['maxCachedNodes'] ?? 50000,
   );
   Map<String, dynamic> toJson() => {
     'scanCacheTtlMinutes': scanCacheTtlMinutes,
     'maxCacheScans': maxCacheScans,
+    'maxCachedNodes': maxCachedNodes,
   };
 }
 

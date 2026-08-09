@@ -3,6 +3,7 @@ using System.Text.Json;
 using GSSystemAnalyzer.Hubs;
 using GSSystemAnalyzer.Interfaces;
 using GSSystemAnalyzer.Models;
+using GSSystemAnalyzer.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
@@ -42,13 +43,15 @@ public class DiskScannerEngine : IDiskScannerEngine
 	private readonly ISettingService _settings;
 	private readonly IHubContext<SystemHub> _hub;
 	private readonly ILogger<DiskScannerEngine> _logger;
+	private readonly IScanCacheService? _cacheService;
 	private int _scannedFilesCount = 0;
 
-	public DiskScannerEngine(IHubContext<SystemHub> hub, ISettingService settings, ILogger<DiskScannerEngine> logger)
+	public DiskScannerEngine(IHubContext<SystemHub> hub, ISettingService settings, ILogger<DiskScannerEngine> logger, IScanCacheService? cacheService = null)
 	{
 		_hub = hub;
 		_settings = settings;
 		_logger = logger;
+		_cacheService = cacheService;
 		if (File.Exists(_cacheFilePath))
 		{
 			try
@@ -64,6 +67,11 @@ public class DiskScannerEngine : IDiskScannerEngine
 
 					PruneStaleCacheEntries();
 					EnforceMaxCacheScans();
+
+					if (_cacheService != null)
+					{
+						HydrateScanCacheService(savedMemory);
+					}
 				}
 			}
 			catch (Exception ex)
@@ -71,6 +79,71 @@ public class DiskScannerEngine : IDiskScannerEngine
 				_logger.LogWarning(ex, "Cache file corrupted, starting fresh");
 				try { File.Delete(_cacheFilePath); } catch { /* best effort */ }
 			}
+		}
+	}
+
+	public void HydrateScanCacheService(IDictionary<string, CacheEntry> savedMemory)
+	{
+		try
+		{
+			var parentToChildren = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+			foreach (var path in savedMemory.Keys)
+			{
+				try
+				{
+					var parent = Path.GetDirectoryName(path);
+					if (!string.IsNullOrEmpty(parent))
+					{
+						if (!parentToChildren.TryGetValue(parent, out var children))
+						{
+							children = new List<string>();
+							parentToChildren[parent] = children;
+						}
+						children.Add(path);
+					}
+				}
+				catch { }
+			}
+
+			foreach (var (path, entry) in savedMemory)
+			{
+				parentToChildren.TryGetValue(path, out var childList);
+				var dirNode = new CachedDirNode(
+					Path: path,
+					ChildDirectoryPaths: childList ?? (IReadOnlyList<string>)Array.Empty<string>(),
+					Files: Array.Empty<CachedFileEntry>(),
+					OwnBytes: entry.Size,
+					RecursiveBytes: entry.Size,
+					CachedAt: entry.CachedAtUtc != default ? entry.CachedAtUtc : DateTimeOffset.UtcNow,
+					RecursiveBytesStale: false
+				);
+				_cacheService?.SetNode(dirNode, entry.ScanRoot ?? path);
+			}
+
+			var scanRoots = savedMemory.Values
+				.Select(v => v.ScanRoot)
+				.Where(r => !string.IsNullOrEmpty(r))
+				.Distinct(StringComparer.OrdinalIgnoreCase);
+
+			foreach (var root in scanRoots)
+			{
+				if (root != null)
+				{
+					var rootMeta = new ScanRootMeta(
+						DriveRoot: root,
+						Depth: _settings.Current.Scan.Depth,
+						ScannedAt: DateTimeOffset.UtcNow,
+						TotalBytes: savedMemory.TryGetValue(root, out var rootEntry) ? rootEntry.Size : 0,
+						TotalFiles: 0,
+						RootNodeKey: ScanCacheService.NormalizePath(root)
+					);
+					_cacheService?.SetScanRoot(rootMeta);
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			_logger.LogWarning(ex, "Error while hydrating ScanCacheService from disk memory");
 		}
 	}
 
@@ -107,7 +180,7 @@ public class DiskScannerEngine : IDiskScannerEngine
 		try
 		{
 			var directoriesToScan = items.OfType<DirectoryInfo>()
-				.Where(d => !DirectorySizeCache.ContainsKey(d.FullName))
+				.Where(d => !DirectorySizeCache.ContainsKey(d.FullName) || (_cacheService != null && !_cacheService.TryGetNode(d.FullName, out _)))
 				.ToList();
 
 			var totalNodes = directoriesToScan.Count;
@@ -137,48 +210,68 @@ public class DiskScannerEngine : IDiskScannerEngine
 					MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2)
 				};
 
-				await Parallel.ForEachAsync(directoriesToScan, options, async (dir, ct) =>
+				try
 				{
-					try
+					await Parallel.ForEachAsync(directoriesToScan, options, async (dir, ct) =>
 					{
-						var size = await Task.Run(() => GetDirectorySize(dir, ct, scanRoot), ct);
-
-						DirectorySizeCache.TryGetValue(dir.FullName, out var existingEntry);
-						DirectorySizeCache[dir.FullName] = new CacheEntry
+						try
 						{
-							Size = size,
-							LastUpdated = dir.LastWriteTimeUtc,
-							CachedAtUtc = DateTime.UtcNow,
-							ScanRoot = scanRoot,
-							Extensions = existingEntry?.Extensions
-						};
-					}
-					catch (OperationCanceledException)
-					{
-						return;
-					}
+							var size = await Task.Run(() => GetDirectorySize(dir, ct, scanRoot), ct);
 
-					var completed = Interlocked.Increment(ref completedNode);
-					var percentage = Math.Round(((double)completed / totalNodes) * 100, 1);
+							DirectorySizeCache.TryGetValue(dir.FullName, out var existingEntry);
+							DirectorySizeCache[dir.FullName] = new CacheEntry
+							{
+								Size = size,
+								LastUpdated = dir.LastWriteTimeUtc,
+								CachedAtUtc = DateTime.UtcNow,
+								ScanRoot = scanRoot,
+								Extensions = existingEntry?.Extensions
+							};
+						}
+						catch (OperationCanceledException)
+						{
+							return;
+						}
 
-					_ = _hub.Clients.All.SendAsync("ScanProgress", new
-					{
-						scanId = scanId,
-						completed = completed,
-						total = totalNodes,
-						percentageComplete = percentage,
-						currentTarget = dir.Name
+						var completed = Interlocked.Increment(ref completedNode);
+						var percentage = Math.Round(((double)completed / totalNodes) * 100, 1);
+
+						_ = _hub.Clients.All.SendAsync("ScanProgress", new
+						{
+							scanId = scanId,
+							completed = completed,
+							total = totalNodes,
+							percentageComplete = percentage,
+							currentTarget = dir.Name
+						});
 					});
-				});
 
-				// TTL expiry (now based on real scan time) + cap to N most-recent scans.
-				PruneStaleCacheEntries();
-				EnforceMaxCacheScans();
+					// TTL expiry (now based on real scan time) + cap to N most-recent scans.
+					PruneStaleCacheEntries();
+					EnforceMaxCacheScans();
 
-				SaveMemoryToDisk();
+					SaveMemoryToDisk();
+
+					var rootNodeKey = ScanCacheService.NormalizePath(scanRoot);
+					var rootMeta = new ScanRootMeta(
+						DriveRoot: scanRoot,
+						Depth: _settings.Current.Scan.Depth,
+						ScannedAt: DateTimeOffset.UtcNow,
+						TotalBytes: DirectorySizeCache.TryGetValue(scanRoot, out var rootEntry) ? rootEntry.Size : _scannedFilesCount,
+						TotalFiles: _scannedFilesCount,
+						RootNodeKey: rootNodeKey
+					);
+					_cacheService?.SetScanRoot(rootMeta);
+
+					await _hub.Clients.All.SendAsync("ScanProgress", new { scanId = scanId, status = "COMPLETED", count = _scannedFilesCount, currentTarget = "Scan completed" });
+				}
+				catch (OperationCanceledException)
+				{
+					_logger.LogInformation("Scan {ScanId} was canceled by user.", scanId);
+					await _hub.Clients.All.SendAsync("ScanProgress", new { scanId = scanId, status = "CANCELED", count = _scannedFilesCount, currentTarget = "Scan canceled" });
+					throw;
+				}
 			}
-
-			await _hub.Clients.All.SendAsync("ScanProgress", new { scanId = scanId, status = "COMPLETED", count = _scannedFilesCount, currentTarget = "Scan completed" });
 		}
 		finally
 		{
@@ -189,8 +282,7 @@ public class DiskScannerEngine : IDiskScannerEngine
 
 	private long GetDirectorySize(DirectoryInfo dir, CancellationToken token, string scanRoot, int currentDepth = 1)
 	{
-		if (token.IsCancellationRequested)
-			throw new OperationCanceledException("Scan aborted by user");
+		token.ThrowIfCancellationRequested();
 
 		var config = _settings.Current.Scan;
 
@@ -206,7 +298,22 @@ public class DiskScannerEngine : IDiskScannerEngine
 		if (DirectorySizeCache.TryGetValue(dir.FullName, out var entry))
 		{
 			if (dir.LastWriteTimeUtc <= entry.LastUpdated)
+			{
+				if (_cacheService != null && !_cacheService.TryGetNode(dir.FullName, out _))
+				{
+					var cachedNode = new CachedDirNode(
+						Path: dir.FullName,
+						ChildDirectoryPaths: Array.Empty<string>(),
+						Files: Array.Empty<CachedFileEntry>(),
+						OwnBytes: entry.Size,
+						RecursiveBytes: entry.Size,
+						CachedAt: entry.CachedAtUtc != default ? entry.CachedAtUtc : DateTimeOffset.UtcNow,
+						RecursiveBytesStale: false
+					);
+					_cacheService.SetNode(cachedNode, scanRoot);
+				}
 				return entry.Size;
+			}
 
 			_logger.LogDebug("Cache stale for directory, rescanning");
 		}
@@ -265,11 +372,32 @@ public class DiskScannerEngine : IDiskScannerEngine
 				});
 			}
 
-			foreach (var subDir in dir.GetDirectories("*", option))
+			var subDirs = dir.GetDirectories("*", option);
+			var childPaths = new List<string>();
+			foreach (var subDir in subDirs)
 			{
+				childPaths.Add(subDir.FullName);
 				// Pass depth + 1 so each recursive level is tracked
 				size += GetDirectorySize(subDir, token, scanRoot, currentDepth + 1);
 			}
+
+			var fileEntries = files.Select(f => new CachedFileEntry(
+				f.Name,
+				string.IsNullOrEmpty(f.Extension) ? "(none)" : f.Extension.ToLowerInvariant(),
+				f.Length,
+				f.LastWriteTimeUtc
+			)).ToList();
+
+			var dirNode = new CachedDirNode(
+				Path: dir.FullName,
+				ChildDirectoryPaths: childPaths,
+				Files: fileEntries,
+				OwnBytes: files.Sum(f => f.Length),
+				RecursiveBytes: size,
+				CachedAt: DateTimeOffset.UtcNow,
+				RecursiveBytesStale: false
+			);
+			_cacheService?.SetNode(dirNode, scanRoot);
 		}
 		catch (OperationCanceledException) { throw; }
 		catch (Exception) { /* access denied etc — skip silently */ }
@@ -362,6 +490,7 @@ public class DiskScannerEngine : IDiskScannerEngine
 		}
 
 		_logger.LogDebug("File system change detected: {ChangeType} on {Name}", e.ChangeType, e.Name);
+		_cacheService?.HandleWatcherEvent(e.FullPath, e.ChangeType);
 
 		try
 		{
@@ -495,6 +624,7 @@ public class DiskScannerEngine : IDiskScannerEngine
 	public void ClearCache()
 	{
 		DirectorySizeCache.Clear();
+		_cacheService?.Clear();
 
 		lock (_fileWriteLock)
 		{
@@ -550,6 +680,7 @@ public class DiskScannerEngine : IDiskScannerEngine
 			DirectorySizeCache.TryRemove(key, out _);
 		}
 
+		_cacheService?.InvalidatePaths(paths);
 		SaveMemoryToDisk();
 	}
 }
