@@ -116,6 +116,7 @@ class MonitoringSettings {
       networkPollIntervalMs,
       scheduledScanIntervalMinutes;
   bool enableScheduledScans;
+  String? preferredNetworkInterfaceId;
 
   MonitoringSettings({
     this.cpuPollIntervalMs = 1000,
@@ -124,6 +125,7 @@ class MonitoringSettings {
     this.networkPollIntervalMs = 1000,
     this.scheduledScanIntervalMinutes = 15,
     this.enableScheduledScans = false,
+    this.preferredNetworkInterfaceId,
   });
   factory MonitoringSettings.fromJson(Map<String, dynamic> json) =>
       MonitoringSettings(
@@ -134,6 +136,7 @@ class MonitoringSettings {
         scheduledScanIntervalMinutes:
             json['scheduledScanIntervalMinutes'] ?? 15,
         enableScheduledScans: json['enableScheduledScans'] ?? false,
+        preferredNetworkInterfaceId: json['preferredNetworkInterfaceId'],
       );
   Map<String, dynamic> toJson() => {
     'cpuPollIntervalMs': cpuPollIntervalMs,
@@ -142,6 +145,7 @@ class MonitoringSettings {
     'networkPollIntervalMs': networkPollIntervalMs,
     'scheduledScanIntervalMinutes': scheduledScanIntervalMinutes,
     'enableScheduledScans': enableScheduledScans,
+    'preferredNetworkInterfaceId': preferredNetworkInterfaceId,
   };
 }
 

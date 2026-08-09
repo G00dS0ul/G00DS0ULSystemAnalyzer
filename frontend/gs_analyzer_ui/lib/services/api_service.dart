@@ -16,6 +16,7 @@ import 'package:gs_analyzer_ui/models/permission_audit_models.dart';
 import 'package:gs_analyzer_ui/models/telemetry_history_model.dart';
 import 'package:gs_analyzer_ui/models/startup_program.dart';
 import 'package:gs_analyzer_ui/models/scheduled_scan_model.dart';
+import 'package:gs_analyzer_ui/models/network_telemetry.dart';
 import 'package:gs_analyzer_ui/models/scan_diff.dart';
 import 'package:gs_analyzer_ui/models/cache_stats.dart';
 
@@ -36,6 +37,7 @@ class ApiService {
   static const String startupUrl = 'http://localhost:5200/api/startup';
   static const String schedulesUrl = 'http://localhost:5200/api/schedules';
   static const String scanDiffUrl = 'http://localhost:5200/api/scan/diff';
+  static const String networkUrl = 'http://localhost:5200/api/network';
 
   Future<TelemetryHistoryResponse?> fetchTelemetryHistory(
     String metric,
@@ -769,6 +771,50 @@ class ApiService {
       throw Exception(
         'Clear baseline failed [${response.statusCode}]: ${response.body}',
       );
+    }
+  }
+
+  /// Fetches the latest network snapshot via REST.
+  Future<NetworkSnapshot?> fetchNetworkSnapshot() async {
+    final uri = Uri.parse('$networkUrl/interfaces');
+    try {
+      final response = await _client.get(uri);
+      if (response.statusCode == 200) {
+        final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+        return NetworkSnapshot.fromJson(jsonBody);
+      } else {
+        appLogger.i('Failed to fetch network snapshot: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      appLogger.i('Network snapshot request failed: $e');
+      return null;
+    }
+  }
+
+  /// Sets or clears the preferred primary network interface.
+  Future<bool> setPreferredNetworkInterface(String? interfaceId) async {
+    final uri = Uri.parse('$networkUrl/primary');
+    try {
+      final response = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'interfaceId': interfaceId}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      appLogger.i('Failed to set preferred network interface: $e');
+      return false;
+    }
+  }
+
+  /// Triggers network engine snapshot query upon app startup.
+  Future<void> startNetworkRadar() async {
+    final uri = Uri.parse('$networkUrl/interfaces');
+    try {
+      await _client.get(uri);
+    } catch (e) {
+      appLogger.i('Failed to trigger network radar: $e');
     }
   }
 }

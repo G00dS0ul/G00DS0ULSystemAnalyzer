@@ -306,6 +306,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               notifier.updateUI();
             },
           ),
+          _buildSlider(
+            'NETWORK POLL',
+            mon.networkPollIntervalMs.toDouble(),
+            500,
+            60000,
+            ' ms',
+            (val) {
+              mon.networkPollIntervalMs = val.toInt();
+              notifier.updateUI();
+            },
+          ),
           _buildToggle('SCHEDULED SCANS', mon.enableScheduledScans, (val) {
             mon.enableScheduledScans = val;
             notifier.updateUI();

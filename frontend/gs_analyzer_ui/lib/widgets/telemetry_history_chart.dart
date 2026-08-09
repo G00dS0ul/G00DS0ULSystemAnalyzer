@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:gs_analyzer_ui/providers/telemetry_history_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:intl/intl.dart';
+import 'package:gs_analyzer_ui/utils/formatters.dart';
 
 class TelemetryHistoryChart extends ConsumerStatefulWidget {
   final String metricKey;
@@ -117,6 +118,21 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
   }
 
   Widget _buildHeaderTitle() {
+    if (_currentMetricKey == 'network_rx') {
+      return const Text('NETWORK RX (DOWNLOAD)', style: HudTheme.headerCyan);
+    }
+    if (_currentMetricKey == 'network_tx') {
+      return const Text(
+        'NETWORK TX (UPLOAD)',
+        style: TextStyle(
+          fontFamily: HudTheme.fontCore,
+          color: HudTheme.accentAmber,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 2,
+        ),
+      );
+    }
     String title = _currentMetricKey.toUpperCase().replaceAll('_', ' ');
     return Text(title, style: HudTheme.headerCyan);
   }
@@ -172,10 +188,13 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
   }
 
   Widget _buildStatChip(String label, double value, String unit) {
+    final displayValue = unit == 'B/s'
+        ? formatRate(value)
+        : '${value.toStringAsFixed(1)} $unit';
     return Row(
       children: [
         Text('$label: ', style: HudTheme.labelMuted),
-        Text('${value.toStringAsFixed(1)} $unit', style: HudTheme.statGreen),
+        Text(displayValue, style: HudTheme.statGreen),
       ],
     );
   }
@@ -207,6 +226,10 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
     final points = state.response!.points;
     final unit = state.response!.unit;
     final isPercent = unit == '%' || _currentMetricKey.contains('percent');
+    final isRate = unit == 'B/s' || _currentMetricKey.startsWith('network_');
+    final chartColor = _currentMetricKey == 'network_tx'
+        ? HudTheme.accentAmber
+        : HudTheme.accentCyan;
 
     final spots = points.map((p) {
       return FlSpot(p.timestamp.millisecondsSinceEpoch.toDouble(), p.value);
@@ -248,8 +271,15 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 40,
+              reservedSize: isRate ? 55 : 40,
               getTitlesWidget: (value, meta) {
+                if (isRate) {
+                  return Text(
+                    formatRate(value),
+                    style: HudTheme.labelMuted.copyWith(fontSize: 9),
+                    textAlign: TextAlign.right,
+                  );
+                }
                 return Text(
                   isPercent
                       ? value.toInt().toString()
@@ -292,10 +322,11 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
                   spot.x.toInt(),
                 );
                 final timeStr = DateFormat('HH:mm:ss').format(date);
+                final valStr = isRate ? formatRate(spot.y) : '${spot.y} $unit';
                 return LineTooltipItem(
-                  '$timeStr\n${spot.y} $unit',
-                  const TextStyle(
-                    color: HudTheme.accentCyan,
+                  '$timeStr\n$valStr',
+                  TextStyle(
+                    color: chartColor,
                     fontFamily: HudTheme.fontCore,
                     fontSize: 12,
                   ),
@@ -308,13 +339,13 @@ class _TelemetryHistoryChartState extends ConsumerState<TelemetryHistoryChart> {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            color: HudTheme.accentCyan,
+            color: chartColor,
             barWidth: 2,
             isStrokeCapRound: true,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: HudTheme.accentCyan.withValues(alpha: 0.08),
+              color: chartColor.withValues(alpha: 0.08),
             ),
           ),
         ],
