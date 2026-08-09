@@ -268,6 +268,9 @@ class TelemetryService {
       } catch (e) {
         appLogger.w('DISK ALERT CLEARED PARSE ERROR: $e');
       }
+    }
+  }
+
   void _handleNetworkUpdate(List<Object?>? arguments) {
     if (arguments == null || arguments.isEmpty) return;
     try {

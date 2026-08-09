@@ -113,6 +113,8 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
           .where((n) => n.isNotEmpty)
           .toList();
       ref.read(diskAlertsProvider.notifier).pruneDrives(activeNames);
+    };
+
     _telemetryService?.onNetworkUpdate = (data) {
       ref.read(networkProvider.notifier).updateNetwork(data);
     };
