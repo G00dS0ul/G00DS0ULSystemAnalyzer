@@ -14,6 +14,7 @@ import 'package:gs_analyzer_ui/providers/telemetry_provider.dart';
 import 'package:gs_analyzer_ui/screen/process_explorer_screen.dart';
 import 'package:gs_analyzer_ui/screen/network_module_screen.dart';
 import 'package:gs_analyzer_ui/screen/startup_manager_screen.dart';
+import 'package:gs_analyzer_ui/providers/cache_stats_provider.dart';
 import 'package:gs_analyzer_ui/screen/telemetry_history_screen.dart';
 import 'package:gs_analyzer_ui/providers/cache_stats_provider.dart';
 import 'cpu_metrics_screen.dart';
