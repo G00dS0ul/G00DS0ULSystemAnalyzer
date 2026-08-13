@@ -25,8 +25,6 @@ public class DriveMonitorService : BackgroundService
 	private const double DefaultThresholdPercent = 90.0;
 	private const double RemovableDriveThresholdPercent = 95.0;
 	private const double CriticalSeverityThresholdPercent = 98.0;
-	private const double HysteresisBand = 5.0;
-	private const double ReAlertPercentIncrease = 5.0;
 
 	private readonly IDriveDetectionService _driveService;
 	private readonly IHubContext<SystemHub> _hubContext;
@@ -35,20 +33,32 @@ public class DriveMonitorService : BackgroundService
 	private readonly Func<DateTimeOffset> _timeProvider;
 	private readonly TimeSpan _cooldownInterval;
 
-	private readonly Dictionary<string, DriveAlertState> _driveStates = new(StringComparer.OrdinalIgnoreCase);
+	// Per-drive ThresholdAlertTracker instances (N=1 for disk — no debounce needed)
+	private readonly Dictionary<string, ThresholdAlertTracker> _driveTrackers = new(StringComparer.OrdinalIgnoreCase);
 	private readonly object _stateLock = new();
 	private readonly SemaphoreSlim _wakeSignal = new(0, 1);
 
 	private string _lastHardwareSignature = string.Empty;
 	private int _secondsSinceLastSpaceCheck = 60;
 
+	/// <summary>
+	/// Exposes the per-drive alert state for external consumers and tests.
+	/// Synthesised from the internal ThresholdAlertTracker instances.
+	/// </summary>
 	public IReadOnlyDictionary<string, DriveAlertState> DriveStates
 	{
 		get
 		{
 			lock (_stateLock)
 			{
-				return new Dictionary<string, DriveAlertState>(_driveStates, StringComparer.OrdinalIgnoreCase);
+				return _driveTrackers.ToDictionary(
+					kvp => kvp.Key,
+					kvp => new DriveAlertState(
+						kvp.Value.IsAlerting,
+						kvp.Value.LastAlertedAt,
+						kvp.Value.LastAlertedValue,
+						kvp.Value.FirstDetectedAt),
+					StringComparer.OrdinalIgnoreCase);
 			}
 		}
 	}
@@ -80,6 +90,15 @@ public class DriveMonitorService : BackgroundService
 		_settings.OnSettingsChanged += HandleSettingsChanged;
 	}
 
+	private ThresholdAlertTracker CreateTrackerForDrive()
+	{
+		return new ThresholdAlertTracker(
+			requiredConsecutive: 1,
+			hysteresisBand: 5.0,
+			reAlertIncrease: 5.0,
+			cooldownInterval: _cooldownInterval);
+	}
+
 	private void HandleSettingsChanged(object? sender, AppSettingDto newSettings)
 	{
 		_logger.LogInformation("Settings changed: triggering immediate drive alert re-evaluation.");
@@ -107,10 +126,10 @@ public class DriveMonitorService : BackgroundService
 		// Prune removed drives
 		lock (_stateLock)
 		{
-			var staleKeys = _driveStates.Keys.Where(k => !presentNames.Contains(k)).ToList();
+			var staleKeys = _driveTrackers.Keys.Where(k => !presentNames.Contains(k)).ToList();
 			foreach (var stale in staleKeys)
 			{
-				_driveStates.Remove(stale);
+				_driveTrackers.Remove(stale);
 			}
 		}
 
@@ -119,62 +138,31 @@ public class DriveMonitorService : BackgroundService
 			double threshold = GetThresholdForDrive(drive);
 			double usedPercent = drive.UsedPercent;
 
-			DriveAlertState state;
+			ThresholdAlertTracker tracker;
 			lock (_stateLock)
 			{
-				if (!_driveStates.TryGetValue(drive.Name, out state!))
+				if (!_driveTrackers.TryGetValue(drive.Name, out tracker!))
 				{
-					state = new DriveAlertState(false, null, usedPercent, null);
-					_driveStates[drive.Name] = state;
+					tracker = CreateTrackerForDrive();
+					_driveTrackers[drive.Name] = tracker;
 				}
 			}
 
-			if (!state.IsAlerting)
-			{
-				// Normal -> Alerting transition
-				if (usedPercent >= threshold)
-				{
-					var firstDetectedAt = state.FirstDetectedAt ?? now;
-					var newState = new DriveAlertState(true, now, usedPercent, firstDetectedAt);
-					lock (_stateLock)
-					{
-						_driveStates[drive.Name] = newState;
-					}
+			// For disk: single condition — percentage above threshold
+			bool isAboveThreshold = usedPercent >= threshold;
+			var evaluation = tracker.Evaluate(isAboveThreshold, usedPercent, threshold, now);
 
-					await SendDiskAlertAsync(drive, threshold, usedPercent, firstDetectedAt, cancellationToken);
-				}
-			}
-			else
+			switch (evaluation.Action)
 			{
-				// Alerting -> Normal recovery (5-point hysteresis band)
-				if (usedPercent <= (threshold - HysteresisBand))
-				{
-					var newState = new DriveAlertState(false, null, usedPercent, null);
-					lock (_stateLock)
-					{
-						_driveStates[drive.Name] = newState;
-					}
+				case AlertAction.Fire:
+					tracker.RecordAlertFired(usedPercent, now);
+					await SendDiskAlertAsync(drive, threshold, usedPercent, evaluation.FirstDetectedAt!.Value, cancellationToken);
+					break;
 
+				case AlertAction.Clear:
+					tracker.RecordCleared();
 					await SendDiskAlertClearedAsync(drive, usedPercent, cancellationToken);
-				}
-				// While Alerting: Cooldown & Progression re-fire check
-				else
-				{
-					bool cooldownElapsed = state.LastAlertedAt.HasValue && (now - state.LastAlertedAt.Value) >= _cooldownInterval;
-					bool usageClimbed = usedPercent >= (state.LastPercent + ReAlertPercentIncrease);
-
-					if (cooldownElapsed && usageClimbed)
-					{
-						var firstDetectedAt = state.FirstDetectedAt ?? now;
-						var newState = new DriveAlertState(true, now, usedPercent, firstDetectedAt);
-						lock (_stateLock)
-						{
-							_driveStates[drive.Name] = newState;
-						}
-
-						await SendDiskAlertAsync(drive, threshold, usedPercent, firstDetectedAt, cancellationToken);
-					}
-				}
+					break;
 			}
 		}
 	}

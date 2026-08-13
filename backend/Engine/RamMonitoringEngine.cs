@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using GSSystemAnalyzer.Hubs;
 using GSSystemAnalyzer.Interfaces;
 using GSSystemAnalyzer.Models;
+using GSSystemAnalyzer.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
@@ -13,11 +14,19 @@ namespace GSSystemAnalyzer.Engine
 	{
 		private CancellationTokenSource? _radarCts;
 		private readonly IHubContext<SystemHub> _hub;
+		private readonly ISettingService _settings;
 		private readonly IProcessOwnerResolver _ownerResolver;
 		private readonly ITelemetryHistoryBuffer _historyBuffer;
 		private readonly ILogger<RamMonitoringEngine> _logger;
+		private readonly Func<DateTimeOffset> _timeProvider;
+		private readonly ThresholdAlertTracker _alertTracker;
 		private readonly object _lock = new object();
 		private TimeSpan _pollInterval;
+
+		/// <summary>True while the RAM alert is active (debounce passed, not yet cleared).</summary>
+		public bool IsRamAlerting => _alertTracker.IsAlerting;
+
+		private const long CriticalAvailableBytes = 256L * 1024L * 1024L; // 256 MB
 
 		// Per-process CPU baseline from the previous tick
 		private readonly ConcurrentDictionary<int, (TimeSpan CpuTime, DateTime Timestamp)> _prevCpuSnapshot = new();
@@ -25,12 +34,26 @@ namespace GSSystemAnalyzer.Engine
 		// Consecutive zero-CPU-tick counter per PID for status heuristic
 		private readonly ConcurrentDictionary<int, int> _zeroTickCounts = new();
 
-		public RamMonitoringEngine(IHubContext<SystemHub> hub, ISettingService settings, IProcessOwnerResolver ownerResolver, ITelemetryHistoryBuffer historyBuffer, ILogger<RamMonitoringEngine> logger)
+		public RamMonitoringEngine(
+			IHubContext<SystemHub> hub,
+			ISettingService settings,
+			IProcessOwnerResolver ownerResolver,
+			ITelemetryHistoryBuffer historyBuffer,
+			ILogger<RamMonitoringEngine> logger,
+			Func<DateTimeOffset>? timeProvider = null,
+			ThresholdAlertTracker? alertTracker = null)
 		{
 			_hub = hub;
+			_settings = settings;
 			_ownerResolver = ownerResolver;
 			_historyBuffer = historyBuffer;
 			_logger = logger;
+			_timeProvider = timeProvider ?? (() => DateTimeOffset.UtcNow);
+			_alertTracker = alertTracker ?? new ThresholdAlertTracker(
+				requiredConsecutive: 5,
+				hysteresisBand: 5.0,
+				reAlertIncrease: 5.0,
+				cooldownInterval: TimeSpan.FromMinutes(60));
 			_pollInterval = TimeSpan.FromMilliseconds(settings.Current.Monitoring.RamPollIntervalMs);
 			settings.OnSettingsChanged += (_, s) =>
 				_pollInterval = TimeSpan.FromMilliseconds(s.Monitoring.RamPollIntervalMs);
@@ -102,6 +125,9 @@ namespace GSSystemAnalyzer.Engine
 
 							_historyBuffer.Record("ram", activeGb);
 							_historyBuffer.Record("ram_percent", percent);
+
+							// ── RAM pressure alert evaluation ─────────────────────
+							await EvaluateRamPressureAsync(globalMetrics, snapshot, token);
 						}
 
 						_logger.LogDebug("RAM sweep at {Time} — sent {ProcessCount} processes", DateTime.Now.ToString("HH:mm:ss"), snapshot.Count);
@@ -268,6 +294,120 @@ namespace GSSystemAnalyzer.Engine
 #else
 			return "RUNNING";
 #endif
+		}
+
+		// ── RAM pressure alert evaluation ──────────────────────────────
+		internal async Task EvaluateRamPressureAsync(
+			SystemMemoryMetrics.GlobalMemoryMetrics globalMetrics,
+			List<ProcessTelemetry> processList,
+			CancellationToken token)
+		{
+			double totalGb = globalMetrics.TotalGb;
+			double activeGb = globalMetrics.ActiveGb;
+			double availableGb = globalMetrics.CacheGb; // CacheGb holds available physical RAM (ullAvailPhys)
+			double usedPercent = totalGb > 0 ? Math.Round((activeGb / totalGb) * 100, 1) : 0;
+			long availableBytes = (long)(availableGb * 1024 * 1024 * 1024);
+
+			var alerts = _settings.Current.Alerts;
+			double thresholdPercent = alerts.RamThresholdPercent;
+			long minimumFreeBytes = alerts.RamMinimumFreeMb * 1024L * 1024L;
+
+			// Dual condition: percentage AND absolute free-memory floor
+			bool underPressure =
+				usedPercent >= thresholdPercent &&
+				availableBytes <= minimumFreeBytes;
+
+			var now = _timeProvider();
+			var evaluation = _alertTracker.Evaluate(underPressure, usedPercent, thresholdPercent, now);
+
+			switch (evaluation.Action)
+			{
+				case AlertAction.Fire:
+					_alertTracker.RecordAlertFired(usedPercent, now);
+					await SendRamAlertAsync(usedPercent, availableBytes, thresholdPercent, alerts.RamMinimumFreeMb,
+						evaluation.FirstDetectedAt!.Value, processList, token);
+					break;
+
+				case AlertAction.Clear:
+					_alertTracker.RecordCleared();
+					await SendRamAlertClearedAsync(usedPercent, availableBytes, token);
+					break;
+			}
+		}
+
+		private async Task SendRamAlertAsync(
+			double usedPercent,
+			long availableBytes,
+			double thresholdPercent,
+			int minimumFreeMb,
+			DateTimeOffset firstDetectedAt,
+			List<ProcessTelemetry> processList,
+			CancellationToken token)
+		{
+			var now = _timeProvider();
+			string severity = availableBytes < CriticalAvailableBytes ? "critical" : "warning";
+			int sustainedForSeconds = (int)(now - firstDetectedAt).TotalSeconds;
+
+			// Top 3 consumers by working set from the same tick's process list
+			var topConsumers = processList
+				.OrderByDescending(p => p.WorkingSetBytes)
+				.Take(3)
+				.Select(p => new TopConsumerEntry
+				{
+					Pid = p.ProcessId,
+					Name = p.Name,
+					RamMb = p.RamMb
+				})
+				.ToList();
+
+			_logger.LogWarning(
+				"RAM Alert [{Severity}]: {UsedPercent}% used, {Available} available (threshold: {Threshold}%, min free: {MinFreeMb} MB)",
+				severity, usedPercent, FormatSize(availableBytes), thresholdPercent, minimumFreeMb);
+
+			var payload = new RamAlertPayload
+			{
+				UsedPercent = usedPercent,
+				AvailablePhysicalBytes = availableBytes,
+				AvailableFormatted = FormatSize(availableBytes),
+				ThresholdPercent = thresholdPercent,
+				MinimumFreeMb = minimumFreeMb,
+				Severity = severity,
+				SustainedForSeconds = sustainedForSeconds,
+				TopConsumers = topConsumers
+			};
+
+			await _hub.Clients.All.SendAsync("RamAlert", payload, cancellationToken: token);
+		}
+
+		private async Task SendRamAlertClearedAsync(
+			double usedPercent,
+			long availableBytes,
+			CancellationToken token)
+		{
+			_logger.LogInformation(
+				"RAM Alert Cleared: usage recovered to {UsedPercent}%, {Available} available.",
+				usedPercent, FormatSize(availableBytes));
+
+			var payload = new
+			{
+				usedPercent,
+				availableFormatted = FormatSize(availableBytes)
+			};
+
+			await _hub.Clients.All.SendAsync("RamAlertCleared", payload, cancellationToken: token);
+		}
+
+		private static string FormatSize(long bytes)
+		{
+			string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
+			int counter = 0;
+			decimal number = bytes;
+			while (Math.Round(number / 1024) >= 1 && counter < suffixes.Length - 1)
+			{
+				number /= 1024;
+				counter++;
+			}
+			return string.Format("{0:n1} {1}", number, suffixes[counter]);
 		}
 
 		public int ExecuteOrder66(List<int> processIds)
