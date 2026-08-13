@@ -78,6 +78,7 @@ class ScanSettings {
 class AlertSettings {
   int diskThresholdPercent,
       ramThresholdPercent,
+      ramMinimumFreeMb,
       cpuThresholdPercent,
       thermalThresholdCelsius;
   bool enableDesktopNotifications;
@@ -85,6 +86,7 @@ class AlertSettings {
   AlertSettings({
     this.diskThresholdPercent = 90,
     this.ramThresholdPercent = 85,
+    this.ramMinimumFreeMb = 1024,
     this.cpuThresholdPercent = 95,
     this.thermalThresholdCelsius = 85,
     this.enableDesktopNotifications = true,
@@ -93,6 +95,7 @@ class AlertSettings {
   factory AlertSettings.fromJson(Map<String, dynamic> json) => AlertSettings(
     diskThresholdPercent: json['diskThresholdPercent'] ?? 90,
     ramThresholdPercent: json['ramThresholdPercent'] ?? 85,
+    ramMinimumFreeMb: json['ramMinimumFreeMb'] ?? 1024,
     cpuThresholdPercent: json['cpuThresholdPercent'] ?? 95,
     thermalThresholdCelsius:
         json['thermalThresholdCelsius'] ??
@@ -103,6 +106,7 @@ class AlertSettings {
   Map<String, dynamic> toJson() => {
     'diskThresholdPercent': diskThresholdPercent,
     'ramThresholdPercent': ramThresholdPercent,
+    'ramMinimumFreeMb': ramMinimumFreeMb,
     'cpuThresholdPercent': cpuThresholdPercent,
     'thermalThresholdCelsius': thermalThresholdCelsius,
     'enableDesktopNotifications': enableDesktopNotifications,

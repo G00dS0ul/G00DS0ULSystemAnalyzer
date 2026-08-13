@@ -27,6 +27,8 @@ class TelemetryService {
   Function(Map<String, dynamic>)? onAutoScanComplete;
   Function(Map<String, dynamic>)? onDiskAlert;
   Function(Map<String, dynamic>)? onDiskAlertCleared;
+  Function(Map<String, dynamic>)? onRamAlert;
+  Function(Map<String, dynamic>)? onRamAlertCleared;
   Function(Map<String, dynamic>)? onNetworkUpdate;
 
   TelemetryService({
@@ -68,6 +70,8 @@ class TelemetryService {
     _hubConnection.on('AutoScanComplete', _handleAutoScanComplete);
     _hubConnection.on('DiskAlert', _handleDiskAlert);
     _hubConnection.on('DiskAlertCleared', _handleDiskAlertCleared);
+    _hubConnection.on('RamAlert', _handleRamAlert);
+    _hubConnection.on('RamAlertCleared', _handleRamAlertCleared);
     _hubConnection.on('NetworkUpdate', _handleNetworkUpdate);
   }
 
@@ -267,6 +271,32 @@ class TelemetryService {
         }
       } catch (e) {
         appLogger.w('DISK ALERT CLEARED PARSE ERROR: $e');
+      }
+    }
+  }
+
+  void _handleRamAlert(List<Object?>? arguments) {
+    if (onRamAlert != null && arguments != null && arguments.isNotEmpty) {
+      try {
+        final rawData = arguments[0];
+        if (rawData is Map) {
+          onRamAlert!(Map<String, dynamic>.from(rawData));
+        }
+      } catch (e) {
+        appLogger.w('RAM ALERT PARSE ERROR: $e');
+      }
+    }
+  }
+
+  void _handleRamAlertCleared(List<Object?>? arguments) {
+    if (onRamAlertCleared != null && arguments != null && arguments.isNotEmpty) {
+      try {
+        final rawData = arguments[0];
+        if (rawData is Map) {
+          onRamAlertCleared!(Map<String, dynamic>.from(rawData));
+        }
+      } catch (e) {
+        appLogger.w('RAM ALERT CLEARED PARSE ERROR: $e');
       }
     }
   }

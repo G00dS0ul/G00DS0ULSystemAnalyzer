@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:gs_analyzer_ui/models/disk_alert.dart';
+import 'package:gs_analyzer_ui/models/ram_alert.dart';
 import 'package:gs_analyzer_ui/utils/logger.dart';
 
 /// Centralized notification service supporting desktop OS toasts for Disk, RAM, Thermal, and other alerts.
@@ -67,6 +68,40 @@ class NotificationService {
     final body =
         '${alert.displayName} is ${alert.usedPercent.toStringAsFixed(0)}% full — ${alert.freeFormatted} free';
     final payload = 'storage:${alert.driveName}';
+
+    await showNotification(
+      title: title,
+      body: body,
+      payload: payload,
+    );
+  }
+
+  /// Dispatches a desktop RamAlert notification gated strictly on [enableDesktopNotifications].
+  Future<void> showRamAlertNotification(
+    RamAlert alert, {
+    required bool enableDesktopNotifications,
+  }) async {
+    if (!enableDesktopNotifications) {
+      appLogger.d(
+        'Notification suppressed: enableDesktopNotifications is false for RAM alert',
+      );
+      return;
+    }
+
+    final title = 'GSAnalyzer — Memory Alert [${alert.severity.toUpperCase()}]';
+    
+    // Base body: MEMORY PRESSURE — 924 MB FREE (88%)
+    var body = 'MEMORY PRESSURE — ${alert.availableFormatted} FREE (${alert.usedPercent}%)';
+    
+    // Expanded body (Top consumers)
+    if (alert.topConsumers.isNotEmpty) {
+      body += '\n\nTop consumers:';
+      for (var consumer in alert.topConsumers) {
+        body += '\n• ${consumer.name} (${consumer.ramMb.toStringAsFixed(0)} MB)';
+      }
+    }
+    
+    final payload = 'memory';
 
     await showNotification(
       title: title,

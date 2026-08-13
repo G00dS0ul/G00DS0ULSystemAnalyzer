@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/custom_progress_indicator.dart';
-// import 'package:gs_analyzer_ui/providers/drive_stats_provider.dart';
 import 'package:gs_analyzer_ui/providers/ram_provider.dart';
+import 'package:gs_analyzer_ui/providers/ram_alert_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_label.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
@@ -20,6 +20,7 @@ class _CpuMemoryState extends ConsumerState<CpuMemory>{
   @override
   Widget build(BuildContext context) {
     final ramstate = ref.watch(ramProvider);
+    final ramAlert = ref.watch(ramAlertProvider);
     // final drive = ref.watsch(currentDriveProvider)!;
 
     return CustomContainer(
@@ -31,8 +32,28 @@ class _CpuMemoryState extends ConsumerState<CpuMemory>{
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              HudLabel(
-                'MeM ALLOCATION'
+              Row(
+                children: [
+                  HudLabel('MeM ALLOCATION'),
+                  if (ramAlert != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: ramAlert.severity == 'critical' ? HudTheme.accentRed : HudTheme.accentAmber,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        ramAlert.severity == 'critical' ? 'CRITICAL' : 'PRESSURE',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Icon(
                 Icons.memory,

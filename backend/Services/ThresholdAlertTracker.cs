@@ -50,7 +50,7 @@ public class ThresholdAlertTracker
 	{
 		if (!IsAlerting)
 		{
-			//  Normal → Alerting path
+			//  Normal - Alerting path
 			if (isAboveThreshold)
 			{
 				ConsecutiveCount++;
@@ -73,7 +73,7 @@ public class ThresholdAlertTracker
 		}
 		else
 		{
-			//  Alerting → Recovery path 
+			//  Alerting - Recovery path 
 			if (currentValue <= (threshold - _hysteresisBand))
 			{
 				return new AlertEvaluation(AlertAction.Clear, currentValue, null);

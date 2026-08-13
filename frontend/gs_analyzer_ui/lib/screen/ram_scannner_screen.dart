@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/status.dart';
 import 'package:gs_analyzer_ui/providers/ram_provider.dart';
+import 'package:gs_analyzer_ui/providers/ram_alert_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/utils/hud_label.dart';
 import 'package:gs_analyzer_ui/widgets/telemetry_history_chart.dart';
@@ -20,6 +21,7 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
   @override
   Widget build(BuildContext context) {
     final ramState = ref.watch(ramProvider);
+    final ramAlert = ref.watch(ramAlertProvider);
     final d = ref.watch(hudDensityProvider);
 
     return Column(
@@ -136,8 +138,10 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
                       if (index == 0) return _buildTableHeader(d);
 
                       final group = ramState.groupedProcesses[index - 1];
+                      
+                      final isTopConsumer = ramAlert?.topConsumers.any((c) => c.name == group.name) ?? false;
                       final isMemHot = group.totalPercentMem > 10.0;
-                      final isHot = isMemHot;
+                      final isHot = isMemHot || isTopConsumer;
                       final textColor = isHot
                           ? HudTheme.accentAmber
                           : HudTheme.textMain;
@@ -155,8 +159,11 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
                           color: isHot
                               ? HudTheme.accentAmber.withValues(alpha: 0.05)
                               : Colors.transparent,
-                          border: const Border(
-                            bottom: BorderSide(color: Colors.white10),
+                          border: Border(
+                            bottom: const BorderSide(color: Colors.white10),
+                            left: isTopConsumer
+                                ? const BorderSide(color: HudTheme.accentAmber, width: 4)
+                                : BorderSide.none,
                           ),
                         ),
                         child: Row(
