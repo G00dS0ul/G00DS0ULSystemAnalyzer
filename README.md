@@ -1,30 +1,14 @@
 # 🦅 GS System Analyzer
 
-[Flutter](https://img.shields.io/badge/Frontend-Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
-
-Flutter
-
-[Riverpod](https://img.shields.io/badge/State-Riverpod-000000?style=for-the-badge&logo=dart&logoColor=white)
-
-Riverpod
-
-[[ASP.NET](http://ASP.NET) Core](https://img.shields.io/badge/Backend-ASP.NET_Core_10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
-
-[ASP.NET](http://ASP.NET) Core
-
-[SignalR](https://img.shields.io/badge/WebSockets-SignalR-0078D4?style=for-the-badge&logo=microsoft&logoColor=white)
-
-SignalR
-
-[Status](https://img.shields.io/badge/Status-Pre--Beta_(v2.0)-FF8C00?style=for-the-badge)
-
-Status
-
-[License](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)
-
-License
-
-[![Discord](https://img.shields.io/badge/Community-Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)]([https://discord.gg/FA8WsVXMx](https://discord.gg/FA8WsVXMx))
+<p>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Frontend-Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Frontend Flutter" /></a>&nbsp;
+  <a href="https://riverpod.dev"><img src="https://img.shields.io/badge/State-Riverpod-000000?style=for-the-badge&logo=dart&logoColor=white" alt="State Riverpod" /></a>&nbsp;
+  <a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/Backend-ASP.NET_Core_10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="Backend ASP.NET Core 10" /></a>&nbsp;
+  <a href="https://learn.microsoft.com/aspnet/core/signalr/introduction"><img src="https://img.shields.io/badge/WebSockets-SignalR-0078D4?style=for-the-badge&logo=microsoft&logoColor=white" alt="WebSockets SignalR" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/Status-Pre--Beta_(v2.0)-FF8C00?style=for-the-badge" alt="Status Pre-Beta v2.0" /></a>&nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="License Apache 2.0" /></a>&nbsp;
+  <a href="https://discord.gg/FA8WsVXMx"><img src="https://img.shields.io/badge/Community-Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Community Discord" /></a>
+</p>
 
 A high-performance, cross-platform system telemetry and disk management engine. Built with a reactive Flutter UI and powered by a multithreaded C# backend, GS System Analyzer provides real-time OS-level insights and execution protocols wrapped in a custom **"Cyber-HUD"** aesthetic.
 
@@ -33,7 +17,7 @@ A high-performance, cross-platform system telemetry and disk management engine. 
 
 ---
 
-## 📍 Project Status — Where We Are Right Now
+## 📍 Project Status - Where We Are Right Now
 
 **Current stage: Pre-Beta, v2.0 feature freeze approaching (August 2026).**
 
