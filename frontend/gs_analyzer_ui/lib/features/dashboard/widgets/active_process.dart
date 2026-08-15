@@ -32,9 +32,12 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'ACTIVE PROCESS TREE',
-                style: HudTheme.labelMuted,
+              Expanded(
+                child: Text(
+                  'ACTIVE PROCESS TREE',
+                  style: HudTheme.labelMuted,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               Row(
                 children: [
@@ -104,8 +107,11 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
                     ),
                   ),
                   Expanded(
-                    child: Status(
-                      status: group.dominantStatus
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Status(
+                        status: group.dominantStatus
+                      ),
                     ),
                   ),
                 ],

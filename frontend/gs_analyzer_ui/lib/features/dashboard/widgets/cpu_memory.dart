@@ -41,7 +41,7 @@ class _CpuMemoryState extends ConsumerState<CpuMemory>{
               )
             ],
           ),
-          Spacer(),
+          const SizedBox(height: 20,),
           // ListTile(
           //   // isThreeLine: true,
           //   contentPadding: EdgeInsets.zero,

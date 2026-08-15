@@ -7,6 +7,7 @@ import 'package:gs_analyzer_ui/screen/ram_scannner_screen.dart';
 import 'package:gs_analyzer_ui/screen/settings_screen.dart';
 import 'package:gs_analyzer_ui/screen/thermal_module_screen.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
+import 'package:gs_analyzer_ui/widgets/coming_soon.dart';
 import 'package:gs_analyzer_ui/widgets/global_sidebar_widget.dart';
 import 'package:gs_analyzer_ui/screen/storage_screen.dart';
 import 'package:gs_analyzer_ui/providers/storage_view_provider.dart';
@@ -86,8 +87,10 @@ class StorageRouter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(storageViewProvider);
-    return view == StorageView.analyzer
-        ? const AnalyzerDashboard()
-        : const StorageScreen();
+    return ComingSoon(
+      child: view == StorageView.analyzer
+          ? const AnalyzerDashboard()
+          : const StorageScreen(),
+    );
   }
 }

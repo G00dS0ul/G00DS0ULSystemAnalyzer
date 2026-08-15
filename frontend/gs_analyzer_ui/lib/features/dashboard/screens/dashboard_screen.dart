@@ -8,6 +8,7 @@ import 'package:gs_analyzer_ui/features/dashboard/widgets/net_rate.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/thermal_sensor.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
+import 'package:gs_analyzer_ui/widgets/coming_soon.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -22,76 +23,96 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final d = ref.watch(hudDensityProvider);
 
-    return Container(
-      child: ListView(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(d.panelPad),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minDashboardWidth = 1000.0; // Minimum width to comfortably show all horizontal components
+        final targetWidth = constraints.maxWidth > minDashboardWidth ? constraints.maxWidth : minDashboardWidth;
+        
+        return Container(
+          child: ListView(
+            children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: targetWidth,
+                    maxWidth: targetWidth,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(d.panelPad),
+                    child: Column(
                       children: [
-                        Text(
-                          'System_Overview'.toUpperCase(),
-                          style:HudTheme.headerCyan
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'System_Overview'.toUpperCase(),
+                                    style:HudTheme.headerCyan
+                                  ),
+                                  Text(
+                                    'Real-Time Telemetry Stream'.toUpperCase(),
+                                    style: HudTheme.labelMuted,
+                                  )
+                                ],
+                              ),
+                            ),
+                            CustomButton(
+                              padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                              icon: Icons.circle,
+                            )
+                          ],
                         ),
-                        Text(
-                          'Real-Time Telemetry Stream'.toUpperCase(),
-                          style: HudTheme.labelMuted,
+                        const SizedBox(height: 30,),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: CpuLoadReport()
+                              ),
+                              const SizedBox(width: 15,),
+                              Expanded(
+                                child: CpuMemory()
+                              ),
+                              const SizedBox(width: 15,),
+                              Expanded(
+                                child: ComingSoon(child: NetRate())
+                              )
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 25,),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: ActiveProcess()
+                              ),
+                              const SizedBox(width: 15,),
+                              Expanded(
+                                flex: 1,
+                                child: ComingSoon(
+                                  child: ThermalSensor()
+                                )
+                              )
+                            ],
+                          ),
                         )
                       ],
                     ),
-                    CustomButton(
-                      padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                      icon: Icons.circle,
-                    )
-                  ],
-                ),
-                const SizedBox(height: 30,),
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: CpuLoadReport()
-                      ),
-                      const SizedBox(width: 15,),
-                      Expanded(
-                        child: CpuMemory()
-                      ),
-                      const SizedBox(width: 15,),
-                      Expanded(
-                        child: NetRate()
-                      )
-                    ],
                   ),
                 ),
-                const SizedBox(height: 25,),
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: ActiveProcess()
-                      ),
-                      const SizedBox(width: 15,),
-                      Expanded(
-                        flex: 1,
-                        child: ThermalSensor()
-                      )
-                    ],
-                  ),
-                )
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 } 
