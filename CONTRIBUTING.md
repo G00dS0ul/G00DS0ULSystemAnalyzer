@@ -1,25 +1,32 @@
-# CONTRIBUTING.md
-
 # Contributing to GS System Analyzer
 
-Thanks for your interest in contributing. This is an active open source project, licensed under **Apache-2.0**, and contributions are welcome from developers with experience in Flutter/Dart, C#/ASP.NET Core.
+Thanks for your interest in contributing. This is an active open-source project licensed under **Apache-2.0**. Contributions are welcome from developers with experience in Flutter/Dart and C#/ASP.NET Core.
 
-Read this document fully before opening a pull request.
+Please read this document fully before opening a pull request.
+
+## Table of Contents
+
+- [Where We Are Right Now](#where-we-are-right-now)
+- [What We're Building](#what-were-building)
+- [Before You Start](#before-you-start)
+- [Setting Up](#setting-up)
+- [Engineering Rules](#engineering-rules)
+- [Continuous Integration](#continuous-integration)
+- [Pull Request Process](#pull-request-process)
+- [Compensation & IP](#compensation--ip)
+- [Code of Conduct](#code-of-conduct)
+- [Questions & Community](#questions--community)
 
 ---
 
-## 📍 Where We Are Right Now
+## Where We Are Right Now
 
-<aside>
-🚧
-
-**Stage: Pre-Beta, feature freeze approaching.** The engine and every primary telemetry panel are shipped and running. What is left for v2.0 is network and disk I/O, fine-grained cache invalidation, and alerting polish.
-
-**Public Beta — Sept 2026**  ·  **Official release — Oct/Nov 2026.**
-
-Active focus right now: `NET_IO`, `DISK_IO`, Memory Cache TTL & Invalidation, RAM Pressure Alerts, Watcher Event Log, and the Multi-Drive review follow-ups.
-
-</aside>
+> 🚧 **Stage: Pre-Beta, feature freeze approaching.**
+> The engine and every primary telemetry panel are shipped and running. What is left for v2.0 is network and disk I/O, fine-grained cache invalidation, and alerting polish.
+>
+> **Public Beta — Sept 2026** · **Official release — Oct/Nov 2026**
+>
+> Active focus right now: `NET_IO`, `DISK_IO`, Memory Cache TTL & Invalidation, RAM Pressure Alerts, Watcher Event Log, and the Multi-Drive review follow-ups.
 
 **Roadmap at a glance:**
 
@@ -27,12 +34,7 @@ Active focus right now: `NET_IO`, `DISK_IO`, Memory Cache TTL & Invalidation, RA
 - **Release 1.0 (Oct–Dec 2026)** — Multi-drive support, advanced GPU thermals, dark/light theme, unified single-pass scan engine, scheduled/automated nukes.
 - **Release 2.0 (Q1 2027)** — Predictive analytics, behavioural baselines, macOS native layer.
 
-<aside>
-⚠️
-
-Feature-level status is tracked in **GitHub Issues**. An open issue means the feature is not done, regardless of what any board says.
-
-</aside>
+> ⚠️ Feature-level status is tracked in **GitHub Issues**. An open issue means the feature is not done, regardless of what any board says.
 
 ---
 
@@ -42,7 +44,7 @@ GS System Analyzer is a cross-platform desktop application for real-time system 
 
 The repo is a **monorepo** with two top-level projects — a C# backend and a Flutter desktop client:
 
-```
+```text
 core/
 ├── backend/                          ASP.NET Core 10 backend (C#, SignalR)
 │   ├── BackgroundWorkers/            DriveMonitorService, ScheduledScanWorker
@@ -101,21 +103,17 @@ core/
 - .NET 10.0 SDK
 - Git
 
-**1. Fork & clone**
+### 1) Fork & clone
 
 ```bash
 git clone https://github.com/<your-username>/core.git
 cd core
 ```
 
-<aside>
-🛑
+> 🛑 **Clone into a path with no non-ASCII characters.**
+> Emoji or other non-ASCII characters anywhere in the path (including your Windows profile folder name) can break tooling that still resolves paths through the legacy ANSI code page. If your user profile contains such characters, clone to something like `C:\dev\` instead of your home directory.
 
-**Clone into a path with no non-ASCII characters.** Emoji or other non-ASCII characters anywhere in the path (including your Windows profile folder name) will break tooling that still resolves paths through the legacy ANSI code page — this has already cost real debugging time on installers and archive extraction. If your user profile contains such characters, clone to something like `C:\dev\` instead of your home directory.
-
-</aside>
-
-**2. Start the backend (Terminal 1)**
+### 2) Start the backend (Terminal 1)
 
 ```bash
 cd backend
@@ -123,11 +121,11 @@ dotnet restore
 dotnet run            # serves on http://localhost:5200
 ```
 
-- Run your terminal **as Administrator** — thermal/sensor reads require elevated privileges. Without it, thermal and several telemetry panels will show empty or ghost data.
-- On corporate/vPro machines with HVCI or Memory Integrity enabled, the low-level sensor driver is blocked outright. The sensor stack will fall back to WMI automatically; reduced thermal data on such machines is expected, not a bug.
+- Run your terminal **as Administrator** — thermal/sensor reads require elevated privileges. Without it, thermal and several telemetry panels may show empty or ghost data.
+- On corporate/vPro machines with HVCI or Memory Integrity enabled, the low-level sensor driver is blocked. The sensor stack falls back to WMI automatically; reduced thermal data on such machines is expected.
 - Alternatively, open `backend/GSSystemAnalyzer.slnx` in Visual Studio / Rider and run from there.
 
-**3. Start the frontend (Terminal 2)**
+### 3) Start the frontend (Terminal 2)
 
 ```bash
 cd frontend/gs_analyzer_ui
@@ -138,12 +136,12 @@ flutter run -d windows      # or: -d macos / -d linux
 - Before running, confirm `ApiService` (in `lib/services/`) points at `http://localhost:5200`.
 - The Flutter client is a reactive shell — it shows no real data unless the backend is running, because all OS-level telemetry arrives via SignalR/REST.
 
-**4. Iterate with hot reload**
+### 4) Iterate with hot reload
 
 With `flutter run` active, edit any Dart file and:
 
-- Press **`r`** → **hot reload**: pushes UI changes in ~1s and preserves current app state. Use this for widget, layout, and styling tweaks.
-- Press **`R`** → **hot restart**: full state rebuild. Use this when you change providers, `main.dart`, or the shape of your state.
+- Press **`r`** for **hot reload**: pushes UI changes in ~1s and preserves current app state.
+- Press **`R`** for **hot restart**: full state rebuild for provider or app-entry changes.
 - Most IDEs (VS Code, Android Studio) hot-reload automatically on save.
 
 ---
@@ -152,13 +150,13 @@ With `flutter run` active, edit any Dart file and:
 
 These are not suggestions. Every pull request is checked against them.
 
-### 1. Architecture
+### 1) Architecture
 
 - Flutter → SignalR/REST → C# backend → OS APIs. This is the only permitted data flow.
 - Flutter widgets receive data via Riverpod providers connected to SignalR streams.
 - No direct OS calls from Dart code.
 
-### 2. UI — HudTheme
+### 2) UI — HudTheme
 
 All colors, typography, and decorations must reference `HudTheme` constants from `lib/utils/hud_theme.dart`.
 
@@ -174,7 +172,7 @@ Text('58.6 GB', style: TextStyle(color: Colors.white))
 - Icon colors: folders → `accentAmber`, files → `accentGreen`, delete → `accentRed`, navigation → `accentCyan`.
 - `HudTheme` is currently a `static const` class. Do not add new hardcoded colors as a workaround — if a token is missing, add it to `HudTheme`.
 
-### 3. Settings keys — the three-place rule
+### 3) Settings keys — the three-place rule
 
 Any new configurable value must land in **all three** places in the same pull request:
 
@@ -182,18 +180,18 @@ Any new configurable value must land in **all three** places in the same pull re
 2. the validation rules (type + accepted range), and
 3. the Settings panel UI.
 
-A key that exists in only one or two of these is a bug, not a partial feature — it produces documentation and specs that tell people to configure something they cannot actually set. PRs that add a key to fewer than three places will be sent back.
+A key that exists in only one or two of these is a bug, not a partial feature. PRs that add a key to fewer than three places will be sent back.
 
-### 4. No duplicated helpers
+### 4) No duplicated helpers
 
-Before writing a formatter, check whether one exists. Byte/rate formatting in particular has been duplicated repeatedly. Extend the shared helper instead of adding another copy.
+Before writing a formatter, check whether one exists. Byte/rate formatting has been duplicated repeatedly; extend the shared helper instead of adding another copy.
 
-### 5. Logging
+### 5) Logging
 
 - No raw `print()` in Dart. Use `debugPrint`/logger gated on `AdvancedSettings.enableDebugLogs`.
-- Hardware and OEM probes must fail **once**, quietly, and cache the negative result. Re-probing a permanently unavailable sensor on every poll cycle floods the log with stack traces and hides real failures.
+- Hardware and OEM probes must fail **once**, quietly, and cache the negative result. Re-probing a permanently unavailable sensor on every poll cycle floods logs and hides real failures.
 
-### 6. Testing
+### 6) Testing
 
 - Every new backend service must include at least **one xUnit test** covering the happy path and **one edge case**.
 - File deletion tests must use a **temp directory only** — never real paths.
@@ -219,9 +217,9 @@ var tempRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 Directory.CreateDirectory(tempRoot);
 ```
 
-### 7. Repo hygiene
+### 7) Repo hygiene
 
-- **Never commit scan caches, build output, or generated artifacts.** The repository already carries a large history from a committed scan cache; do not make it worse. Check `git status` before staging.
+- **Never commit scan caches, build output, or generated artifacts.** The repository already carries a large history from a committed scan cache; do not make it worse.
 - End every file with a trailing newline.
 - Keep diffs free of unrelated whitespace churn.
 
@@ -233,11 +231,11 @@ Five workflows run in `.github/workflows/`:
 
 | Workflow | What it does |
 | --- | --- |
-| `dart.yml` | `flutter analyze`  • Flutter tests |
+| `dart.yml` | `flutter analyze` · Flutter tests |
 | `dotnet-desktop.yml` | Backend build + `dotnet test` |
 | `benchmark.yml` | BenchmarkDotNet suites against `thresholds.json` |
 | `benchmark-report.yml` | Publishes the benchmark comparison |
-| `leak-perf-guard.yml` | Leak & performance gates (below) |
+| `leak-perf-guard.yml` | Leak & performance gates |
 
 **Leak & Performance Guard — three gates:**
 
@@ -245,7 +243,7 @@ Five workflows run in `.github/workflows/`:
 2. **Benchmark regression** — fails if any benchmark exceeds 150% of its recorded baseline.
 3. **Flutter leak tracking** — `leak_tracker_flutter_testing` must report no leaked widgets.
 
-A red gate blocks merge. Do not disable a gate to get a PR through — if a gate is wrong, say so in the PR and open an issue against the gate.
+A red gate blocks merge. Do not disable a gate to get a PR through — if a gate is wrong, note it in the PR and open an issue against the gate.
 
 ---
 
@@ -258,7 +256,7 @@ A red gate blocks merge. Do not disable a gate to get a PR through — if a gate
 5. Run existing tests before submitting — PRs that break passing tests will not be reviewed.
 6. Keep PRs focused. One feature or fix per PR. Large PRs will be asked to be split.
 7. Write a clear PR description: what you changed, why, and how to test it.
-8. **Backend contract changes and their frontend callers must land together.** A backend-only PR that changes a route or payload shape and leaves the Flutter `ApiService` on the old contract does not produce a working build and will not be merged on its own.
+8. **Backend contract changes and their frontend callers must land together.** A backend-only PR that changes a route or payload shape and leaves Flutter `ApiService` on the old contract will not be merged on its own.
 9. Not all contributions will be accepted. Decisions are based on product direction and engineering priorities.
 
 **Merge gate — every PR to `main` must satisfy:**
@@ -280,8 +278,8 @@ This project is **open source** under **Apache-2.0** and currently **bootstrappe
 
 - Contributing is **voluntary**.
 - There is **no payment** at this stage.
-- All contributions are licensed under Apache-2.0, the same license as the rest of the project. You retain your rights as a contributor under that license.
-- You retain the right to showcase your contributions in your portfolio and describe your work in professional profiles, provided no confidential internal information (outside the public repo) is disclosed.
+- All contributions are licensed under Apache-2.0, the same license as the rest of the project.
+- You retain the right to showcase your contributions in your portfolio and professional profiles, provided no confidential internal information (outside the public repo) is disclosed.
 - Third-party notices are recorded in `NOTICE`. The project bundles LibreHardwareMonitorLib under MPL-2.0; if you add a dependency, add its notice there.
 
 ---
