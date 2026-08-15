@@ -3,16 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:gs_analyzer_ui/providers/settings_provider.dart';
 import 'package:gs_analyzer_ui/providers/ram_provider.dart';
-import 'package:gs_analyzer_ui/providers/startup_provider.dart';
 import 'package:gs_analyzer_ui/providers/schedule_provider.dart';
-import 'package:gs_analyzer_ui/providers/navigation_provider.dart';
 import 'package:gs_analyzer_ui/services/telemetry_service.dart';
 import 'package:gs_analyzer_ui/utils/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
+import 'package:gs_analyzer_ui/providers/network_provider.dart';
 import 'package:gs_analyzer_ui/providers/directory_provider.dart';
 import 'package:gs_analyzer_ui/providers/drive_stats_provider.dart';
 import 'package:gs_analyzer_ui/providers/scan_diff_provider.dart';
+import 'package:gs_analyzer_ui/models/disk_alert.dart';
+import 'package:gs_analyzer_ui/providers/disk_alert_provider.dart';
+import 'package:gs_analyzer_ui/services/notification_service.dart';
 
 import 'cpu_provider.dart';
 import 'nuke_provider.dart';
@@ -104,6 +106,19 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
       ref.read(cpuProvider.notifier).updateCpu(data);
     };
 
+    _telemetryService?.onDriveUpdate = (data) {
+      ref.read(drivesProvider.notifier).updateFromTelemetry(data);
+      final activeNames = data
+          .map((d) => (d is Map ? d['name'] : null)?.toString() ?? '')
+          .where((n) => n.isNotEmpty)
+          .toList();
+      ref.read(diskAlertsProvider.notifier).pruneDrives(activeNames);
+    };
+
+    _telemetryService?.onNetworkUpdate = (data) {
+      ref.read(networkProvider.notifier).updateNetwork(data);
+    };
+
     _telemetryService?.onDirectoryChunk = (scanId, path, chunk) {
       ref
           .read(directoryProvider.notifier)
@@ -180,6 +195,23 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
       );
     };
 
+    _telemetryService?.onDiskAlert = (data) {
+      final alert = DiskAlert.fromJson(data);
+      ref.read(diskAlertsProvider.notifier).handleDiskAlert(alert);
+
+      final enableDesktop = ref.read(settingsProvider).currentSettings?.alerts.enableDesktopNotifications ?? true;
+      NotificationService().showDiskAlertNotification(
+        alert,
+        enableDesktopNotifications: enableDesktop,
+      );
+    };
+
+    _telemetryService?.onDiskAlertCleared = (data) {
+      final driveName = data['driveName'] as String?;
+      if (driveName != null && driveName.isNotEmpty) {
+        ref.read(diskAlertsProvider.notifier).handleDiskAlertCleared(driveName);
+      }
+    };
 
     _telemetryService?.startListening();
   }

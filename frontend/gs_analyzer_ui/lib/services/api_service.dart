@@ -16,25 +16,28 @@ import 'package:gs_analyzer_ui/models/permission_audit_models.dart';
 import 'package:gs_analyzer_ui/models/telemetry_history_model.dart';
 import 'package:gs_analyzer_ui/models/startup_program.dart';
 import 'package:gs_analyzer_ui/models/scheduled_scan_model.dart';
+import 'package:gs_analyzer_ui/models/network_telemetry.dart';
 import 'package:gs_analyzer_ui/models/scan_diff.dart';
+import 'package:gs_analyzer_ui/models/cache_stats.dart';
 
 class ApiService {
   final http.Client _client;
   ApiService([http.Client? client]) : _client = client ?? http.Client();
 
   static const String storageUrl = 'http://localhost:5200/api/storage';
+  static const String cacheUrl = 'http://localhost:5200/api/cache';
   static const String telemetryUrl = 'http://localhost:5200/api/Telemetry';
   static const String nukeUrl = 'http://localhost:5200/api/nuke';
   static const String thermalUrl = 'http://localhost:5200/api/thermal';
   static const String settingsUrl = 'http://localhost:5200/api/settings';
   static const String driveUrl = 'http://localhost:5200/api/drives';
   static const String auditUrl = 'http://localhost:5200/api/audit';
-  static const String telemetryHistoryUrl =
-      'http://localhost:5200/api/telemetry/history';
+  static const String telemetryHistoryUrl = 'http://localhost:5200/api/telemetry/history';
   static const String tempFilesUrl = 'http://localhost:5200/api/tempfiles';
   static const String startupUrl = 'http://localhost:5200/api/startup';
   static const String schedulesUrl = 'http://localhost:5200/api/schedules';
   static const String scanDiffUrl = 'http://localhost:5200/api/scan/diff';
+  static const String networkUrl = 'http://localhost:5200/api/network';
 
   Future<TelemetryHistoryResponse?> fetchTelemetryHistory(
     String metric,
@@ -495,8 +498,8 @@ class ApiService {
 
   Future<bool> clearCache() async {
     try {
-      final response = await _client.post(
-        Uri.parse('$settingsUrl/cache/clear'),
+      final response = await _client.delete(
+        Uri.parse(cacheUrl),
       );
       if (response.statusCode == 200) {
         appLogger.i('[API] Cache cleared successfully.');
@@ -507,6 +510,26 @@ class ApiService {
     } catch (e) {
       appLogger.i('[API] Cache clear error: $e');
       return false;
+    }
+  }
+
+  Future<CacheStats?> getCacheStats() async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$cacheUrl/stats'),
+      );
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final data = json.containsKey('data') && json['data'] is Map<String, dynamic>
+            ? json['data'] as Map<String, dynamic>
+            : json;
+        return CacheStats.fromJson(data);
+      }
+      appLogger.i('[API] Fetch cache stats failed: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      appLogger.i('[API] Fetch cache stats error: $e');
+      return null;
     }
   }
 
@@ -748,6 +771,50 @@ class ApiService {
       throw Exception(
         'Clear baseline failed [${response.statusCode}]: ${response.body}',
       );
+    }
+  }
+
+  /// Fetches the latest network snapshot via REST.
+  Future<NetworkSnapshot?> fetchNetworkSnapshot() async {
+    final uri = Uri.parse('$networkUrl/interfaces');
+    try {
+      final response = await _client.get(uri);
+      if (response.statusCode == 200) {
+        final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+        return NetworkSnapshot.fromJson(jsonBody);
+      } else {
+        appLogger.i('Failed to fetch network snapshot: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      appLogger.i('Network snapshot request failed: $e');
+      return null;
+    }
+  }
+
+  /// Sets or clears the preferred primary network interface.
+  Future<bool> setPreferredNetworkInterface(String? interfaceId) async {
+    final uri = Uri.parse('$networkUrl/primary');
+    try {
+      final response = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'interfaceId': interfaceId}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      appLogger.i('Failed to set preferred network interface: $e');
+      return false;
+    }
+  }
+
+  /// Triggers network engine snapshot query upon app startup.
+  Future<void> startNetworkRadar() async {
+    final uri = Uri.parse('$networkUrl/interfaces');
+    try {
+      await _client.get(uri);
+    } catch (e) {
+      appLogger.i('Failed to trigger network radar: $e');
     }
   }
 }
