@@ -62,6 +62,8 @@ class _GSAnalyzerAppState extends ConsumerState<GSAnalyzerApp>
             ref.read(selectedDriveNameProvider.notifier).state = driveName;
           }
           ref.read(storageViewProvider.notifier).state = StorageView.drivePicker;
+        } else if (payload == 'memory') {
+          ref.read(navigationProvider.notifier).state = AppRoute.memory;
         }
       },
     );

@@ -233,7 +233,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'RAM MIN FREE',
             alerts.ramMinimumFreeMb.toDouble(),
             256,
-            131072, // Up to 128GB
+            16384, // Up to 16GB
             ' MB',
             (val) {
               alerts.ramMinimumFreeMb = val.toInt();
