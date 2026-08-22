@@ -28,36 +28,36 @@ class ThermalSensor extends StatelessWidget {
                     title: Text(
                       'CPU_PKG'
                     ),
-                    trailing: Text(
-                      '68\u{00B0}C',
-                      style: TextStyle(
-                        fontSize: 18
-                      ),
+                  trailing: Text(
+                    '68\u{00B0}C',
+                    style: TextStyle(
+                      fontSize: 18
                     ),
                   ),
                 ),
-                const SizedBox(height: 15,),
-                CustomContainer(
-                  color: Colors.black,
-                  child: ListTile(
-                    leading: Icon(Icons.thermostat, color: Color(0XFFA4B7ED),),
-                    title: Text(
-                      'SYS_BOARD'
-                    ),
-                    trailing: Text(
-                      '42\u{00B0}C',
-                      style: TextStyle(
-                        fontSize: 18
-                      ),
+              ),
+              const SizedBox(height: 15,),
+              CustomContainer(
+                color: Colors.black,
+                child: ListTile(
+                  leading: Icon(Icons.thermostat, color: Color(0XFFA4B7ED),),
+                  title: Text(
+                    'SYS_BOARD'
+                  ),
+                  trailing: Text(
+                    '42\u{00B0}C',
+                    style: TextStyle(
+                      fontSize: 18
                     ),
                   ),
                 ),
-                const SizedBox(height: 50,),
-                CustomProgressIndicator(
-                  label: 'fan speed', 
-                  tag: '2400  rpm', 
-                  value: 0.8, 
-                  height: 4
+              ),
+            const SizedBox(height: 50,),
+          CustomProgressIndicator(
+            label: 'fan speed', 
+            tag: '2400  rpm', 
+            value: 0.8, 
+            height: 4
           )
         ],
       )

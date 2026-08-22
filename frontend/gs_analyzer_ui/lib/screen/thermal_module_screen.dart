@@ -316,8 +316,9 @@ class _ThermalModuleScreenState extends ConsumerState<ThermalModuleScreen> {
   }
 
   Widget _buildAdvancedSection(HudDensity d) {
-    return Container(
-      decoration: HudTheme.hudPanelDecoration,
+    return Material(
+      color: HudTheme.bgPanel,
+      borderRadius: BorderRadius.circular(12),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
