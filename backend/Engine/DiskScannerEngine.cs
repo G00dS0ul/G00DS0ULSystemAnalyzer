@@ -36,7 +36,7 @@ public class DiskScannerEngine : IDiskScannerEngine
 	private readonly string _cacheFilePath = Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
 		"GSAnalyzer", "scanner_memory.json");
-	private FileSystemWatcher? _liveRader;
+	private FileSystemWatcher? _liveRadar;
 	private readonly object _radarLock = new object();
 	private DateTime _lastRadarAlert = DateTime.MinValue;
 	private readonly TimeSpan _radarCooldown = TimeSpan.FromMilliseconds(500);
@@ -445,27 +445,27 @@ public class DiskScannerEngine : IDiskScannerEngine
 		{
 			try
 			{
-				if (_liveRader != null)
+				if (_liveRadar != null)
 				{
-					_liveRader.EnableRaisingEvents = false;
-					_liveRader.Dispose();
-					_liveRader = null;
+					_liveRadar.EnableRaisingEvents = false;
+					_liveRadar.Dispose();
+					_liveRadar = null;
 				}
 
 				if (Directory.Exists(targetPath))
 				{
-					_liveRader = new FileSystemWatcher(targetPath);
+					_liveRadar = new FileSystemWatcher(targetPath);
 
-					_liveRader.IncludeSubdirectories = false;
+					_liveRadar.IncludeSubdirectories = false;
 
-					_liveRader.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
+					_liveRadar.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
 
-					_liveRader.Created += OnRadarTriggered;
-					_liveRader.Deleted += OnRadarTriggered;
-					_liveRader.Renamed += OnRadarTriggered;
-					_liveRader.Changed += OnRadarTriggered;
+					_liveRadar.Created += OnRadarTriggered;
+					_liveRadar.Deleted += OnRadarTriggered;
+					_liveRadar.Renamed += OnRadarTriggered;
+					_liveRadar.Changed += OnRadarTriggered;
 
-					_liveRader.EnableRaisingEvents = true;
+					_liveRadar.EnableRaisingEvents = true;
 					_logger.LogInformation("File system watcher active on {Path}", targetPath);
 				}
 			}
