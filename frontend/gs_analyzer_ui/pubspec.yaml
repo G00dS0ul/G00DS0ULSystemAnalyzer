@@ -44,6 +44,7 @@ dependencies:
   logger: ^2.7.0
   window_manager: ^0.5.1
   local_notifier: ^0.1.6
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
