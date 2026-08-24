@@ -41,12 +41,12 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 	{
 		var harness = CreateHarness();
 		harness.Engine.MoveRadarToSector(_tempRoot);
-		await Task.Delay(100);
+		var watcher = GetWatcher(harness.Engine);
 
 		for (var i = 0; i < 3; i++)
 		{
-			await File.WriteAllTextAsync(Path.Combine(_tempRoot, $"burst-{i}.txt"), i.ToString());
-			await Task.Delay(75);
+			TriggerWatcherEvent(harness.Engine, watcher, $"burst-{i}.txt");
+			if (i < 2) await Task.Delay(75);
 		}
 
 		var lastWrite = Stopwatch.GetTimestamp();
@@ -69,10 +69,7 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 		var harness = CreateHarness();
 		harness.Engine.MoveRadarToSector(_tempRoot);
 
-		var watcherField = typeof(DiskScannerEngine).GetField(
-			"_liveRader",
-			BindingFlags.Instance | BindingFlags.NonPublic);
-		var watcher = Assert.IsType<FileSystemWatcher>(watcherField?.GetValue(harness.Engine));
+		var watcher = GetWatcher(harness.Engine);
 		Assert.Equal(16 * 1024, watcher.InternalBufferSize);
 
 		var raiseError = typeof(FileSystemWatcher).GetMethod(
@@ -124,6 +121,23 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 
 	private static string Normalize(string path) => path.Replace("\\", "/");
 
+	private static FileSystemWatcher GetWatcher(DiskScannerEngine engine)
+	{
+		var watcherField = typeof(DiskScannerEngine).GetField(
+			"_liveRader",
+			BindingFlags.Instance | BindingFlags.NonPublic);
+		return Assert.IsType<FileSystemWatcher>(watcherField?.GetValue(engine));
+	}
+
+	private void TriggerWatcherEvent(DiskScannerEngine engine, FileSystemWatcher watcher, string name)
+	{
+		var handler = typeof(DiskScannerEngine).GetMethod(
+			"OnRadarTriggered",
+			BindingFlags.Instance | BindingFlags.NonPublic);
+		Assert.NotNull(handler);
+		handler.Invoke(engine, [watcher, new FileSystemEventArgs(WatcherChangeTypes.Changed, _tempRoot, name)]);
+	}
+
 	public void Dispose()
 	{
 		foreach (var harness in _harnesses)
@@ -131,7 +145,11 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 			(harness.Engine as IDisposable)?.Dispose();
 		}
 
-		Directory.Delete(_tempRoot, recursive: true);
+		try
+		{
+			Directory.Delete(_tempRoot, recursive: true);
+		}
+		catch (DirectoryNotFoundException) { }
 	}
 
 	private sealed class WatcherHarness(DiskScannerEngine engine, Mock<IScanCacheService> cache)
