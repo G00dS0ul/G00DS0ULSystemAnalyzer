@@ -44,14 +44,16 @@ public class DiskScannerEngine : IDiskScannerEngine
 	private readonly IHubContext<SystemHub> _hub;
 	private readonly ILogger<DiskScannerEngine> _logger;
 	private readonly IScanCacheService? _cacheService;
+	private readonly IWatcherEventLogService? _watcherLog;
 	private int _scannedFilesCount = 0;
 
-	public DiskScannerEngine(IHubContext<SystemHub> hub, ISettingService settings, ILogger<DiskScannerEngine> logger, IScanCacheService? cacheService = null)
+	public DiskScannerEngine(IHubContext<SystemHub> hub, ISettingService settings, ILogger<DiskScannerEngine> logger, IScanCacheService? cacheService = null, IWatcherEventLogService? watcherLog = null)
 	{
 		_hub = hub;
 		_settings = settings;
 		_logger = logger;
 		_cacheService = cacheService;
+		_watcherLog = watcherLog;
 		if (File.Exists(_cacheFilePath))
 		{
 			try
@@ -459,11 +461,13 @@ public class DiskScannerEngine : IDiskScannerEngine
 					_liveRader.IncludeSubdirectories = false;
 
 					_liveRader.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
+					_liveRader.InternalBufferSize = 65536;
 
 					_liveRader.Created += OnRadarTriggered;
 					_liveRader.Deleted += OnRadarTriggered;
 					_liveRader.Renamed += OnRadarTriggered;
 					_liveRader.Changed += OnRadarTriggered;
+					_liveRader.Error += OnRadarError;
 
 					_liveRader.EnableRaisingEvents = true;
 					_logger.LogInformation("File system watcher active on {Path}", targetPath);
@@ -492,6 +496,35 @@ public class DiskScannerEngine : IDiskScannerEngine
 		_logger.LogDebug("File system change detected: {ChangeType} on {Name}", e.ChangeType, e.Name);
 		_cacheService?.HandleWatcherEvent(e.FullPath, e.ChangeType);
 
+		// Log to the watcher event log
+		WatcherChangeKind kind = e.ChangeType switch
+		{
+			WatcherChangeTypes.Created => WatcherChangeKind.Created,
+			WatcherChangeTypes.Deleted => WatcherChangeKind.Deleted,
+			WatcherChangeTypes.Changed => WatcherChangeKind.Modified,
+			WatcherChangeTypes.Renamed => WatcherChangeKind.Renamed,
+			_ => WatcherChangeKind.Modified
+		};
+		
+		string? oldPath = e is RenamedEventArgs re ? re.OldFullPath : null;
+		
+		bool isDirectory = false;
+		try
+		{
+			if (e.ChangeType != WatcherChangeTypes.Deleted)
+			{
+				isDirectory = Directory.Exists(e.FullPath);
+			}
+			else if (oldPath != null)
+			{
+				// For rename, check the new path
+				isDirectory = Directory.Exists(e.FullPath);
+			}
+		}
+		catch { }
+
+		_watcherLog?.LogEvent(DateTimeOffset.UtcNow, kind, e.FullPath, oldPath, isDirectory);
+
 		try
 		{
 			var folderThatChanged = Path.GetDirectoryName(e.FullPath) ?? "";
@@ -501,6 +534,24 @@ public class DiskScannerEngine : IDiskScannerEngine
 		catch (Exception ex)
 		{
 			_logger.LogDebug(ex, "Failed to broadcast SectorChanged for {Path}", e.FullPath);
+		}
+	}
+
+	private void OnRadarError(object sender, ErrorEventArgs e)
+	{
+		var ex = e.GetException();
+		_logger.LogWarning(ex, "Live Radar encountered an error. Buffer may have overflowed.");
+		
+		lock (_radarLock)
+		{
+			if (_liveRader != null)
+			{
+				var path = _liveRader.Path;
+				_watcherLog?.LogOverflow(path);
+				
+				// Invalidate the subtree to force a real scan instead of drifting
+				InvalidatePaths(new[] { path });
+			}
 		}
 	}
 

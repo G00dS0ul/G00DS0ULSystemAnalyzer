@@ -13,6 +13,7 @@ namespace GSSystemAnalyzer.Services
 		private readonly object _fileLoack = new();
 
 		public AppSettingDto Current { get; private set; }
+		public string AppDataFolder { get; private set; }
 		public event EventHandler<AppSettingDto>? OnSettingsChanged;
 
 
@@ -22,14 +23,15 @@ namespace GSSystemAnalyzer.Services
 			if (testFilePath != null)
 			{
 				_settingsFilePath = testFilePath;
+				AppDataFolder = Path.GetDirectoryName(testFilePath) ?? string.Empty;
 			}
 			else
 			{
 				var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-				var appFolder = Path.Combine(appData, "GSAnalyzer");
-				Directory.CreateDirectory(appFolder);
+				AppDataFolder = Path.Combine(appData, "GSAnalyzer");
+				Directory.CreateDirectory(AppDataFolder);
 
-				_settingsFilePath = Path.Combine(appFolder, "appsettings.user.json");
+				_settingsFilePath = Path.Combine(AppDataFolder, "appsettings.user.json");
 			}
 
 			_jsonOptions = new JsonSerializerOptions
