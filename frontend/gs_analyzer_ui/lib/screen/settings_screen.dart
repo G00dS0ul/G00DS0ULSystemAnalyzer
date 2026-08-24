@@ -230,6 +230,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           _buildSlider(
+            'RAM MIN FREE',
+            alerts.ramMinimumFreeMb.toDouble(),
+            256,
+            16384, // Up to 16GB
+            ' MB',
+            (val) {
+              alerts.ramMinimumFreeMb = val.toInt();
+              notifier.updateUI();
+            },
+          ),
+          _buildSlider(
             'CPU THRESHOLD',
             alerts.cpuThresholdPercent.toDouble(),
             1,

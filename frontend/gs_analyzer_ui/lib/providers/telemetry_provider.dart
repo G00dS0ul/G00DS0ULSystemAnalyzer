@@ -14,6 +14,8 @@ import 'package:gs_analyzer_ui/providers/drive_stats_provider.dart';
 import 'package:gs_analyzer_ui/providers/scan_diff_provider.dart';
 import 'package:gs_analyzer_ui/models/disk_alert.dart';
 import 'package:gs_analyzer_ui/providers/disk_alert_provider.dart';
+import 'package:gs_analyzer_ui/models/ram_alert.dart';
+import 'package:gs_analyzer_ui/providers/ram_alert_provider.dart';
 import 'package:gs_analyzer_ui/services/notification_service.dart';
 
 import 'cpu_provider.dart';
@@ -211,6 +213,21 @@ class TelemetryNotifier extends StateNotifier<TelemetryState> {
       if (driveName != null && driveName.isNotEmpty) {
         ref.read(diskAlertsProvider.notifier).handleDiskAlertCleared(driveName);
       }
+    };
+
+    _telemetryService?.onRamAlert = (data) {
+      final alert = RamAlert.fromJson(data);
+      ref.read(ramAlertProvider.notifier).handleRamAlert(alert);
+
+      final enableDesktop = ref.read(settingsProvider).currentSettings?.alerts.enableDesktopNotifications ?? true;
+      NotificationService().showRamAlertNotification(
+        alert,
+        enableDesktopNotifications: enableDesktop,
+      );
+    };
+
+    _telemetryService?.onRamAlertCleared = (data) {
+      ref.read(ramAlertProvider.notifier).handleRamAlertCleared();
     };
 
     _telemetryService?.startListening();
