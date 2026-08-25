@@ -9,6 +9,7 @@ import 'package:gs_analyzer_ui/providers/storage_view_provider.dart';
 import 'package:gs_analyzer_ui/providers/storage_mode_provider.dart';
 import 'package:gs_analyzer_ui/widgets/file_type_analyzer_panel.dart';
 import 'package:gs_analyzer_ui/widgets/undo_history_panel.dart';
+import 'package:gs_analyzer_ui/widgets/watcher_event_log_panel.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
 import 'package:gs_analyzer_ui/providers/scan_diff_provider.dart';
 import 'package:gs_analyzer_ui/screen/scan_diff_screen.dart';
@@ -104,6 +105,7 @@ class StorageScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const WatcherEventLogPanel(),
                 UndoHistoryPanel(),
               ],
             ),

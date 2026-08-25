@@ -30,6 +30,7 @@ class TelemetryService {
   Function(Map<String, dynamic>)? onRamAlert;
   Function(Map<String, dynamic>)? onRamAlertCleared;
   Function(Map<String, dynamic>)? onNetworkUpdate;
+  Function(Map<String, dynamic>)? onWatcherEventLogged;
 
   TelemetryService({
     required this.onProgressUpdate,
@@ -73,6 +74,7 @@ class TelemetryService {
     _hubConnection.on('RamAlert', _handleRamAlert);
     _hubConnection.on('RamAlertCleared', _handleRamAlertCleared);
     _hubConnection.on('NetworkUpdate', _handleNetworkUpdate);
+    _hubConnection.on('WatcherEventLogged', _handleWatcherEventLogged);
   }
 
   Future<void> startListening() async {
@@ -313,6 +315,19 @@ class TelemetryService {
       }
     } catch (e) {
       appLogger.i('NETWORK TELEMETRY CRASH: $e');
+    }
+  }
+
+  void _handleWatcherEventLogged(List<Object?>? arguments) {
+    if (onWatcherEventLogged != null && arguments != null && arguments.isNotEmpty) {
+      try {
+        final rawData = arguments[0];
+        if (rawData is Map) {
+          onWatcherEventLogged!(Map<String, dynamic>.from(rawData));
+        }
+      } catch (e) {
+        appLogger.w('WATCHER EVENT PARSE ERROR: $e');
+      }
     }
   }
 }

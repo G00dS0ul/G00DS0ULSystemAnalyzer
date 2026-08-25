@@ -38,6 +38,7 @@ class ApiService {
   static const String schedulesUrl = 'http://localhost:5200/api/schedules';
   static const String scanDiffUrl = 'http://localhost:5200/api/scan/diff';
   static const String networkUrl = 'http://localhost:5200/api/network';
+  static const String watcherUrl = 'http://localhost:5200/api/watcher';
 
   Future<TelemetryHistoryResponse?> fetchTelemetryHistory(
     String metric,
@@ -803,7 +804,40 @@ class ApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      appLogger.i('Failed to set preferred network interface: $e');
+      appLogger.i('Failed to set primary network interface: $e');
+      return false;
+    }
+  }
+
+  // --- WATCHER EVENT LOG ---
+
+  Future<List<dynamic>> getWatcherLog({int limit = 500, String? kind}) async {
+    var uri = Uri.parse('$watcherUrl/log').replace(queryParameters: {
+      'limit': limit.toString(),
+      if (kind != null) 'kind': kind,
+    });
+
+    try {
+      final response = await _client.get(uri);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      } else {
+        appLogger.i('Failed to fetch watcher log: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      appLogger.i('Watcher log fetch error: $e');
+      return [];
+    }
+  }
+
+  Future<bool> clearWatcherLog() async {
+    final uri = Uri.parse('$watcherUrl/log');
+    try {
+      final response = await _client.delete(uri);
+      return response.statusCode == 204 || response.statusCode == 200;
+    } catch (e) {
+      appLogger.i('Watcher log clear error: $e');
       return false;
     }
   }
