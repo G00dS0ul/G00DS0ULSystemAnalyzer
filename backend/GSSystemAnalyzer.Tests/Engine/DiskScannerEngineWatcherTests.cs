@@ -4,6 +4,7 @@ using System.Reflection;
 using GSSystemAnalyzer.Engine;
 using GSSystemAnalyzer.Hubs;
 using GSSystemAnalyzer.Interfaces;
+using GSSystemAnalyzer.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -70,7 +71,7 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 		harness.Engine.MoveRadarToSector(_tempRoot);
 
 		var watcher = GetWatcher(harness.Engine);
-		Assert.Equal(16 * 1024, watcher.InternalBufferSize);
+		Assert.Equal(64 * 1024, watcher.InternalBufferSize);
 
 		var raiseError = typeof(FileSystemWatcher).GetMethod(
 			"OnError",
@@ -79,8 +80,48 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 		raiseError.Invoke(watcher, [new ErrorEventArgs(new InternalBufferOverflowException())]);
 
 		harness.Cache.Verify(c => c.HandleWatcherOverflow(_tempRoot), Times.Once);
+		harness.WatcherLog.Verify(l => l.LogOverflow(_tempRoot), Times.Once);
 		var changedSector = await harness.FirstSectorChanged.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		Assert.Equal(Normalize(_tempRoot), changedSector);
+	}
+
+	[Fact]
+	public async Task ScannerCacheEvents_DoNotCreateRefreshLoopUnderStress()
+	{
+		var harness = CreateHarness();
+		harness.Engine.MoveRadarToSector(_tempRoot);
+		var watcher = GetWatcher(harness.Engine);
+		var cacheFilePath = GetCacheFilePath(harness.Engine);
+
+		for (var i = 0; i < 100; i++)
+		{
+			TriggerWatcherFullPathEvent(harness.Engine, watcher, i % 2 == 0 ? cacheFilePath : cacheFilePath + ".tmp");
+		}
+
+		await Task.Delay(700);
+		Assert.Empty(harness.Broadcasts);
+		harness.WatcherLog.Verify(
+			l => l.LogEvent(
+				It.IsAny<DateTimeOffset>(),
+				It.IsAny<WatcherChangeKind>(),
+				It.IsAny<string>(),
+				It.IsAny<string?>(),
+				It.IsAny<bool>()),
+			Times.Never);
+
+		var externalPath = Path.Combine(_tempRoot, "external.txt");
+		TriggerWatcherFullPathEvent(harness.Engine, watcher, externalPath);
+		var changedSector = await harness.FirstSectorChanged.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		Assert.Equal(Normalize(_tempRoot), changedSector);
+		Assert.Single(harness.Broadcasts);
+		harness.WatcherLog.Verify(
+			l => l.LogEvent(
+				It.IsAny<DateTimeOffset>(),
+				WatcherChangeKind.Modified,
+				externalPath,
+				null,
+				false),
+			Times.Once);
 	}
 
 	private WatcherHarness CreateHarness()
@@ -93,14 +134,17 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 		hub.SetupGet(h => h.Clients).Returns(clients.Object);
 
 		var cache = new Mock<IScanCacheService>();
+		var watcherLog = new Mock<IWatcherEventLogService>();
 		var settings = new Mock<ISettingService>();
 		var harness = new WatcherHarness(
 			new DiskScannerEngine(
 				hub.Object,
 				settings.Object,
 				NullLogger<DiskScannerEngine>.Instance,
-				cache.Object),
-			cache);
+				cache.Object,
+				watcherLog.Object),
+			cache,
+			watcherLog);
 
 		proxy
 			.Setup(p => p.SendCoreAsync(
@@ -129,13 +173,33 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 		return Assert.IsType<FileSystemWatcher>(watcherField?.GetValue(engine));
 	}
 
+	private static string GetCacheFilePath(DiskScannerEngine engine)
+	{
+		var cachePathField = typeof(DiskScannerEngine).GetField(
+			"_cacheFilePath",
+			BindingFlags.Instance | BindingFlags.NonPublic);
+		return Assert.IsType<string>(cachePathField?.GetValue(engine));
+	}
+
 	private void TriggerWatcherEvent(DiskScannerEngine engine, FileSystemWatcher watcher, string name)
+	{
+		TriggerWatcherFullPathEvent(engine, watcher, Path.Combine(_tempRoot, name));
+	}
+
+	private static void TriggerWatcherFullPathEvent(DiskScannerEngine engine, FileSystemWatcher watcher, string fullPath)
 	{
 		var handler = typeof(DiskScannerEngine).GetMethod(
 			"OnRadarTriggered",
 			BindingFlags.Instance | BindingFlags.NonPublic);
 		Assert.NotNull(handler);
-		handler.Invoke(engine, [watcher, new FileSystemEventArgs(WatcherChangeTypes.Changed, _tempRoot, name)]);
+		handler.Invoke(engine,
+		[
+			watcher,
+			new FileSystemEventArgs(
+				WatcherChangeTypes.Changed,
+				Path.GetDirectoryName(fullPath)!,
+				Path.GetFileName(fullPath))
+		]);
 	}
 
 	public void Dispose()
@@ -152,10 +216,14 @@ public sealed class DiskScannerEngineWatcherTests : IDisposable
 		catch (DirectoryNotFoundException) { }
 	}
 
-	private sealed class WatcherHarness(DiskScannerEngine engine, Mock<IScanCacheService> cache)
+	private sealed class WatcherHarness(
+		DiskScannerEngine engine,
+		Mock<IScanCacheService> cache,
+		Mock<IWatcherEventLogService> watcherLog)
 	{
 		public DiskScannerEngine Engine { get; } = engine;
 		public Mock<IScanCacheService> Cache { get; } = cache;
+		public Mock<IWatcherEventLogService> WatcherLog { get; } = watcherLog;
 		public ConcurrentQueue<(long Timestamp, string Path)> Broadcasts { get; } = new();
 		public TaskCompletionSource<string> FirstSectorChanged { get; } =
 			new(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -23,7 +23,7 @@ public class CacheEntry
 
 public class DiskScannerEngine : IDiskScannerEngine, IDisposable
 {
-	private const int RadarBufferSize = 16 * 1024;
+	private const int RadarBufferSize = 64 * 1024;
 	public ConcurrentDictionary<string, CacheEntry> DirectorySizeCache = new(StringComparer.OrdinalIgnoreCase);
 	private CancellationTokenSource? _nukeCts;
 	private readonly ConcurrentDictionary<Guid, ScanSession> _activeSessions = new();
@@ -487,6 +487,8 @@ public class DiskScannerEngine : IDiskScannerEngine, IDisposable
 
 	private void OnRadarTriggered(object sender, FileSystemEventArgs e)
 	{
+		if (IsScannerCachePath(e.FullPath)) return;
+
 		_logger.LogDebug("File system change detected: {ChangeType} on {Name}", e.ChangeType, e.Name);
 		_cacheService?.HandleWatcherEvent(e.FullPath, e.ChangeType);
 
@@ -514,6 +516,10 @@ public class DiskScannerEngine : IDiskScannerEngine, IDisposable
 		_watcherLog?.LogEvent(DateTimeOffset.UtcNow, kind, e.FullPath, oldPath, isDirectory);
 		ScheduleRadarRefresh(sender as FileSystemWatcher);
 	}
+
+	private bool IsScannerCachePath(string fullPath) =>
+		string.Equals(fullPath, _cacheFilePath, StringComparison.OrdinalIgnoreCase) ||
+		string.Equals(fullPath, _cacheFilePath + ".tmp", StringComparison.OrdinalIgnoreCase);
 
 	private void OnRadarError(object sender, ErrorEventArgs e)
 	{
