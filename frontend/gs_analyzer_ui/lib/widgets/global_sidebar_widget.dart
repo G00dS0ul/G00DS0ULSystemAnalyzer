@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gs_analyzer_ui/providers/navigation_provider.dart';
 import 'package:gs_analyzer_ui/providers/settings_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
-import 'package:gs_analyzer_ui/utils/hud_label.dart';
 
 class GlobalSidebarWidget extends ConsumerStatefulWidget {
   const GlobalSidebarWidget({super.key});
@@ -205,14 +204,25 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
             if (_isExpanded) ...[
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  title,
-                  overflow: TextOverflow.ellipsis,
-                  style: HudTheme.bodyText.copyWith(
-                    color: color,
-                    fontSize: 13,
-                    fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
-                  ),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        overflow: TextOverflow.ellipsis,
+                        style: HudTheme.bodyText.copyWith(
+                          color: color,
+                          fontSize: 13,
+                          fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    if (isActive && route == AppRoute.storage)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6.0),
+                        child: Icon(Icons.lock, color: color, size: 14),
+                      ),
+                  ],
                 ),
               ),
             ],
