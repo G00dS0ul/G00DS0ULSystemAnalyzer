@@ -217,7 +217,7 @@ class _GlobalSidebarWidgetState extends ConsumerState<GlobalSidebarWidget> {
                         ),
                       ),
                     ),
-                    if (isActive && route == AppRoute.storage)
+                    if (route == AppRoute.storage)
                       Padding(
                         padding: const EdgeInsets.only(left: 6.0),
                         child: Icon(Icons.lock, color: color, size: 14),

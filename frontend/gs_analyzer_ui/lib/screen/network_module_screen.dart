@@ -252,14 +252,16 @@ class _NetworkModuleScreenState extends ConsumerState<NetworkModuleScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'ACTIVE: ${primary.name.toUpperCase()}',
-                style: const TextStyle(
-                  fontFamily: HudTheme.fontCore,
-                  color: HudTheme.accentCyan,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
+              Expanded(
+                child: Text(
+                  'ACTIVE: ${primary.name.toUpperCase()}',
+                  style: const TextStyle(
+                    fontFamily: HudTheme.fontCore,
+                    color: HudTheme.accentCyan,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
                 ),
               ),
               Text(

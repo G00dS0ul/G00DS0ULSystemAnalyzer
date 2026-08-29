@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gs_analyzer_ui/features/dashboard/widgets/process_filter.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/process_table.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/status.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
 import 'package:gs_analyzer_ui/providers/process_explorer_provider.dart';
-import 'package:gs_analyzer_ui/providers/ram_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
 
@@ -19,9 +19,8 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
 
   @override
   Widget build(BuildContext context) {
-    final ramState = ref.watch(ramProvider);
+    final processes = ref.watch(filteredProcessesProvider).take(4).toList();
     final d = ref.watch(hudDensityProvider);
-    final processes = ramState.groupedProcesses.take(4).toList();
     final selectedPid = ref.watch(selectedProcessPidProvider);
 
     return CustomContainer(
@@ -39,25 +38,7 @@ class _ActiveProcessState extends ConsumerState<ActiveProcess> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Row(
-                children: [
-                  CustomContainer(
-                    color: Colors.black,
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    child: Text(
-                      'FILTER'
-                    ),
-                  ),
-                  const SizedBox(width: 10,),
-                  Container(
-                    color: Colors.black,
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    child: Text(
-                      'SORT BY CPU'
-                    ),
-                  )
-                ],
-              )
+              ProcessFilter(),
             ],
           ),
           const SizedBox(height: 10,),
