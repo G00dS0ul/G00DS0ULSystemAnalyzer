@@ -13,4 +13,4 @@ enum AppRoute {
   settings,
 }
 
-final navigationProvider = StateProvider<AppRoute>((ref) => AppRoute.process);
+final navigationProvider = StateProvider<AppRoute>((ref) => AppRoute.dashboard);

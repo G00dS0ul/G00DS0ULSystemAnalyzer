@@ -73,50 +73,54 @@ class _RamScannerScreenState extends ConsumerState<RamScannerScreen> {
             ),
             child: LayoutBuilder(
               builder: (ctx, c) {
-                final row = c.maxWidth > 640;
-                return Flex(
-                  direction: row ? Axis.horizontal : Axis.vertical,
-                  children: [
-                    Flexible(
-                      fit: row ? FlexFit.tight : FlexFit.loose,
-                      child: _buildAllocationCard(
-                        'ACTIVE MEMORY',
-                        '${ramState.activeGb.toStringAsFixed(1)} / ${ramState.totalGb.toStringAsFixed(1)} GB',
-                        HudTheme.accentCyan,
-                        ramState.totalGb > 0
-                            ? ramState.activeGb / ramState.totalGb
-                            : 0.0,
-                        d,
-                      ),
-                    ),
-                    SizedBox(width: d.gap, height: d.gap),
-                    Flexible(
-                      fit: row ? FlexFit.tight : FlexFit.loose,
-                      child: _buildAllocationCard(
-                        'CACHE (STANDBY)',
-                        '${ramState.cacheGb.toStringAsFixed(1)} / ${ramState.totalGb.toStringAsFixed(1)} GB',
-                        HudTheme.accentGreen,
-                        ramState.totalGb > 0
-                            ? ramState.cacheGb / ramState.totalGb
-                            : 0.0,
-                        d,
-                      ),
-                    ),
-                    SizedBox(width: d.gap, height: d.gap),
-                    Flexible(
-                      fit: row ? FlexFit.tight : FlexFit.loose,
-                      child: _buildAllocationCard(
-                        'SWAP / PAGEFILE',
-                        '${ramState.swapGb.toStringAsFixed(1)} / ${ramState.totalSwapGb.toStringAsFixed(1)} GB',
-                        HudTheme.accentAmber,
-                        ramState.totalSwapGb > 0
-                            ? ramState.swapGb / ramState.totalSwapGb
-                            : 0.0,
-                        d,
-                      ),
-                    ),
-                  ],
+                final row = c.maxWidth > 450;
+    
+                final activeCard = _buildAllocationCard(
+                  'ACTIVE MEMORY',
+                  '${ramState.activeGb.toStringAsFixed(1)} / ${ramState.totalGb.toStringAsFixed(1)} GB',
+                  HudTheme.accentCyan,
+                  ramState.totalGb > 0 ? ramState.activeGb / ramState.totalGb : 0.0,
+                  d,
                 );
+                final cacheCard = _buildAllocationCard(
+                  'CACHE (STANDBY)',
+                  '${ramState.cacheGb.toStringAsFixed(1)} / ${ramState.totalGb.toStringAsFixed(1)} GB',
+                  HudTheme.accentGreen,
+                  ramState.totalGb > 0 ? ramState.cacheGb / ramState.totalGb : 0.0,
+                  d,
+                );
+                final swapCard = _buildAllocationCard(
+                  'SWAP / PAGEFILE',
+                  '${ramState.swapGb.toStringAsFixed(1)} / ${ramState.totalSwapGb.toStringAsFixed(1)} GB',
+                  HudTheme.accentAmber,
+                  ramState.totalSwapGb > 0 ? ramState.swapGb / ramState.totalSwapGb : 0.0,
+                  d,
+                );
+
+                final gap = SizedBox(width: d.gap, height: d.gap);
+
+                if (row) {
+                  return Row(
+                    children: [
+                      Expanded(child: activeCard),
+                      gap,
+                      Expanded(child: cacheCard),
+                      gap,
+                      Expanded(child: swapCard),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      activeCard,
+                      gap,
+                      cacheCard,
+                      gap,
+                      swapCard,
+                    ],
+                  );
+                }
               },
             ),
           ),
