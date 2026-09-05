@@ -246,6 +246,11 @@ public class NukeProtocolService : INukeProtocolService
 					});
 				}
 			}
+			catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+			{
+				_logger.LogDebug("Skipped {Path}: in use or access denied ({Message})", path, ex.Message);
+				skippedFiles++;
+			}
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "Failed to nuke {Path}", path);
