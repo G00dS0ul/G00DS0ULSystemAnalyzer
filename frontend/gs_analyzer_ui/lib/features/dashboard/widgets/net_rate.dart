@@ -1,14 +1,48 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gs_analyzer_ui/providers/network_provider.dart';
+import 'package:gs_analyzer_ui/utils/formatters.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
 
-class NetRate extends StatelessWidget {
+class NetRate extends ConsumerStatefulWidget {
   const NetRate({super.key});
 
   @override
+  ConsumerState<NetRate> createState() => _NetRateState();
+}
+
+class _NetRateState extends ConsumerState<NetRate> {
+  String _getSimplifiedName(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('cellular')) return 'Cellular';
+    if (lower.contains('wi-fi') || lower.contains('wifi') || lower.contains('wireless')) return 'Wi-Fi';
+    if (lower.contains('ethernet')) return 'Ethernet';
+    
+    final parts = name.split('-');
+    if (parts.isNotEmpty) {
+      return parts[0].trim();
+    }
+    return name;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final netState = ref.watch(networkProvider);
+    final primary = netState.primaryInterface;
+    
+    if (primary == null) {
+      return CustomContainer(
+        color: HudTheme.bgPanel,
+        padding: EdgeInsets.all(20),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return 
       CustomContainer(
         color: HudTheme.bgPanel,
@@ -17,8 +51,16 @@ class NetRate extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'NET IO [ETH0]',
+              'NET IO',
               style: HudTheme.labelMuted,
+            ),
+            const SizedBox(height: 10,),
+            Text(
+              'ACTIVE: ${_getSimplifiedName(primary.name)}',
+              style: HudTheme.statCyan.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.bold
+              ),
             ),
             const SizedBox(height: 15,),
             ListTile(
@@ -38,23 +80,12 @@ class NetRate extends StatelessWidget {
                   color: Colors.white60
                 ),
               ),
-              subtitle: RichText(
-                text: TextSpan(
-                  text: '1.2 ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold
-                  ),
-                  children: [
-                    TextSpan(
-                      text: ' GB/S',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: HudTheme.primaryBorder
-                      )
-                    )
-                  ]
-                )
+              subtitle: Text(
+                formatRate(primary.rxBytesPerSec),
+                style: HudTheme.statCyan.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold
+                ),
               )
             ),
             ListTile(
@@ -74,24 +105,33 @@ class NetRate extends StatelessWidget {
                   color: Colors.white60
                 ),
               ),
-              subtitle: RichText(
-                text: TextSpan(
-                  text: '450 ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold
-                  ),
-                  children: [
-                    TextSpan(
-                      text: ' MB/S',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: HudTheme.accentAmber
-                      )
-                    )
-                  ]
-                )
+              subtitle: Text(
+                formatRate(primary.txBytesPerSec),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: HudTheme.accentAmber,
+                  fontWeight: FontWeight.bold
+                ),
               )
+              
+              // RichText(
+              //   text: TextSpan(
+              //     text: formatRate(primary.txBytesPerSec),
+              //     style: TextStyle(
+              //       fontSize: 16,
+              //       fontWeight: FontWeight.bold
+              //     ),
+              //     children: [
+              //       TextSpan(
+              //         text: ' MB/S',
+              //         style: TextStyle(
+              //           fontSize: 13,
+              //           color: HudTheme.accentAmber
+              //         )
+              //       )
+              //     ]
+              //   )
+              // )
             ),
             const SizedBox(height: 60,)
           ],

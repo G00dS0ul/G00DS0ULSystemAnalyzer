@@ -8,7 +8,6 @@ import 'package:gs_analyzer_ui/features/dashboard/widgets/net_rate.dart';
 import 'package:gs_analyzer_ui/features/dashboard/widgets/thermal_sensor.dart';
 import 'package:gs_analyzer_ui/providers/hud_density_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
-import 'package:gs_analyzer_ui/widgets/coming_soon.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -80,7 +79,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                               const SizedBox(width: 15,),
                               Expanded(
-                                child: ComingSoon(child: NetRate())
+                                child: NetRate()
                               )
                             ],
                           ),
@@ -97,9 +96,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               const SizedBox(width: 15,),
                               Expanded(
                                 flex: 1,
-                                child: ComingSoon(
-                                  child: ThermalSensor()
-                                )
+                                child: ThermalSensor()
                               )
                             ],
                           ),

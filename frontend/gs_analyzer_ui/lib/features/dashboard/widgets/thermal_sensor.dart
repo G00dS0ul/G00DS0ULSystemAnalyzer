@@ -1,15 +1,22 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:gs_analyzer_ui/features/dashboard/widgets/custom_progress_indicator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gs_analyzer_ui/providers/thermal_provider.dart';
 import 'package:gs_analyzer_ui/utils/hud_theme.dart';
 import 'package:gs_analyzer_ui/widgets/custom_container.dart';
 
-class ThermalSensor extends StatelessWidget {
+class ThermalSensor extends ConsumerStatefulWidget {
   const ThermalSensor({super.key});
 
   @override
+  ConsumerState<ThermalSensor> createState() => _ThermalSensorState();
+}
+
+class _ThermalSensorState extends ConsumerState<ThermalSensor> {
+  @override
   Widget build(BuildContext context) {
+    final thermalState = ref.watch(thermalProvider);
+    final telemetry = thermalState.telemetry!;
+
     return CustomContainer(
       color: HudTheme.bgPanel,
       padding: EdgeInsets.all(20),
@@ -24,12 +31,12 @@ class ThermalSensor extends StatelessWidget {
               CustomContainer(
                 color: Colors.black,
                 child: ListTile(
-                  leading: Icon(Icons.thermostat, color: Color(0XFFFEB694),),
+                  leading: Icon(Icons.thermostat, color: HudTheme.accentCyan,),
                     title: Text(
                       'CPU_PKG'
                     ),
                   trailing: Text(
-                    '68\u{00B0}C',
+                    '${telemetry.cpuPackageCelsius?.toStringAsFixed(1) ?? 'N/A'}\u{00B0}C',
                     style: TextStyle(
                       fontSize: 18
                     ),
@@ -40,12 +47,28 @@ class ThermalSensor extends StatelessWidget {
               CustomContainer(
                 color: Colors.black,
                 child: ListTile(
-                  leading: Icon(Icons.thermostat, color: Color(0XFFA4B7ED),),
+                  leading: Icon(Icons.thermostat, color: HudTheme.accentGreen,),
                   title: Text(
                     'SYS_BOARD'
                   ),
                   trailing: Text(
-                    '42\u{00B0}C',
+                    '${telemetry.motherBoardCelsius ?? 'N/A'}\u{00B0}C',
+                    style: TextStyle(
+                      fontSize: 18
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15,),
+              CustomContainer(
+                color: Colors.black,
+                child: ListTile(
+                  leading: Icon(Icons.thermostat, color: HudTheme.primaryBorder),
+                  title: Text(
+                    'AMBIENT'
+                  ),
+                  trailing: Text(
+                    '${telemetry.ambientCelsius ?? 'N/A'}\u{00B0}C',
                     style: TextStyle(
                       fontSize: 18
                     ),
@@ -53,12 +76,24 @@ class ThermalSensor extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 50,),
-          CustomProgressIndicator(
-            label: 'fan speed', 
-            tag: '2400  rpm', 
-            value: 0.8, 
-            height: 4
-          )
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'FAN SPEED',
+                ),
+                Text(
+                  '${telemetry.chassisFan1Rpm} rpm',
+                  style: HudTheme.statGreen,
+                )
+              ],
+            )
+          // CustomProgressIndicator(
+          //   label: 'fan speed', 
+          //   tag: '${telemetry.chassisFan1Rpm} rpm', 
+          //   value: 0.8, 
+          //   height: 4
+          // )
         ],
       )
     );
